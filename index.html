@@ -6,6 +6,8 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icon.svg" type="image/svg+xml">
 <meta name="theme-color" content="#2446c4">
+<!-- Atril publicada: los enlaces para compartir creados en el equipo apuntan aquí -->
+<meta name="atril-url" content="https://imboqqentt.github.io/Atril/">
 <title>Atril</title>
 <link rel="stylesheet" href="fonts/fonts.css">
 <style>
@@ -262,6 +264,8 @@ button { cursor: pointer; }
 .stat b { display: block; font-family: var(--font-engrave); font-size: 26px; font-weight: 400; color: var(--fg); }
 textarea.xml { width: 100%; height: 220px; font-family: var(--font-mono); font-size: 11px; border: 1px solid var(--line); border-radius: 8px; padding: 8px; background: var(--panel-2); color: var(--fg); }
 
+.linkout { width: 100%; border: 1px solid var(--line); border-radius: 7px; padding: 8px 9px; background: var(--panel-2); font-family: var(--font-mono); font-size: 12px; color: var(--fg); }
+.dialog p.warn { color: var(--warn); font-size: 13px; }
 .toast {
   position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(20px + env(safe-area-inset-bottom, 0px)); z-index: 60;
   background: var(--fg); color: var(--bg); padding: 9px 14px; border-radius: 9px; font-size: 13px; box-shadow: var(--shadow); max-width: calc(100% - 32px);
@@ -289,6 +293,7 @@ textarea.xml { width: 100%; height: 220px; font-family: var(--font-mono); font-s
     <div class="spacer"></div>
     <button class="btn" id="bNew">Nueva</button>
     <button class="btn" id="bOpen" title="Ctrl+O">Abrir</button>
+    <button class="btn" id="bShare">Compartir</button>
     <button class="btn primary" id="bSave" title="Ctrl+S">Guardar</button>
     <div class="menuwrap">
       <button class="btn" id="bFile" aria-haspopup="true" aria-expanded="false">Archivo ▾</button>
@@ -2272,6 +2277,17 @@ async function openDialog() {
   let items = [];
   try { items = (await RECENT.all()).sort((a, b) => b.at - a.at); } catch (e) {}
   const list = document.getElementById("recList"); if (!list) return;
+  let prev = null; try { prev = JSON.parse(lsGet(LS_PREV) || "null"); } catch (e) {}
+  if (prev && Array.isArray(prev.staves)) {
+    const row = document.createElement("div"); row.className = "libitem"; row.id = "recPrev";
+    row.innerHTML = `<button class="open"><b>${esc(prev.title || "Sin título")}</b><span>Borrador sin guardar, de antes de abrir un enlace</span></button><button class="btn" data-del>Descartar</button>`;
+    row.querySelector(".open").onclick = () => {
+      if (dirty) lsSet(LS_PREV, JSON.stringify(score)); else { try { localStorage.removeItem(LS_PREV); } catch (e) {} }
+      closeModal(); openScore(prev, null, ""); dirty = true; saveDraft(); toast("Recuperaste tu borrador. Guárdalo con Ctrl+S.");
+    };
+    row.querySelector("[data-del]").onclick = () => { try { localStorage.removeItem(LS_PREV); } catch (e) {} row.remove(); };
+    list.before(row);
+  }
   if (!items.length) { list.innerHTML = `<p class="hint">Aquí aparecerán las partituras que guardes o abras.</p>`; return; }
   const fmt = (t) => { try { return new Date(t).toLocaleString("es-CL", { dateStyle: "medium", timeStyle: "short" }); } catch (e) { return ""; } };
   list.innerHTML = items.map((it) => `<div class="libitem ${it.id === score.id ? "current" : ""}" data-id="${esc(it.id)}"><button class="open"><b>${esc(it.title || "Sin título")}</b><span>${esc(it.name)} · ${fmt(it.at)}</span></button><button class="btn" data-del title="Quitar de la lista (no borra el archivo)">Quitar</button></div>`).join("");
@@ -2280,6 +2296,73 @@ async function openDialog() {
     row.querySelector(".open").onclick = () => openRecent(it);
     row.querySelector("[data-del]").onclick = async () => { try { await RECENT.del(it.id); } catch (e) {} row.remove(); };
   });
+}
+
+/* ================= compartir por enlace ================= */
+// La partitura viaja dentro del enlace: #s=<JSON comprimido con deflate-raw, en base64url>. Nada pasa por un servidor.
+const LINK_MAX = 30000, LS_PREV = "atril.borrador.anterior";
+const canLink = typeof CompressionStream === "function" && typeof DecompressionStream === "function";
+function b64url(bytes) {
+  let bin = ""; for (let i = 0; i < bytes.length; i += 0x8000) bin += String.fromCharCode.apply(null, bytes.subarray(i, i + 0x8000));
+  return btoa(bin).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+}
+function unb64url(str) {
+  const bin = atob(str.replace(/-/g, "+").replace(/_/g, "/"));
+  const out = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
+  return out;
+}
+async function packScore(sc) {
+  const z = new Blob([JSON.stringify(sc)]).stream().pipeThrough(new CompressionStream("deflate-raw"));
+  return b64url(new Uint8Array(await new Response(z).arrayBuffer()));
+}
+async function unpackScore(str) {
+  const z = new Blob([unb64url(str)]).stream().pipeThrough(new DecompressionStream("deflate-raw"));
+  return JSON.parse(await new Response(z).text());
+}
+// Dirección base del enlace. En el equipo (localhost, archivo, app de escritorio) se usa la de Atril publicada,
+// si está en <meta name="atril-url">, para que el enlace funcione en otros equipos.
+function linkBase() {
+  const here = location.origin + location.pathname;
+  const local = !/^https?:$/.test(location.protocol) || /^(localhost|127\.0\.0\.1|\[::1\])$/.test(location.hostname);
+  const pub = (document.querySelector('meta[name="atril-url"]') || {}).content || "";
+  return { url: local && pub ? pub : here, localOnly: local && !pub };
+}
+async function shareLink() {
+  const sc = clone(score); delete sc.sample;
+  return linkBase().url + "#s=" + (await packScore(sc));
+}
+async function shareDialog() {
+  if (!canLink) { toast("Este navegador no puede crear enlaces. Comparte el archivo .atril (Guardar) o el PDF."); return; }
+  const link = await shareLink(), long = link.length > LINK_MAX, { localOnly } = linkBase();
+  openModal(`<h3>Compartir</h3>
+    <p>El enlace lleva la partitura completa adentro: quien lo abra la ve, la escucha y puede guardar su copia. No se sube a ningún servidor; si después cambias la partitura, comparte un enlace nuevo.</p>
+    <input class="linkout" id="shLink" readonly aria-label="Enlace de la partitura">
+    ${long ? `<p class="warn" id="shLong">El enlace es muy largo (${link.length.toLocaleString("es-CL")} caracteres) y puede cortarse en WhatsApp o en el correo. Mejor envía el archivo .atril.</p>` : `<p class="hint">${link.length.toLocaleString("es-CL")} caracteres.</p>`}
+    ${localOnly ? `<p class="warn" id="shLocal">Este enlace apunta a tu equipo y solo funciona aquí. Para que funcione en otros equipos, compártelo desde Atril publicado en internet.</p>` : ""}
+    <div class="actions"><button class="btn" data-x="file" style="margin-right:auto">Descargar .atril</button><button class="btn" data-x="close">Cerrar</button>${navigator.share ? `<button class="btn" data-x="native">Enviar…</button>` : ""}<button class="btn primary" data-x="copy">Copiar enlace</button></div>`, (d) => {
+    const inp = d.querySelector("#shLink"); inp.value = link;
+    inp.onclick = () => inp.select();
+    d.querySelector('[data-x="close"]').onclick = closeModal;
+    d.querySelector('[data-x="file"]').onclick = () => { const sc = clone(score); delete sc.sample; offer(slug() + ".atril", new Blob([JSON.stringify(sc, null, 1)], { type: "application/json" })); };
+    d.querySelector('[data-x="copy"]').onclick = () => navigator.clipboard.writeText(link).then(() => toast(long ? "Enlace copiado. Es largo: si no llega completo, envía el archivo." : "Enlace copiado."), () => { inp.focus(); inp.select(); toast("Selecciona el enlace y cópialo con Ctrl+C."); });
+    const nat = d.querySelector('[data-x="native"]');
+    if (nat) nat.onclick = () => navigator.share({ title: score.title || "Partitura", url: link }).catch(() => {});
+  });
+  document.querySelector('#modal [data-x="copy"]').focus(); // Enter copia; el campo muestra el comienzo del enlace
+}
+// Abre la partitura que viene en el enlace (#s=…). Si había cambios sin guardar, quedan como "borrador anterior" en Abrir.
+async function openFromHash() {
+  const m = location.hash.match(/^#s=([A-Za-z0-9_-]+)/);
+  if (!m) return false;
+  history.replaceState(null, "", location.pathname + location.search);
+  let sc = null;
+  try { sc = await unpackScore(m[1]); } catch (e) {}
+  if (!sc || !Array.isArray(sc.staves)) { toast("Este enlace está incompleto o dañado. Pide que te lo envíen de nuevo, o que te manden el archivo .atril."); return false; }
+  if (dirty) lsSet(LS_PREV, JSON.stringify(score));
+  sc.id = uid(); delete sc.sample;
+  openScore(sc, null, "");
+  setTimeout(() => toast(`Te compartieron «${sc.title || "Sin título"}». Pulsa ▶ para escucharla; guárdala con Ctrl+S para tener tu copia.`), 300);
+  return true;
 }
 
 /* ================= exportación ================= */
@@ -3219,7 +3302,7 @@ function helpDialog() {
     <p><b>Letra:</b> con L se abre la barra de letra. Escribe la sílaba y pulsa Espacio para pasar a la nota siguiente, o guion para separar sílabas de una misma palabra. Con “Pegar estrofa” puedes poner una estrofa entera escrita así: Al-ce-mos hoy la voz.</p>
     <p><b>Cambios de compás o tonalidad:</b> pon el cursor en el compás donde empieza el cambio y elige el compás o la tonalidad en el panel Partitura.</p>
     <p>Para ensayar una voz del coro, usa la S de esa voz para escucharla sola, o la M para silenciarla.</p>
-    <p><b>Tus archivos:</b> cada partitura se guarda como un archivo .atril en la carpeta que elijas; “Abrir” muestra las recientes. Para compartirla, envía el archivo .atril, o el PDF, MusicXML o audio desde el menú Archivo.${canPick ? "" : " Este navegador no puede escribir directo en tus carpetas: al guardar se descarga el archivo .atril."}</p>
+    <p><b>Tus archivos:</b> cada partitura se guarda como un archivo .atril en la carpeta que elijas; “Abrir” muestra las recientes. Para compartirla, usa “Compartir”: el enlace lleva la partitura adentro, sin subirla a ningún servidor. También puedes enviar el archivo .atril, o el PDF, MusicXML o audio desde el menú Archivo.${canPick ? "" : " Este navegador no puede escribir directo en tus carpetas: al guardar se descarga el archivo .atril."}</p>
     <p>Atril funciona en tu equipo, sin cuenta y sin internet: escribir, reproducir, letra, acordes, transponer y generar PDF, MusicXML y audio. Si cierras la pestaña sin guardar, al volver encontrarás tu último borrador.</p>
     <div class="actions"><button class="btn primary" data-x="close">Entendido</button></div>`, (d) => { d.querySelector('[data-x="close"]').onclick = closeModal; });
 }
@@ -3375,6 +3458,7 @@ function wire() {
   document.getElementById("sound").onchange = (e) => { lsSet("atril.sonido", e.target.value); if (isBank(e.target.value)) loadSound(e.target.value).catch(() => {}); };
   document.getElementById("bNew").onclick = newScoreDialog;
   document.getElementById("bOpen").onclick = openDialog;
+  document.getElementById("bShare").onclick = shareDialog;
   document.getElementById("bSave").onclick = () => saveFile();
   document.getElementById("bHelp").onclick = helpDialog;
   const bf = document.getElementById("bFile"), mf = document.getElementById("mFile");
@@ -3426,8 +3510,11 @@ function start() {
   // archivos .atril o MusicXML abiertos con Atril instalada como app
   if ("launchQueue" in window) launchQueue.setConsumer(async (p) => { const h = p.files && p.files[0]; if (h) importFile(await h.getFile(), h); });
   if (embedded) setTimeout(() => toast(`«${embedded.title || "Sin título"}» — pulsa ▶ para escucharla. Puedes transponerla y descargar PDF, audio o MusicXML.`), 600);
-  else if (!draft) setTimeout(() => toast("Partitura de ejemplo. Pulsa ▶ para escucharla o “Nueva” para empezar la tuya."), 600);
+  else if (!draft && !location.hash.startsWith("#s=")) setTimeout(() => toast("Partitura de ejemplo. Pulsa ▶ para escucharla o “Nueva” para empezar la tuya."), 600);
   document.getElementById("desk").focus({ preventScroll: true });
+  // enlace compartido: al cargar o si se pega otro enlace en la misma pestaña
+  openFromHash();
+  window.addEventListener("hashchange", openFromHash);
 }
 start();
 </script>

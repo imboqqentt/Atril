@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { execSync } from "node:child_process";
+import { readFileSync } from "node:fs";
 
 test.use({ serviceWorkers: "allow" });
 
@@ -22,7 +22,7 @@ test("una versión nueva de index.html llega sin reinstalar", async ({ page, con
 });
 
 test("quien tenía el service worker anterior recibe el nuevo y las versiones nuevas", async ({ page, context }) => {
-  const oldSw = execSync("git show 610d071:sw.js", { encoding: "utf8" }); // el que guardaba index.html para siempre
+  const oldSw = readFileSync("tests/fixtures/sw-v1.js", "utf8"); // el primero, que guardaba index.html para siempre
   await context.route(/\/sw\.js$/, (route) => route.fulfill({ contentType: "text/javascript", body: oldSw }));
   await installed(page);
   await context.unroute(/\/sw\.js$/);
@@ -32,6 +32,7 @@ test("quien tenía el service worker anterior recibe el nuevo y las versiones nu
   });
   // al navegar, el navegador revisa sw.js, instala el nuevo y este toma el control (puede tardar una navegación más)
   await expect.poll(async () => {
+    await page.evaluate(async () => (await navigator.serviceWorker.getRegistration()).update().catch(() => {})); // lo que hace el navegador al navegar
     await page.reload();
     return page.evaluate(async () => { const r = await navigator.serviceWorker.getRegistration(); return r.active && r.active.state === "activated" && !r.installing && !r.waiting && (await caches.keys()).join(); });
   }, { intervals: [500], timeout: 15_000 }).toBe("atril-v2");

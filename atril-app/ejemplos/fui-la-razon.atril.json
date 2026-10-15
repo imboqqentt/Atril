@@ -1,0 +1,8420 @@
+{
+ "id": "smv9l4g9pcdf88",
+ "title": "Fui La Razón",
+ "composer": "Dottie Rambo",
+ "tempo": 80,
+ "time": "3/4",
+ "key": 0,
+ "changes": [
+  {
+   "m": 57,
+   "key": -5
+  }
+ ],
+ "marks": {},
+ "layout": {
+  "staff": 6,
+  "perSystem": 0
+ },
+ "groups": [
+  {
+   "type": "bracket",
+   "from": 0,
+   "to": 1
+  }
+ ],
+ "staves": [
+  {
+   "name": "",
+   "clef": "treble",
+   "voices": [
+    {
+     "name": "Soprano",
+     "notes": [
+      {
+       "d": "h",
+       "dots": 0,
+       "rest": true,
+       "tie": false,
+       "keys": []
+      },
+      {
+       "d": "8",
+       "dots": 0,
+       "rest": true,
+       "tie": false,
+       "keys": []
+      },
+      {
+       "d": "8",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "E",
+         "a": 0,
+         "o": 4
+        }
+       ],
+       "ly": [
+        {
+         "t": "¿Cuál",
+         "h": false
+        },
+        {
+         "t": "No",
+         "h": false
+        }
+       ]
+      },
+      {
+       "d": "q",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "G",
+         "a": 0,
+         "o": 4
+        }
+       ],
+       "ly": [
+        {
+         "t": "fue",
+         "h": false
+        },
+        {
+         "t": "pu",
+         "h": true
+        }
+       ]
+      },
+      {
+       "d": "q",
+       "dots": 1,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "G",
+         "a": 0,
+         "o": 4
+        }
+       ],
+       "ly": [
+        {
+         "t": "la",
+         "h": false
+        },
+        {
+         "t": "do",
+         "h": false
+        }
+       ]
+      },
+      {
+       "d": "8",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "G",
+         "a": 0,
+         "o": 4
+        }
+       ],
+       "ly": [
+        {
+         "t": "ra",
+         "h": true
+        },
+        {
+         "t": "un",
+         "h": false
+        }
+       ]
+      },
+      {
+       "d": "8",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "G",
+         "a": 0,
+         "o": 4
+        }
+       ],
+       "ly": [
+        {
+         "t": "zón",
+         "h": false
+        },
+        {
+         "t": "án",
+         "h": true
+        }
+       ]
+      },
+      {
+       "d": "q",
+       "dots": 1,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "F",
+         "a": 0,
+         "o": 4
+        }
+       ]
+      },
+      {
+       "d": "8",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "E",
+         "a": 0,
+         "o": 4
+        }
+       ],
+       "ly": [
+        {
+         "t": "que",
+         "h": false
+        },
+        {
+         "t": "gel",
+         "h": false
+        }
+       ]
+      },
+      {
+       "d": "8",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "F",
+         "a": 0,
+         "o": 4
+        }
+       ],
+       "ly": [
+        {
+         "t": "del",
+         "h": false
+        },
+        {
+         "t": "ser",
+         "h": false
+        }
+       ]
+      },
+      {
+       "d": "q",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "G",
+         "a": 0,
+         "o": 4
+        }
+       ],
+       "ly": [
+        {
+         "t": "cie",
+         "h": true
+        },
+        {
+         "t": "en",
+         "h": true
+        }
+       ]
+      },
+      {
+       "d": "q",
+       "dots": 1,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "G",
+         "a": 0,
+         "o": 4
+        }
+       ],
+       "ly": [
+        {
+         "t": "lo",
+         "h": false
+        },
+        {
+         "t": "via",
+         "h": true
+        }
+       ]
+      },
+      {
+       "d": "8",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "G",
+         "a": 0,
+         "o": 4
+        }
+       ],
+       "ly": [
+        {
+         "t": "el",
+         "h": false
+        },
+        {
+         "t": "do",
+         "h": false
+        }
+       ]
+      },
+      {
+       "d": "q",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "G",
+         "a": 0,
+         "o": 4
+        }
+       ],
+       "ly": [
+        {
+         "t": "Pa",
+         "h": true
+        },
+        {
+         "t": "des",
+         "h": true
+        }
+       ]
+      },
+      {
+       "d": "8",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "G",
+         "a": 0,
+         "o": 4
+        }
+       ],
+       "ly": [
+        {
+         "t": "dre",
+         "h": false
+        },
+        {
+         "t": "de_el",
+         "h": false
+        }
+       ]
+      },
+      {
+       "d": "8",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "G",
+         "a": 0,
+         "o": 4
+        }
+       ],
+       "ly": [
+        {
+         "t": "su",
+         "h": false
+        },
+        {
+         "t": "tro",
+         "h": true
+        }
+       ]
+      },
+      {
+       "d": "8",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "F",
+         "a": 0,
+         "o": 4
+        }
+       ],
+       "ly": [
+        {
+         "t": "Hi",
+         "h": true
+        },
+        {
+         "t": "no",
+         "h": false
+        }
+       ]
+      },
+      {
+       "d": "8",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "E",
+         "a": 0,
+         "o": 4
+        }
+       ],
+       "ly": [
+        {
+         "t": "jo_en",
+         "h": true
+        },
+        {
+         "t": "ce_les",
+         "h": true
+        }
+       ]
+      },
+      {
+       "d": "h",
+       "dots": 1,
+       "rest": false,
+       "tie": true,
+       "keys": [
+        {
+         "s": "C",
+         "a": 0,
+         "o": 4
+        }
+       ],
+       "ly": [
+        {
+         "t": "vió",
+         "h": false
+        },
+        {
+         "t": "tial",
+         "h": false
+        }
+       ]
+      },
+      {
+       "d": "h",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "C",
+         "a": 0,
+         "o": 4
+        }
+       ]
+      },
+      {
+       "d": "8",
+       "dots": 0,
+       "rest": true,
+       "tie": false,
+       "keys": []
+      },
+      {
+       "d": "8",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "E",
+         "a": 0,
+         "o": 4
+        }
+       ],
+       "ly": [
+        {
+         "t": "a",
+         "h": false
+        },
+        {
+         "t": "pues",
+         "h": false
+        }
+       ]
+      },
+      {
+       "d": "q",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "F",
+         "a": 0,
+         "o": 4
+        }
+       ],
+       "ly": [
+        {
+         "t": "ser",
+         "h": false
+        },
+        {
+         "t": "nun",
+         "h": true
+        }
+       ]
+      },
+      {
+       "d": "q",
+       "dots": 1,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "F",
+         "a": 0,
+         "o": 4
+        }
+       ],
+       "ly": [
+        {
+         "t": "des",
+         "h": true
+        },
+        {
+         "t": "ca",
+         "h": false
+        }
+       ]
+      },
+      {
+       "d": "8",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "F",
+         "a": 0,
+         "o": 4
+        }
+       ],
+       "ly": [
+        {
+         "t": "pre",
+         "h": true
+        },
+        {
+         "t": "po",
+         "h": true
+        }
+       ]
+      },
+      {
+       "d": "8",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "F",
+         "a": 0,
+         "o": 4
+        }
+       ],
+       "ly": [
+        {
+         "t": "cia",
+         "h": true
+        },
+        {
+         "t": "drí",
+         "h": true
+        }
+       ]
+      },
+      {
+       "d": "h",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "E",
+         "a": 0,
+         "o": 4
+        }
+       ],
+       "ly": [
+        {
+         "t": "do",
+         "h": false
+        },
+        {
+         "t": "a",
+         "h": false
+        }
+       ]
+      },
+      {
+       "d": "8",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "D",
+         "a": 0,
+         "o": 4
+        }
+       ],
+       "ly": [
+        {
+         "t": "y",
+         "h": false
+        },
+        {
+         "t": "com",
+         "h": true
+        }
+       ]
+      },
+      {
+       "d": "q",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "F",
+         "a": 0,
+         "o": 4
+        }
+       ],
+       "ly": [
+        {
+         "t": "cul",
+         "h": true
+        },
+        {
+         "t": "prar",
+         "h": false
+        }
+       ]
+      },
+      {
+       "d": "q",
+       "dots": 1,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "F",
+         "a": 0,
+         "o": 4
+        }
+       ],
+       "ly": [
+        {
+         "t": "pas",
+         "h": false
+        },
+        {
+         "t": "mi",
+         "h": false
+        }
+       ]
+      },
+      {
+       "d": "8",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "G",
+         "a": 0,
+         "o": 4
+        }
+       ],
+       "ly": [
+        {
+         "t": "a",
+         "h": true
+        },
+        {
+         "t": "per",
+         "h": true
+        }
+       ]
+      },
+      {
+       "d": "q",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "A",
+         "a": 0,
+         "o": 4
+        }
+       ],
+       "ly": [
+        {
+         "t": "je",
+         "h": true
+        },
+        {
+         "t": "dón",
+         "h": false
+        }
+       ]
+      },
+      {
+       "d": "q",
+       "dots": 1,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "G",
+         "a": 0,
+         "o": 4
+        }
+       ],
+       "ly": [
+        {
+         "t": "nas",
+         "h": false
+        },
+        {
+         "t": "al",
+         "h": false
+        }
+       ]
+      },
+      {
+       "d": "8",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "F",
+         "a": 0,
+         "o": 4
+        }
+       ],
+       "ly": [
+        {
+         "t": "pa",
+         "h": true
+        },
+        {
+         "t": "mo",
+         "h": true
+        }
+       ]
+      },
+      {
+       "d": "h",
+       "dots": 1,
+       "rest": false,
+       "tie": true,
+       "keys": [
+        {
+         "s": "E",
+         "a": 0,
+         "o": 4
+        }
+       ],
+       "ly": [
+        {
+         "t": "gar?",
+         "h": false
+        },
+        {
+         "t": "rir",
+         "h": false
+        }
+       ]
+      },
+      {
+       "d": "h",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "E",
+         "a": 0,
+         "o": 4
+        }
+       ]
+      },
+      {
+       "d": "8",
+       "dots": 0,
+       "rest": true,
+       "tie": false,
+       "keys": []
+      },
+      {
+       "d": "8",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "E",
+         "a": 0,
+         "o": 4
+        }
+       ],
+       "ly": [
+        {
+         "t": "¿Cuál",
+         "h": false
+        },
+        {
+         "t": "El",
+         "h": false
+        }
+       ]
+      },
+      {
+       "d": "q",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "G",
+         "a": 0,
+         "o": 4
+        }
+       ],
+       "ly": [
+        {
+         "t": "fue",
+         "h": false
+        },
+        {
+         "t": "pre",
+         "h": true
+        }
+       ]
+      },
+      {
+       "d": "q",
+       "dots": 1,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "G",
+         "a": 0,
+         "o": 4
+        }
+       ],
+       "ly": [
+        {
+         "t": "la",
+         "h": false
+        },
+        {
+         "t": "cio",
+         "h": false
+        }
+       ]
+      },
+      {
+       "d": "8",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "C",
+         "a": 0,
+         "o": 5
+        }
+       ],
+       "ly": [
+        {
+         "t": "ra",
+         "h": true
+        },
+        {
+         "t": "pre",
+         "h": true
+        }
+       ]
+      },
+      {
+       "d": "8",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "A",
+         "a": 0,
+         "o": 4
+        }
+       ],
+       "ly": [
+        {
+         "t": "zón",
+         "h": false
+        },
+        {
+         "t": "vis",
+         "h": true
+        }
+       ]
+      },
+      {
+       "d": "q",
+       "dots": 1,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "G",
+         "a": 0,
+         "o": 4
+        }
+       ]
+      },
+      {
+       "d": "8",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "E",
+         "a": 0,
+         "o": 4
+        }
+       ],
+       "ly": [
+        {
+         "t": "que",
+         "h": false
+        },
+        {
+         "t": "to",
+         "h": false
+        }
+       ]
+      },
+      {
+       "d": "8",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "F",
+         "a": 0,
+         "o": 4
+        }
+       ],
+       "ly": [
+        {
+         "t": "el",
+         "h": false
+        },
+        {
+         "t": "por",
+         "h": false
+        }
+       ]
+      },
+      {
+       "d": "q",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "G",
+         "a": 0,
+         "o": 4
+        }
+       ],
+       "ly": [
+        {
+         "t": "Pa",
+         "h": true
+        },
+        {
+         "t": "li",
+         "h": true
+        }
+       ]
+      },
+      {
+       "d": "q",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "G",
+         "a": 0,
+         "o": 4
+        }
+       ],
+       "ly": [
+        {
+         "t": "dre",
+         "h": false
+        },
+        {
+         "t": "brar",
+         "h": true
+        }
+       ]
+      },
+      {
+       "d": "8",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "G",
+         "a": 0,
+         "o": 4
+        }
+       ],
+       "ly": [
+        {
+         "t": "le",
+         "h": false
+        },
+        {
+         "t": "me",
+         "h": false
+        }
+       ]
+      },
+      {
+       "d": "8",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "G",
+         "a": 0,
+         "o": 4
+        }
+       ],
+       "ly": [
+        {
+         "t": "de",
+         "h": true
+        }
+       ]
+      },
+      {
+       "d": "q",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "G",
+         "a": 0,
+         "o": 4
+        }
+       ],
+       "ly": [
+        {
+         "t": "jó",
+         "h": false
+        },
+        {
+         "t": "ha",
+         "h": true
+        }
+       ]
+      },
+      {
+       "d": "q",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "F",
+         "a": 0,
+         "o": 4
+        }
+       ],
+       "ly": [
+        {
+         "t": "en",
+         "h": false
+        },
+        {
+         "t": "brí",
+         "h": true
+        }
+       ]
+      },
+      {
+       "d": "q",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "E",
+         "a": 0,
+         "o": 4
+        }
+       ],
+       "ly": [
+        {
+         "t": "la",
+         "h": false
+        },
+        {
+         "t": "a_de",
+         "h": false
+        }
+       ]
+      },
+      {
+       "d": "h",
+       "dots": 1,
+       "rest": false,
+       "tie": true,
+       "keys": [
+        {
+         "s": "C",
+         "a": 0,
+         "o": 4
+        }
+       ],
+       "ly": [
+        {
+         "t": "cruz?",
+         "h": false
+        },
+        {
+         "t": "ser",
+         "h": false
+        }
+       ]
+      },
+      {
+       "d": "h",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "C",
+         "a": 0,
+         "o": 4
+        }
+       ]
+      },
+      {
+       "d": "8",
+       "dots": 0,
+       "rest": true,
+       "tie": false,
+       "keys": []
+      },
+      {
+       "d": "8",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "E",
+         "a": 0,
+         "o": 4
+        }
+       ],
+       "ly": [
+        {
+         "t": "Llo",
+         "h": true
+        },
+        {
+         "t": "La",
+         "h": false
+        }
+       ]
+      },
+      {
+       "d": "q",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "F",
+         "a": 0,
+         "o": 4
+        }
+       ],
+       "ly": [
+        {
+         "t": "ré",
+         "h": false
+        },
+        {
+         "t": "muer",
+         "h": true
+        }
+       ]
+      },
+      {
+       "d": "q",
+       "dots": 1,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "F",
+         "a": 0,
+         "o": 4
+        }
+       ],
+       "ly": [
+        {
+         "t": "al",
+         "h": false
+        },
+        {
+         "t": "te",
+         "h": false
+        }
+       ]
+      },
+      {
+       "d": "8",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "F",
+         "a": 0,
+         "o": 4
+        }
+       ],
+       "ly": [
+        {
+         "t": "sa",
+         "h": true
+        },
+        {
+         "t": "de",
+         "h": false
+        }
+       ]
+      },
+      {
+       "d": "8",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "F",
+         "a": 0,
+         "o": 4
+        }
+       ],
+       "ly": [
+        {
+         "t": "ber",
+         "h": false
+        },
+        {
+         "t": "Cris",
+         "h": true
+        }
+       ]
+      },
+      {
+       "d": "q",
+       "dots": 1,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "E",
+         "a": 0,
+         "o": 4
+        }
+       ],
+       "ly": [
+        null,
+        {
+         "t": "to",
+         "h": false
+        }
+       ]
+      },
+      {
+       "d": "8",
+       "dots": 0,
+       "rest": true,
+       "tie": false,
+       "keys": []
+      },
+      {
+       "d": "8",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "D",
+         "a": 0,
+         "o": 4
+        }
+       ],
+       "ly": [
+        {
+         "t": "que",
+         "h": false
+        },
+        {
+         "t": "su",
+         "h": false
+        }
+       ]
+      },
+      {
+       "d": "q",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "F",
+         "a": 0,
+         "o": 4
+        }
+       ],
+       "ly": [
+        {
+         "t": "e",
+         "h": true
+        },
+        {
+         "t": "san",
+         "h": true
+        }
+       ]
+      },
+      {
+       "d": "q",
+       "dots": 1,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "F",
+         "a": 0,
+         "o": 4
+        }
+       ],
+       "ly": [
+        {
+         "t": "sa",
+         "h": false
+        },
+        {
+         "t": "gre",
+         "h": false
+        }
+       ]
+      },
+      {
+       "d": "8",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "G",
+         "a": 0,
+         "o": 4
+        }
+       ],
+       "ly": [
+        {
+         "t": "ra",
+         "h": true
+        },
+        {
+         "t": "ver",
+         "h": true
+        }
+       ]
+      },
+      {
+       "d": "q",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "A",
+         "a": 0,
+         "o": 4
+        }
+       ],
+       "ly": [
+        {
+         "t": "zón",
+         "h": false
+        },
+        {
+         "t": "ti",
+         "h": true
+        }
+       ]
+      },
+      {
+       "d": "q",
+       "dots": 1,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "G",
+         "a": 0,
+         "o": 4
+        }
+       ],
+       "ly": [
+        null,
+        {
+         "t": "da",
+         "h": false
+        }
+       ]
+      },
+      {
+       "d": "8",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "F",
+         "a": 0,
+         "o": 4
+        }
+       ],
+       "ly": [
+        {
+         "t": "yo",
+         "h": false
+        },
+        {
+         "t": "por",
+         "h": false
+        }
+       ]
+      },
+      {
+       "d": "8",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "E",
+         "a": 0,
+         "o": 4
+        }
+       ],
+       "ly": [
+        {
+         "t": "fui.",
+         "h": false
+        },
+        {
+         "t": "mí.",
+         "h": false
+        }
+       ]
+      },
+      {
+       "d": "8",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "D",
+         "a": 0,
+         "o": 4
+        }
+       ]
+      },
+      {
+       "d": "h",
+       "dots": 0,
+       "rest": false,
+       "tie": true,
+       "keys": [
+        {
+         "s": "C",
+         "a": 0,
+         "o": 4
+        }
+       ]
+      },
+      {
+       "d": "h",
+       "dots": 1,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "C",
+         "a": 0,
+         "o": 4
+        }
+       ]
+      },
+      {
+       "d": "q",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "C",
+         "a": 0,
+         "o": 5
+        }
+       ],
+       "ly": [
+        {
+         "t": "Fui",
+         "h": false
+        }
+       ]
+      },
+      {
+       "d": "q",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "E",
+         "a": 0,
+         "o": 5
+        }
+       ],
+       "ly": [
+        {
+         "t": "la",
+         "h": false
+        }
+       ]
+      },
+      {
+       "d": "q",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "C",
+         "a": 0,
+         "o": 5
+        }
+       ],
+       "ly": [
+        {
+         "t": "ra",
+         "h": true
+        }
+       ]
+      },
+      {
+       "d": "h",
+       "dots": 1,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "C",
+         "a": 0,
+         "o": 5
+        }
+       ],
+       "ly": [
+        {
+         "t": "zón,",
+         "h": false
+        }
+       ]
+      },
+      {
+       "d": "h",
+       "dots": 1,
+       "rest": false,
+       "tie": true,
+       "keys": [
+        {
+         "s": "A",
+         "a": 0,
+         "o": 4
+        }
+       ]
+      },
+      {
+       "d": "h",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "A",
+         "a": 0,
+         "o": 4
+        }
+       ]
+      },
+      {
+       "d": "8",
+       "dots": 0,
+       "rest": true,
+       "tie": false,
+       "keys": []
+      },
+      {
+       "d": "8",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "A",
+         "a": 0,
+         "o": 4
+        }
+       ],
+       "ly": [
+        {
+         "t": "te",
+         "h": true
+        }
+       ]
+      },
+      {
+       "d": "q",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "A",
+         "a": 0,
+         "o": 4
+        }
+       ],
+       "ly": [
+        {
+         "t": "rre",
+         "h": true
+        }
+       ]
+      },
+      {
+       "d": "q",
+       "dots": 1,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "B",
+         "a": 0,
+         "o": 4
+        }
+       ],
+       "ly": [
+        {
+         "t": "na",
+         "h": false
+        }
+       ]
+      },
+      {
+       "d": "8",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "A",
+         "a": 0,
+         "o": 4
+        }
+       ],
+       "ly": [
+        {
+         "t": "ra",
+         "h": true
+        }
+       ]
+      },
+      {
+       "d": "h",
+       "dots": 1,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "A",
+         "a": 0,
+         "o": 4
+        }
+       ],
+       "ly": [
+        {
+         "t": "zón",
+         "h": false
+        }
+       ]
+      },
+      {
+       "d": "h",
+       "dots": 1,
+       "rest": false,
+       "tie": true,
+       "keys": [
+        {
+         "s": "G",
+         "a": 0,
+         "o": 4
+        }
+       ]
+      },
+      {
+       "d": "h",
+       "dots": 1,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "G",
+         "a": 0,
+         "o": 4
+        }
+       ]
+      },
+      {
+       "d": "q",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "E",
+         "a": 0,
+         "o": 4
+        }
+       ],
+       "ly": [
+        {
+         "t": "Fui",
+         "h": false
+        }
+       ]
+      },
+      {
+       "d": "q",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "F",
+         "a": 0,
+         "o": 4
+        }
+       ],
+       "ly": [
+        {
+         "t": "el",
+         "h": false
+        }
+       ]
+      },
+      {
+       "d": "q",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "G",
+         "a": 0,
+         "o": 4
+        }
+       ],
+       "ly": [
+        {
+         "t": "cul",
+         "h": true
+        }
+       ]
+      },
+      {
+       "d": "h",
+       "dots": 0,
+       "rest": false,
+       "tie": true,
+       "keys": [
+        {
+         "s": "G",
+         "a": 0,
+         "o": 4
+        }
+       ],
+       "ly": [
+        {
+         "t": "pa",
+         "h": true
+        }
+       ]
+      },
+      {
+       "d": "8",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "G",
+         "a": 0,
+         "o": 4
+        }
+       ]
+      },
+      {
+       "d": "8",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "A",
+         "a": 0,
+         "o": 4
+        }
+       ]
+      },
+      {
+       "d": "h",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "F",
+         "a": 0,
+         "o": 4
+        }
+       ],
+       "ly": [
+        {
+         "t": "ble",
+         "h": false
+        }
+       ]
+      },
+      {
+       "d": "q",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "E",
+         "a": 0,
+         "o": 4
+        }
+       ]
+      },
+      {
+       "d": "h",
+       "dots": 1,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "D",
+         "a": 0,
+         "o": 4
+        }
+       ]
+      },
+      {
+       "d": "q",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "D",
+         "a": 0,
+         "o": 4
+        }
+       ],
+       "ly": [
+        {
+         "t": "de",
+         "h": false
+        }
+       ]
+      },
+      {
+       "d": "q",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "E",
+         "a": 0,
+         "o": 4
+        }
+       ],
+       "ly": [
+        {
+         "t": "cuan",
+         "h": true
+        }
+       ]
+      },
+      {
+       "d": "q",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "F",
+         "a": 0,
+         "o": 4
+        }
+       ],
+       "ly": [
+        {
+         "t": "to",
+         "h": false
+        }
+       ]
+      },
+      {
+       "d": "h",
+       "dots": 0,
+       "rest": false,
+       "tie": true,
+       "keys": [
+        {
+         "s": "A",
+         "a": 0,
+         "o": 4
+        }
+       ],
+       "ly": [
+        {
+         "t": "Él",
+         "h": false
+        }
+       ]
+      },
+      {
+       "d": "8",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "A",
+         "a": 0,
+         "o": 4
+        }
+       ]
+      },
+      {
+       "d": "8",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "G",
+         "a": 0,
+         "o": 4
+        }
+       ]
+      },
+      {
+       "d": "h",
+       "dots": 1,
+       "rest": false,
+       "tie": true,
+       "keys": [
+        {
+         "s": "G",
+         "a": 0,
+         "o": 4
+        }
+       ],
+       "ly": [
+        {
+         "t": "su",
+         "h": true
+        }
+       ]
+      },
+      {
+       "d": "h",
+       "dots": 1,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "G",
+         "a": 0,
+         "o": 4
+        }
+       ],
+       "ly": [
+        {
+         "t": "frió",
+         "h": false
+        }
+       ]
+      },
+      {
+       "d": "q",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "C",
+         "a": 0,
+         "o": 5
+        }
+       ],
+       "ly": [
+        {
+         "t": "Nue",
+         "h": true
+        }
+       ]
+      },
+      {
+       "d": "q",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "C",
+         "a": 0,
+         "o": 5
+        }
+       ],
+       "ly": [
+        {
+         "t": "vo",
+         "h": false
+        }
+       ]
+      },
+      {
+       "d": "q",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "C",
+         "a": 0,
+         "o": 5
+        }
+       ],
+       "ly": [
+        {
+         "t": "sen",
+         "h": true
+        }
+       ]
+      },
+      {
+       "d": "h",
+       "dots": 1,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "C",
+         "a": 0,
+         "o": 5
+        }
+       ],
+       "ly": [
+        {
+         "t": "ti",
+         "h": true
+        }
+       ]
+      },
+      {
+       "d": "h",
+       "dots": 1,
+       "rest": false,
+       "tie": true,
+       "keys": [
+        {
+         "s": "A",
+         "a": 0,
+         "o": 4
+        }
+       ],
+       "ly": [
+        {
+         "t": "do",
+         "h": false
+        }
+       ]
+      },
+      {
+       "d": "h",
+       "dots": 1,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "A",
+         "a": 0,
+         "o": 4
+        }
+       ]
+      },
+      {
+       "d": "q",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "A",
+         "a": 0,
+         "o": 4
+        }
+       ],
+       "ly": [
+        {
+         "t": "dio",
+         "h": false
+        }
+       ]
+      },
+      {
+       "d": "q",
+       "dots": 1,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "B",
+         "a": 0,
+         "o": 4
+        }
+       ],
+       "ly": [
+        {
+         "t": "a",
+         "h": false
+        }
+       ]
+      },
+      {
+       "d": "8",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "A",
+         "a": 0,
+         "o": 4
+        }
+       ],
+       "ly": [
+        {
+         "t": "mi",
+         "h": false
+        }
+       ]
+      },
+      {
+       "d": "h",
+       "dots": 1,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "A",
+         "a": 0,
+         "o": 4
+        }
+       ],
+       "ly": [
+        {
+         "t": "vi",
+         "h": true
+        }
+       ]
+      },
+      {
+       "d": "h",
+       "dots": 1,
+       "rest": false,
+       "tie": true,
+       "keys": [
+        {
+         "s": "G",
+         "a": 0,
+         "o": 4
+        }
+       ],
+       "ly": [
+        {
+         "t": "da",
+         "h": false
+        }
+       ]
+      },
+      {
+       "d": "h",
+       "dots": 1,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "G",
+         "a": 0,
+         "o": 4
+        }
+       ]
+      },
+      {
+       "d": "q",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "E",
+         "a": 0,
+         "o": 4
+        }
+       ],
+       "ly": [
+        {
+         "t": "me",
+         "h": false
+        }
+       ]
+      },
+      {
+       "d": "q",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "F",
+         "a": 0,
+         "o": 4
+        }
+       ],
+       "ly": [
+        {
+         "t": "li",
+         "h": true
+        }
+       ]
+      },
+      {
+       "d": "q",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "G",
+         "a": 0,
+         "o": 4
+        }
+       ],
+       "ly": [
+        {
+         "t": "ber",
+         "h": true
+        }
+       ]
+      },
+      {
+       "d": "h",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "G",
+         "a": 0,
+         "o": 4
+        }
+       ],
+       "ly": [
+        {
+         "t": "tó",
+         "h": false
+        }
+       ]
+      },
+      {
+       "d": "8",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "G",
+         "a": 0,
+         "o": 4
+        }
+       ],
+       "ly": [
+        {
+         "t": "al",
+         "h": false
+        }
+       ]
+      },
+      {
+       "d": "8",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "A",
+         "a": 0,
+         "o": 4
+        }
+       ]
+      },
+      {
+       "d": "h",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "F",
+         "a": 0,
+         "o": 4
+        }
+       ],
+       "ly": [
+        {
+         "t": "mo",
+         "h": true
+        }
+       ]
+      },
+      {
+       "d": "q",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "E",
+         "a": 0,
+         "o": 4
+        }
+       ],
+       "ly": [
+        {
+         "t": "rir",
+         "h": false
+        }
+       ]
+      },
+      {
+       "d": "h",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "D",
+         "a": 0,
+         "o": 4
+        }
+       ]
+      },
+      {
+       "d": "8",
+       "dots": 0,
+       "rest": true,
+       "tie": false,
+       "keys": []
+      },
+      {
+       "d": "8",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "C",
+         "a": 0,
+         "o": 4
+        }
+       ],
+       "ly": [
+        {
+         "t": "Yo",
+         "h": false
+        }
+       ]
+      },
+      {
+       "d": "q",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "F",
+         "a": 0,
+         "o": 4
+        }
+       ],
+       "ly": [
+        {
+         "t": "fui",
+         "h": false
+        }
+       ]
+      },
+      {
+       "d": "q",
+       "dots": 1,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "F",
+         "a": 0,
+         "o": 4
+        }
+       ],
+       "ly": [
+        {
+         "t": "la",
+         "h": false
+        }
+       ]
+      },
+      {
+       "d": "8",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "F",
+         "a": 0,
+         "o": 4
+        }
+       ],
+       "ly": [
+        {
+         "t": "te",
+         "h": true
+        }
+       ]
+      },
+      {
+       "d": "q",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "F",
+         "a": 0,
+         "o": 4
+        }
+       ],
+       "ly": [
+        {
+         "t": "rre",
+         "h": true
+        }
+       ]
+      },
+      {
+       "d": "q",
+       "dots": 1,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "E",
+         "a": 0,
+         "o": 4
+        }
+       ],
+       "ly": [
+        {
+         "t": "na",
+         "h": false
+        }
+       ]
+      },
+      {
+       "d": "8",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "D",
+         "a": 0,
+         "o": 4
+        }
+       ],
+       "ly": [
+        {
+         "t": "ra",
+         "h": true
+        }
+       ]
+      },
+      {
+       "d": "h",
+       "dots": 1,
+       "rest": false,
+       "tie": true,
+       "keys": [
+        {
+         "s": "C",
+         "a": 0,
+         "o": 4
+        }
+       ],
+       "ly": [
+        {
+         "t": "zón",
+         "h": false
+        }
+       ]
+      },
+      {
+       "d": "h",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "C",
+         "a": 0,
+         "o": 4
+        }
+       ]
+      },
+      {
+       "d": "q",
+       "dots": 0,
+       "rest": true,
+       "tie": false,
+       "keys": []
+      },
+      {
+       "d": "8",
+       "dots": 0,
+       "rest": true,
+       "tie": false,
+       "keys": []
+      },
+      {
+       "d": "8",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "F",
+         "a": 0,
+         "o": 4
+        }
+       ],
+       "ly": [
+        {
+         "t": "te",
+         "h": true
+        }
+       ]
+      },
+      {
+       "d": "h",
+       "dots": 0,
+       "rest": true,
+       "tie": false,
+       "keys": []
+      },
+      {
+       "d": "q",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "G",
+         "a": -1,
+         "o": 4
+        }
+       ],
+       "ly": [
+        {
+         "t": "rre",
+         "h": true
+        }
+       ]
+      },
+      {
+       "d": "q",
+       "dots": 1,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "G",
+         "a": -1,
+         "o": 4
+        }
+       ],
+       "ly": [
+        {
+         "t": "na",
+         "h": false
+        }
+       ]
+      },
+      {
+       "d": "8",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "G",
+         "a": -1,
+         "o": 4
+        }
+       ],
+       "ly": [
+        {
+         "t": "ra",
+         "h": true
+        }
+       ]
+      },
+      {
+       "d": "8",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "G",
+         "a": -1,
+         "o": 4
+        }
+       ],
+       "ly": [
+        {
+         "t": "zón",
+         "h": false
+        }
+       ]
+      },
+      {
+       "d": "q",
+       "dots": 1,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "F",
+         "a": 0,
+         "o": 4
+        }
+       ]
+      },
+      {
+       "d": "8",
+       "dots": 0,
+       "rest": true,
+       "tie": false,
+       "keys": []
+      },
+      {
+       "d": "8",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "E",
+         "a": -1,
+         "o": 4
+        }
+       ],
+       "ly": [
+        {
+         "t": "su",
+         "h": false
+        }
+       ]
+      },
+      {
+       "d": "q",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "G",
+         "a": -1,
+         "o": 4
+        }
+       ],
+       "ly": [
+        {
+         "t": "so",
+         "h": true
+        }
+       ]
+      },
+      {
+       "d": "q",
+       "dots": 1,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "G",
+         "a": -1,
+         "o": 4
+        }
+       ],
+       "ly": [
+        {
+         "t": "la",
+         "h": false
+        }
+       ]
+      },
+      {
+       "d": "8",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "A",
+         "a": -1,
+         "o": 4
+        }
+       ],
+       "ly": [
+        {
+         "t": "ra",
+         "h": true
+        }
+       ]
+      },
+      {
+       "d": "q",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "B",
+         "a": -1,
+         "o": 4
+        }
+       ],
+       "ly": [
+        {
+         "t": "zón",
+         "h": false
+        }
+       ]
+      },
+      {
+       "d": "q",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "A",
+         "a": -1,
+         "o": 4
+        }
+       ]
+      },
+      {
+       "d": "q",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "E",
+         "a": -1,
+         "o": 5
+        }
+       ],
+       "ly": [
+        {
+         "t": "yo",
+         "h": false
+        }
+       ]
+      },
+      {
+       "d": "h",
+       "dots": 1,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "D",
+         "a": -1,
+         "o": 5
+        }
+       ],
+       "ly": [
+        {
+         "t": "fui.",
+         "h": false
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "name": "Contralto",
+     "notes": [
+      {
+       "d": "h",
+       "dots": 0,
+       "rest": true,
+       "tie": false,
+       "keys": [],
+       "hid": true
+      },
+      {
+       "d": "8",
+       "dots": 0,
+       "rest": true,
+       "tie": false,
+       "keys": []
+      },
+      {
+       "d": "8",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "C",
+         "a": 0,
+         "o": 4
+        }
+       ]
+      },
+      {
+       "d": "q",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "E",
+         "a": 0,
+         "o": 4
+        }
+       ]
+      },
+      {
+       "d": "q",
+       "dots": 1,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "E",
+         "a": 0,
+         "o": 4
+        }
+       ]
+      },
+      {
+       "d": "8",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "E",
+         "a": 0,
+         "o": 4
+        }
+       ]
+      },
+      {
+       "d": "h",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "D",
+         "a": 0,
+         "o": 4
+        }
+       ]
+      },
+      {
+       "d": "8",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "D",
+         "a": 0,
+         "o": 4
+        }
+       ]
+      },
+      {
+       "d": "8",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "D",
+         "a": 0,
+         "o": 4
+        }
+       ]
+      },
+      {
+       "d": "q",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "E",
+         "a": 0,
+         "o": 4
+        }
+       ]
+      },
+      {
+       "d": "q",
+       "dots": 1,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "E",
+         "a": 0,
+         "o": 4
+        }
+       ]
+      },
+      {
+       "d": "8",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "E",
+         "a": 0,
+         "o": 4
+        }
+       ]
+      },
+      {
+       "d": "q",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "D",
+         "a": 0,
+         "o": 4
+        }
+       ]
+      },
+      {
+       "d": "8",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "D",
+         "a": 0,
+         "o": 4
+        }
+       ]
+      },
+      {
+       "d": "8",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "D",
+         "a": 0,
+         "o": 4
+        }
+       ]
+      },
+      {
+       "d": "8",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "D",
+         "a": 0,
+         "o": 4
+        }
+       ]
+      },
+      {
+       "d": "8",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "D",
+         "a": 0,
+         "o": 4
+        }
+       ]
+      },
+      {
+       "d": "h",
+       "dots": 1,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "C",
+         "a": 0,
+         "o": 4
+        }
+       ]
+      },
+      {
+       "d": "h",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "B",
+         "a": 0,
+         "o": 3
+        }
+       ]
+      },
+      {
+       "d": "8",
+       "dots": 0,
+       "rest": true,
+       "tie": false,
+       "keys": []
+      },
+      {
+       "d": "8",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "B",
+         "a": 0,
+         "o": 3
+        }
+       ]
+      },
+      {
+       "d": "q",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "D",
+         "a": 0,
+         "o": 4
+        }
+       ]
+      },
+      {
+       "d": "q",
+       "dots": 1,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "D",
+         "a": 0,
+         "o": 4
+        }
+       ]
+      },
+      {
+       "d": "8",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "D",
+         "a": 0,
+         "o": 4
+        }
+       ]
+      },
+      {
+       "d": "8",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "D",
+         "a": 0,
+         "o": 4
+        }
+       ]
+      },
+      {
+       "d": "h",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "C",
+         "a": 1,
+         "o": 4
+        }
+       ]
+      },
+      {
+       "d": "8",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "D",
+         "a": 0,
+         "o": 4
+        }
+       ]
+      },
+      {
+       "d": "q",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "D",
+         "a": 0,
+         "o": 4
+        }
+       ]
+      },
+      {
+       "d": "q",
+       "dots": 1,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "D",
+         "a": 0,
+         "o": 4
+        }
+       ]
+      },
+      {
+       "d": "8",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "D",
+         "a": 0,
+         "o": 4
+        }
+       ]
+      },
+      {
+       "d": "q",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "D",
+         "a": 0,
+         "o": 4
+        }
+       ]
+      },
+      {
+       "d": "q",
+       "dots": 1,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "D",
+         "a": 0,
+         "o": 4
+        }
+       ]
+      },
+      {
+       "d": "8",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "D",
+         "a": 0,
+         "o": 4
+        }
+       ]
+      },
+      {
+       "d": "h",
+       "dots": 1,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "E",
+         "a": 0,
+         "o": 4
+        }
+       ]
+      },
+      {
+       "d": "h",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "C",
+         "a": 0,
+         "o": 4
+        }
+       ]
+      },
+      {
+       "d": "8",
+       "dots": 0,
+       "rest": true,
+       "tie": false,
+       "keys": []
+      },
+      {
+       "d": "8",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "C",
+         "a": 0,
+         "o": 4
+        }
+       ]
+      },
+      {
+       "d": "q",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "E",
+         "a": 0,
+         "o": 4
+        }
+       ]
+      },
+      {
+       "d": "q",
+       "dots": 1,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "E",
+         "a": 0,
+         "o": 4
+        }
+       ]
+      },
+      {
+       "d": "8",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "E",
+         "a": 0,
+         "o": 4
+        }
+       ]
+      },
+      {
+       "d": "h",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "D",
+         "a": 0,
+         "o": 4
+        }
+       ]
+      },
+      {
+       "d": "8",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "D",
+         "a": 0,
+         "o": 4
+        }
+       ]
+      },
+      {
+       "d": "8",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "D",
+         "a": 0,
+         "o": 4
+        }
+       ]
+      },
+      {
+       "d": "q",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "E",
+         "a": 0,
+         "o": 4
+        }
+       ]
+      },
+      {
+       "d": "q",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "E",
+         "a": 0,
+         "o": 4
+        }
+       ]
+      },
+      {
+       "d": "8",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "E",
+         "a": 0,
+         "o": 4
+        }
+       ]
+      },
+      {
+       "d": "8",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "E",
+         "a": 0,
+         "o": 4
+        }
+       ]
+      },
+      {
+       "d": "q",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "D",
+         "a": 0,
+         "o": 4
+        }
+       ]
+      },
+      {
+       "d": "q",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "D",
+         "a": 0,
+         "o": 4
+        }
+       ]
+      },
+      {
+       "d": "q",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "D",
+         "a": 0,
+         "o": 4
+        }
+       ]
+      },
+      {
+       "d": "h",
+       "dots": 1,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "C",
+         "a": 0,
+         "o": 4
+        }
+       ]
+      },
+      {
+       "d": "h",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "B",
+         "a": 0,
+         "o": 3
+        }
+       ]
+      },
+      {
+       "d": "8",
+       "dots": 0,
+       "rest": true,
+       "tie": false,
+       "keys": []
+      },
+      {
+       "d": "8",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "C",
+         "a": 0,
+         "o": 4
+        }
+       ]
+      },
+      {
+       "d": "q",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "D",
+         "a": 0,
+         "o": 4
+        }
+       ]
+      },
+      {
+       "d": "q",
+       "dots": 1,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "D",
+         "a": 0,
+         "o": 4
+        }
+       ]
+      },
+      {
+       "d": "8",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "D",
+         "a": 0,
+         "o": 4
+        }
+       ]
+      },
+      {
+       "d": "h",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "C",
+         "a": 1,
+         "o": 4
+        }
+       ]
+      },
+      {
+       "d": "8",
+       "dots": 0,
+       "rest": true,
+       "tie": false,
+       "keys": []
+      },
+      {
+       "d": "8",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "D",
+         "a": 0,
+         "o": 4
+        }
+       ]
+      },
+      {
+       "d": "q",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "D",
+         "a": 0,
+         "o": 4
+        }
+       ]
+      },
+      {
+       "d": "q",
+       "dots": 1,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "D",
+         "a": 0,
+         "o": 4
+        }
+       ]
+      },
+      {
+       "d": "8",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "D",
+         "a": 0,
+         "o": 4
+        }
+       ]
+      },
+      {
+       "d": "h",
+       "dots": 0,
+       "rest": false,
+       "tie": true,
+       "keys": [
+        {
+         "s": "B",
+         "a": 0,
+         "o": 3
+        }
+       ]
+      },
+      {
+       "d": "q",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "B",
+         "a": 0,
+         "o": 3
+        }
+       ]
+      },
+      {
+       "d": "h",
+       "dots": 1,
+       "rest": false,
+       "tie": true,
+       "keys": [
+        {
+         "s": "G",
+         "a": 0,
+         "o": 3
+        }
+       ]
+      },
+      {
+       "d": "h",
+       "dots": 1,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "G",
+         "a": 0,
+         "o": 3
+        }
+       ]
+      },
+      {
+       "d": "q",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "E",
+         "a": 0,
+         "o": 4
+        }
+       ]
+      },
+      {
+       "d": "q",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "E",
+         "a": 0,
+         "o": 4
+        }
+       ]
+      },
+      {
+       "d": "q",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "E",
+         "a": 0,
+         "o": 4
+        }
+       ]
+      },
+      {
+       "d": "h",
+       "dots": 1,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "F",
+         "a": 0,
+         "o": 4
+        }
+       ]
+      },
+      {
+       "d": "h",
+       "dots": 1,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "F",
+         "a": 0,
+         "o": 4
+        }
+       ]
+      },
+      {
+       "d": "h",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "D",
+         "a": 0,
+         "o": 4
+        }
+       ]
+      },
+      {
+       "d": "8",
+       "dots": 0,
+       "rest": true,
+       "tie": false,
+       "keys": []
+      },
+      {
+       "d": "8",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "F",
+         "a": 0,
+         "o": 4
+        }
+       ]
+      },
+      {
+       "d": "q",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "G",
+         "a": 0,
+         "o": 4
+        }
+       ]
+      },
+      {
+       "d": "q",
+       "dots": 1,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "G",
+         "a": 0,
+         "o": 4
+        }
+       ]
+      },
+      {
+       "d": "8",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "F",
+         "a": 0,
+         "o": 4
+        }
+       ]
+      },
+      {
+       "d": "h",
+       "dots": 1,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "F",
+         "a": 0,
+         "o": 4
+        }
+       ]
+      },
+      {
+       "d": "h",
+       "dots": 1,
+       "rest": false,
+       "tie": true,
+       "keys": [
+        {
+         "s": "E",
+         "a": 0,
+         "o": 4
+        }
+       ]
+      },
+      {
+       "d": "h",
+       "dots": 1,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "E",
+         "a": 0,
+         "o": 4
+        }
+       ]
+      },
+      {
+       "d": "q",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "E",
+         "a": 0,
+         "o": 4
+        }
+       ]
+      },
+      {
+       "d": "q",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "F",
+         "a": 0,
+         "o": 4
+        }
+       ]
+      },
+      {
+       "d": "q",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "G",
+         "a": 0,
+         "o": 4
+        }
+       ]
+      },
+      {
+       "d": "h",
+       "dots": 0,
+       "rest": false,
+       "tie": true,
+       "keys": [
+        {
+         "s": "G",
+         "a": 0,
+         "o": 4
+        }
+       ]
+      },
+      {
+       "d": "8",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "G",
+         "a": 0,
+         "o": 4
+        }
+       ]
+      },
+      {
+       "d": "8",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "A",
+         "a": 0,
+         "o": 4
+        }
+       ]
+      },
+      {
+       "d": "h",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "F",
+         "a": 0,
+         "o": 4
+        }
+       ]
+      },
+      {
+       "d": "q",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "E",
+         "a": 0,
+         "o": 4
+        }
+       ]
+      },
+      {
+       "d": "h",
+       "dots": 1,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "D",
+         "a": 0,
+         "o": 4
+        }
+       ]
+      },
+      {
+       "d": "q",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "D",
+         "a": 0,
+         "o": 4
+        }
+       ]
+      },
+      {
+       "d": "q",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "D",
+         "a": 0,
+         "o": 4
+        }
+       ]
+      },
+      {
+       "d": "q",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "D",
+         "a": 0,
+         "o": 4
+        }
+       ]
+      },
+      {
+       "d": "h",
+       "dots": 0,
+       "rest": false,
+       "tie": true,
+       "keys": [
+        {
+         "s": "F",
+         "a": 0,
+         "o": 4
+        }
+       ]
+      },
+      {
+       "d": "8",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "F",
+         "a": 0,
+         "o": 4
+        }
+       ]
+      },
+      {
+       "d": "8",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "E",
+         "a": 0,
+         "o": 4
+        }
+       ]
+      },
+      {
+       "d": "h",
+       "dots": 1,
+       "rest": false,
+       "tie": true,
+       "keys": [
+        {
+         "s": "E",
+         "a": 0,
+         "o": 4
+        }
+       ]
+      },
+      {
+       "d": "h",
+       "dots": 1,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "E",
+         "a": 0,
+         "o": 4
+        }
+       ]
+      },
+      {
+       "d": "q",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "E",
+         "a": 0,
+         "o": 4
+        }
+       ]
+      },
+      {
+       "d": "q",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "E",
+         "a": 0,
+         "o": 4
+        }
+       ]
+      },
+      {
+       "d": "q",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "E",
+         "a": 0,
+         "o": 4
+        }
+       ]
+      },
+      {
+       "d": "h",
+       "dots": 1,
+       "rest": false,
+       "tie": true,
+       "keys": [
+        {
+         "s": "F",
+         "a": 0,
+         "o": 4
+        }
+       ]
+      },
+      {
+       "d": "h",
+       "dots": 1,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "F",
+         "a": 0,
+         "o": 4
+        }
+       ]
+      },
+      {
+       "d": "h",
+       "dots": 1,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "D",
+         "a": 0,
+         "o": 4
+        }
+       ]
+      },
+      {
+       "d": "q",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "F",
+         "a": 0,
+         "o": 4
+        }
+       ]
+      },
+      {
+       "d": "q",
+       "dots": 1,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "G",
+         "a": 0,
+         "o": 4
+        }
+       ]
+      },
+      {
+       "d": "8",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "F",
+         "a": 0,
+         "o": 4
+        }
+       ]
+      },
+      {
+       "d": "h",
+       "dots": 1,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "F",
+         "a": 0,
+         "o": 4
+        }
+       ]
+      },
+      {
+       "d": "h",
+       "dots": 1,
+       "rest": false,
+       "tie": true,
+       "keys": [
+        {
+         "s": "E",
+         "a": 0,
+         "o": 4
+        }
+       ]
+      },
+      {
+       "d": "h",
+       "dots": 1,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "E",
+         "a": 0,
+         "o": 4
+        }
+       ]
+      },
+      {
+       "d": "q",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "E",
+         "a": 0,
+         "o": 4
+        }
+       ]
+      },
+      {
+       "d": "q",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "F",
+         "a": 0,
+         "o": 4
+        }
+       ]
+      },
+      {
+       "d": "q",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "G",
+         "a": 0,
+         "o": 4
+        }
+       ]
+      },
+      {
+       "d": "h",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "G",
+         "a": 0,
+         "o": 4
+        }
+       ]
+      },
+      {
+       "d": "8",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "G",
+         "a": 0,
+         "o": 4
+        }
+       ]
+      },
+      {
+       "d": "8",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "A",
+         "a": 0,
+         "o": 4
+        }
+       ]
+      },
+      {
+       "d": "h",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "F",
+         "a": 0,
+         "o": 4
+        }
+       ]
+      },
+      {
+       "d": "q",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "E",
+         "a": 0,
+         "o": 4
+        }
+       ]
+      },
+      {
+       "d": "h",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "D",
+         "a": 0,
+         "o": 4
+        }
+       ]
+      },
+      {
+       "d": "8",
+       "dots": 0,
+       "rest": true,
+       "tie": false,
+       "keys": []
+      },
+      {
+       "d": "8",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "C",
+         "a": 0,
+         "o": 4
+        }
+       ]
+      },
+      {
+       "d": "q",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "C",
+         "a": 0,
+         "o": 4
+        }
+       ]
+      },
+      {
+       "d": "q",
+       "dots": 1,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "C",
+         "a": 0,
+         "o": 4
+        }
+       ]
+      },
+      {
+       "d": "8",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "C",
+         "a": 0,
+         "o": 4
+        }
+       ]
+      },
+      {
+       "d": "q",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "D",
+         "a": 0,
+         "o": 4
+        }
+       ]
+      },
+      {
+       "d": "q",
+       "dots": 1,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "G",
+         "a": 0,
+         "o": 3
+        }
+       ]
+      },
+      {
+       "d": "8",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "G",
+         "a": 0,
+         "o": 3
+        }
+       ]
+      },
+      {
+       "d": "h",
+       "dots": 1,
+       "rest": false,
+       "tie": true,
+       "keys": [
+        {
+         "s": "G",
+         "a": 0,
+         "o": 3
+        }
+       ]
+      },
+      {
+       "d": "h",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "G",
+         "a": 0,
+         "o": 3
+        }
+       ]
+      },
+      {
+       "d": "q",
+       "dots": 0,
+       "rest": true,
+       "tie": false,
+       "keys": []
+      },
+      {
+       "d": "8",
+       "dots": 0,
+       "rest": true,
+       "tie": false,
+       "keys": []
+      },
+      {
+       "d": "8",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "F",
+         "a": 0,
+         "o": 4
+        }
+       ]
+      },
+      {
+       "d": "h",
+       "dots": 0,
+       "rest": true,
+       "tie": false,
+       "keys": [],
+       "hid": true
+      },
+      {
+       "d": "q",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "G",
+         "a": -1,
+         "o": 4
+        }
+       ]
+      },
+      {
+       "d": "q",
+       "dots": 1,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "G",
+         "a": -1,
+         "o": 4
+        }
+       ]
+      },
+      {
+       "d": "8",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "G",
+         "a": -1,
+         "o": 4
+        }
+       ]
+      },
+      {
+       "d": "8",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "G",
+         "a": -1,
+         "o": 4
+        }
+       ]
+      },
+      {
+       "d": "q",
+       "dots": 1,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "F",
+         "a": 0,
+         "o": 4
+        }
+       ]
+      },
+      {
+       "d": "8",
+       "dots": 0,
+       "rest": true,
+       "tie": false,
+       "keys": []
+      },
+      {
+       "d": "8",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "E",
+         "a": -1,
+         "o": 4
+        }
+       ]
+      },
+      {
+       "d": "q",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "G",
+         "a": -1,
+         "o": 4
+        }
+       ]
+      },
+      {
+       "d": "q",
+       "dots": 1,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "G",
+         "a": -1,
+         "o": 4
+        }
+       ]
+      },
+      {
+       "d": "8",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "A",
+         "a": -1,
+         "o": 4
+        }
+       ]
+      },
+      {
+       "d": "q",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "B",
+         "a": -1,
+         "o": 4
+        }
+       ]
+      },
+      {
+       "d": "q",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "A",
+         "a": -1,
+         "o": 4
+        }
+       ]
+      },
+      {
+       "d": "q",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "G",
+         "a": -1,
+         "o": 4
+        }
+       ]
+      },
+      {
+       "d": "h",
+       "dots": 1,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "F",
+         "a": 0,
+         "o": 4
+        }
+       ]
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "name": "",
+   "clef": "bass",
+   "voices": [
+    {
+     "name": "Tenor",
+     "notes": [
+      {
+       "d": "h",
+       "dots": 0,
+       "rest": true,
+       "tie": false,
+       "keys": []
+      },
+      {
+       "d": "8",
+       "dots": 0,
+       "rest": true,
+       "tie": false,
+       "keys": []
+      },
+      {
+       "d": "8",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "G",
+         "a": 0,
+         "o": 3
+        }
+       ]
+      },
+      {
+       "d": "q",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "G",
+         "a": 0,
+         "o": 3
+        }
+       ]
+      },
+      {
+       "d": "q",
+       "dots": 1,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "G",
+         "a": 0,
+         "o": 3
+        }
+       ]
+      },
+      {
+       "d": "8",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "G",
+         "a": 0,
+         "o": 3
+        }
+       ]
+      },
+      {
+       "d": "h",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "G",
+         "a": 0,
+         "o": 3
+        }
+       ]
+      },
+      {
+       "d": "8",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "G",
+         "a": 0,
+         "o": 3
+        }
+       ]
+      },
+      {
+       "d": "8",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "G",
+         "a": 0,
+         "o": 3
+        }
+       ]
+      },
+      {
+       "d": "q",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "C",
+         "a": 0,
+         "o": 4
+        }
+       ]
+      },
+      {
+       "d": "q",
+       "dots": 1,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "C",
+         "a": 0,
+         "o": 4
+        }
+       ]
+      },
+      {
+       "d": "8",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "C",
+         "a": 0,
+         "o": 4
+        }
+       ]
+      },
+      {
+       "d": "q",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "B",
+         "a": 0,
+         "o": 3
+        }
+       ]
+      },
+      {
+       "d": "8",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "B",
+         "a": 0,
+         "o": 3
+        }
+       ]
+      },
+      {
+       "d": "8",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "B",
+         "a": 0,
+         "o": 3
+        }
+       ]
+      },
+      {
+       "d": "8",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "B",
+         "a": 0,
+         "o": 3
+        }
+       ]
+      },
+      {
+       "d": "8",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "B",
+         "a": 0,
+         "o": 3
+        }
+       ]
+      },
+      {
+       "d": "h",
+       "dots": 1,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "A",
+         "a": 0,
+         "o": 3
+        }
+       ]
+      },
+      {
+       "d": "h",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "G",
+         "a": 0,
+         "o": 3
+        }
+       ]
+      },
+      {
+       "d": "8",
+       "dots": 0,
+       "rest": true,
+       "tie": false,
+       "keys": []
+      },
+      {
+       "d": "8",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "G",
+         "a": 0,
+         "o": 3
+        }
+       ]
+      },
+      {
+       "d": "q",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "A",
+         "a": 0,
+         "o": 3
+        }
+       ]
+      },
+      {
+       "d": "q",
+       "dots": 1,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "A",
+         "a": 0,
+         "o": 3
+        }
+       ]
+      },
+      {
+       "d": "8",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "A",
+         "a": 0,
+         "o": 3
+        }
+       ]
+      },
+      {
+       "d": "8",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "G",
+         "a": 0,
+         "o": 3
+        }
+       ]
+      },
+      {
+       "d": "h",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "G",
+         "a": 0,
+         "o": 3
+        }
+       ]
+      },
+      {
+       "d": "8",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "G",
+         "a": 0,
+         "o": 3
+        }
+       ]
+      },
+      {
+       "d": "q",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "A",
+         "a": 0,
+         "o": 3
+        }
+       ]
+      },
+      {
+       "d": "q",
+       "dots": 1,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "A",
+         "a": 0,
+         "o": 3
+        }
+       ]
+      },
+      {
+       "d": "8",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "A",
+         "a": 0,
+         "o": 3
+        }
+       ]
+      },
+      {
+       "d": "q",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "B",
+         "a": 0,
+         "o": 3
+        }
+       ]
+      },
+      {
+       "d": "q",
+       "dots": 1,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "B",
+         "a": 0,
+         "o": 3
+        }
+       ]
+      },
+      {
+       "d": "8",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "B",
+         "a": 0,
+         "o": 3
+        }
+       ]
+      },
+      {
+       "d": "h",
+       "dots": 1,
+       "rest": false,
+       "tie": true,
+       "keys": [
+        {
+         "s": "G",
+         "a": 0,
+         "o": 3
+        }
+       ]
+      },
+      {
+       "d": "h",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "G",
+         "a": 0,
+         "o": 3
+        }
+       ]
+      },
+      {
+       "d": "8",
+       "dots": 0,
+       "rest": true,
+       "tie": false,
+       "keys": []
+      },
+      {
+       "d": "8",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "G",
+         "a": 0,
+         "o": 3
+        }
+       ]
+      },
+      {
+       "d": "q",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "G",
+         "a": 0,
+         "o": 3
+        }
+       ]
+      },
+      {
+       "d": "q",
+       "dots": 1,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "G",
+         "a": 0,
+         "o": 3
+        }
+       ]
+      },
+      {
+       "d": "8",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "G",
+         "a": 0,
+         "o": 3
+        }
+       ]
+      },
+      {
+       "d": "h",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "G",
+         "a": 0,
+         "o": 3
+        }
+       ]
+      },
+      {
+       "d": "8",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "G",
+         "a": 0,
+         "o": 3
+        }
+       ]
+      },
+      {
+       "d": "8",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "G",
+         "a": 0,
+         "o": 3
+        }
+       ]
+      },
+      {
+       "d": "q",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "C",
+         "a": 0,
+         "o": 4
+        }
+       ]
+      },
+      {
+       "d": "q",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "C",
+         "a": 0,
+         "o": 4
+        }
+       ]
+      },
+      {
+       "d": "8",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "C",
+         "a": 0,
+         "o": 4
+        }
+       ]
+      },
+      {
+       "d": "8",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "C",
+         "a": 0,
+         "o": 4
+        }
+       ]
+      },
+      {
+       "d": "q",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "B",
+         "a": 0,
+         "o": 3
+        }
+       ]
+      },
+      {
+       "d": "q",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "B",
+         "a": 0,
+         "o": 3
+        }
+       ]
+      },
+      {
+       "d": "q",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "B",
+         "a": 0,
+         "o": 3
+        }
+       ]
+      },
+      {
+       "d": "h",
+       "dots": 1,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "A",
+         "a": 0,
+         "o": 3
+        }
+       ]
+      },
+      {
+       "d": "h",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "G",
+         "a": 0,
+         "o": 3
+        }
+       ]
+      },
+      {
+       "d": "8",
+       "dots": 0,
+       "rest": true,
+       "tie": false,
+       "keys": []
+      },
+      {
+       "d": "8",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "G",
+         "a": 0,
+         "o": 3
+        }
+       ]
+      },
+      {
+       "d": "q",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "A",
+         "a": 0,
+         "o": 3
+        }
+       ]
+      },
+      {
+       "d": "q",
+       "dots": 1,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "A",
+         "a": 0,
+         "o": 3
+        }
+       ]
+      },
+      {
+       "d": "8",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "A",
+         "a": 0,
+         "o": 3
+        }
+       ]
+      },
+      {
+       "d": "h",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "G",
+         "a": 0,
+         "o": 3
+        }
+       ]
+      },
+      {
+       "d": "8",
+       "dots": 0,
+       "rest": true,
+       "tie": false,
+       "keys": []
+      },
+      {
+       "d": "8",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "G",
+         "a": 0,
+         "o": 3
+        }
+       ]
+      },
+      {
+       "d": "q",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "A",
+         "a": 0,
+         "o": 3
+        }
+       ]
+      },
+      {
+       "d": "q",
+       "dots": 1,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "A",
+         "a": 0,
+         "o": 3
+        }
+       ]
+      },
+      {
+       "d": "8",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "A",
+         "a": 0,
+         "o": 3
+        }
+       ]
+      },
+      {
+       "d": "h",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "G",
+         "a": 0,
+         "o": 3
+        }
+       ]
+      },
+      {
+       "d": "q",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "F",
+         "a": 0,
+         "o": 3
+        }
+       ]
+      },
+      {
+       "d": "h",
+       "dots": 1,
+       "rest": false,
+       "tie": true,
+       "keys": [
+        {
+         "s": "E",
+         "a": 0,
+         "o": 3
+        }
+       ]
+      },
+      {
+       "d": "h",
+       "dots": 1,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "E",
+         "a": 0,
+         "o": 3
+        }
+       ]
+      },
+      {
+       "d": "q",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "G",
+         "a": 0,
+         "o": 3
+        }
+       ]
+      },
+      {
+       "d": "q",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "G",
+         "a": 0,
+         "o": 3
+        }
+       ]
+      },
+      {
+       "d": "q",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "G",
+         "a": 0,
+         "o": 3
+        }
+       ]
+      },
+      {
+       "d": "h",
+       "dots": 1,
+       "rest": false,
+       "tie": true,
+       "keys": [
+        {
+         "s": "A",
+         "a": 0,
+         "o": 3
+        }
+       ]
+      },
+      {
+       "d": "h",
+       "dots": 1,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "A",
+         "a": 0,
+         "o": 3
+        }
+       ]
+      },
+      {
+       "d": "h",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "F",
+         "a": 0,
+         "o": 3
+        }
+       ]
+      },
+      {
+       "d": "8",
+       "dots": 0,
+       "rest": true,
+       "tie": false,
+       "keys": []
+      },
+      {
+       "d": "8",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "D",
+         "a": 0,
+         "o": 4
+        }
+       ]
+      },
+      {
+       "d": "q",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "D",
+         "a": 0,
+         "o": 4
+        }
+       ]
+      },
+      {
+       "d": "q",
+       "dots": 1,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "D",
+         "a": 0,
+         "o": 4
+        }
+       ]
+      },
+      {
+       "d": "8",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "D",
+         "a": 0,
+         "o": 4
+        }
+       ]
+      },
+      {
+       "d": "h",
+       "dots": 1,
+       "rest": false,
+       "tie": true,
+       "keys": [
+        {
+         "s": "C",
+         "a": 0,
+         "o": 4
+        }
+       ]
+      },
+      {
+       "d": "h",
+       "dots": 1,
+       "rest": false,
+       "tie": true,
+       "keys": [
+        {
+         "s": "C",
+         "a": 0,
+         "o": 4
+        }
+       ]
+      },
+      {
+       "d": "h",
+       "dots": 1,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "C",
+         "a": 0,
+         "o": 4
+        }
+       ]
+      },
+      {
+       "d": "q",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "C",
+         "a": 0,
+         "o": 3
+        }
+       ]
+      },
+      {
+       "d": "q",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "D",
+         "a": 0,
+         "o": 3
+        }
+       ]
+      },
+      {
+       "d": "q",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "E",
+         "a": 0,
+         "o": 3
+        }
+       ]
+      },
+      {
+       "d": "h",
+       "dots": 0,
+       "rest": false,
+       "tie": true,
+       "keys": [
+        {
+         "s": "E",
+         "a": 0,
+         "o": 3
+        }
+       ]
+      },
+      {
+       "d": "8",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "E",
+         "a": 0,
+         "o": 3
+        }
+       ]
+      },
+      {
+       "d": "8",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "F",
+         "a": 0,
+         "o": 3
+        }
+       ]
+      },
+      {
+       "d": "h",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "D",
+         "a": 0,
+         "o": 3
+        }
+       ]
+      },
+      {
+       "d": "q",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "C",
+         "a": 0,
+         "o": 3
+        }
+       ]
+      },
+      {
+       "d": "h",
+       "dots": 1,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "B",
+         "a": 0,
+         "o": 2
+        }
+       ]
+      },
+      {
+       "d": "q",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "B",
+         "a": 0,
+         "o": 3
+        }
+       ]
+      },
+      {
+       "d": "q",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "B",
+         "a": 0,
+         "o": 3
+        }
+       ]
+      },
+      {
+       "d": "q",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "B",
+         "a": 0,
+         "o": 3
+        }
+       ]
+      },
+      {
+       "d": "h",
+       "dots": 0,
+       "rest": false,
+       "tie": true,
+       "keys": [
+        {
+         "s": "G",
+         "a": 0,
+         "o": 3
+        }
+       ]
+      },
+      {
+       "d": "8",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "G",
+         "a": 0,
+         "o": 3
+        }
+       ]
+      },
+      {
+       "d": "8",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "A",
+         "a": 0,
+         "o": 3
+        }
+       ]
+      },
+      {
+       "d": "h",
+       "dots": 1,
+       "rest": false,
+       "tie": true,
+       "keys": [
+        {
+         "s": "C",
+         "a": 0,
+         "o": 4
+        }
+       ]
+      },
+      {
+       "d": "h",
+       "dots": 1,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "C",
+         "a": 0,
+         "o": 4
+        }
+       ]
+      },
+      {
+       "d": "q",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "G",
+         "a": 0,
+         "o": 3
+        }
+       ]
+      },
+      {
+       "d": "q",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "G",
+         "a": 0,
+         "o": 3
+        }
+       ]
+      },
+      {
+       "d": "q",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "G",
+         "a": 0,
+         "o": 3
+        }
+       ]
+      },
+      {
+       "d": "h",
+       "dots": 1,
+       "rest": false,
+       "tie": true,
+       "keys": [
+        {
+         "s": "A",
+         "a": 0,
+         "o": 3
+        }
+       ]
+      },
+      {
+       "d": "h",
+       "dots": 1,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "A",
+         "a": 0,
+         "o": 3
+        }
+       ]
+      },
+      {
+       "d": "h",
+       "dots": 1,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "F",
+         "a": 0,
+         "o": 3
+        }
+       ]
+      },
+      {
+       "d": "q",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "D",
+         "a": 0,
+         "o": 4
+        }
+       ]
+      },
+      {
+       "d": "q",
+       "dots": 1,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "D",
+         "a": 0,
+         "o": 4
+        }
+       ]
+      },
+      {
+       "d": "8",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "D",
+         "a": 0,
+         "o": 4
+        }
+       ]
+      },
+      {
+       "d": "h",
+       "dots": 1,
+       "rest": false,
+       "tie": true,
+       "keys": [
+        {
+         "s": "C",
+         "a": 0,
+         "o": 4
+        }
+       ]
+      },
+      {
+       "d": "h",
+       "dots": 1,
+       "rest": false,
+       "tie": true,
+       "keys": [
+        {
+         "s": "C",
+         "a": 0,
+         "o": 4
+        }
+       ]
+      },
+      {
+       "d": "h",
+       "dots": 1,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "C",
+         "a": 0,
+         "o": 4
+        }
+       ]
+      },
+      {
+       "d": "q",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "C",
+         "a": 1,
+         "o": 3
+        }
+       ]
+      },
+      {
+       "d": "q",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "D",
+         "a": 0,
+         "o": 3
+        }
+       ]
+      },
+      {
+       "d": "q",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "E",
+         "a": 0,
+         "o": 3
+        }
+       ]
+      },
+      {
+       "d": "h",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "E",
+         "a": 0,
+         "o": 3
+        }
+       ]
+      },
+      {
+       "d": "8",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "E",
+         "a": 0,
+         "o": 3
+        }
+       ]
+      },
+      {
+       "d": "8",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "F",
+         "a": 0,
+         "o": 3
+        }
+       ]
+      },
+      {
+       "d": "h",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "D",
+         "a": 0,
+         "o": 3
+        }
+       ]
+      },
+      {
+       "d": "q",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "C",
+         "a": 0,
+         "o": 3
+        }
+       ]
+      },
+      {
+       "d": "h",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "B",
+         "a": 0,
+         "o": 2
+        }
+       ]
+      },
+      {
+       "d": "8",
+       "dots": 0,
+       "rest": true,
+       "tie": false,
+       "keys": []
+      },
+      {
+       "d": "8",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "A",
+         "a": 0,
+         "o": 3
+        }
+       ]
+      },
+      {
+       "d": "q",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "A",
+         "a": 0,
+         "o": 3
+        }
+       ]
+      },
+      {
+       "d": "q",
+       "dots": 1,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "A",
+         "a": 0,
+         "o": 3
+        }
+       ]
+      },
+      {
+       "d": "8",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "A",
+         "a": 0,
+         "o": 3
+        }
+       ]
+      },
+      {
+       "d": "q",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "G",
+         "a": 0,
+         "o": 3
+        }
+       ]
+      },
+      {
+       "d": "q",
+       "dots": 1,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "G",
+         "a": 0,
+         "o": 3
+        }
+       ]
+      },
+      {
+       "d": "8",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "F",
+         "a": 0,
+         "o": 3
+        }
+       ]
+      },
+      {
+       "d": "h",
+       "dots": 1,
+       "rest": false,
+       "tie": true,
+       "keys": [
+        {
+         "s": "E",
+         "a": 0,
+         "o": 3
+        }
+       ]
+      },
+      {
+       "d": "h",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "E",
+         "a": 0,
+         "o": 3
+        }
+       ]
+      },
+      {
+       "d": "q",
+       "dots": 0,
+       "rest": true,
+       "tie": false,
+       "keys": []
+      },
+      {
+       "d": "8",
+       "dots": 0,
+       "rest": true,
+       "tie": false,
+       "keys": []
+      },
+      {
+       "d": "8",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "F",
+         "a": 0,
+         "o": 3
+        }
+       ]
+      },
+      {
+       "d": "h",
+       "dots": 0,
+       "rest": true,
+       "tie": false,
+       "keys": []
+      },
+      {
+       "d": "q",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "G",
+         "a": -1,
+         "o": 3
+        }
+       ]
+      },
+      {
+       "d": "q",
+       "dots": 1,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "G",
+         "a": -1,
+         "o": 3
+        }
+       ]
+      },
+      {
+       "d": "8",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "G",
+         "a": -1,
+         "o": 3
+        }
+       ]
+      },
+      {
+       "d": "8",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "G",
+         "a": -1,
+         "o": 3
+        }
+       ]
+      },
+      {
+       "d": "q",
+       "dots": 1,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "F",
+         "a": 0,
+         "o": 3
+        }
+       ]
+      },
+      {
+       "d": "8",
+       "dots": 0,
+       "rest": true,
+       "tie": false,
+       "keys": []
+      },
+      {
+       "d": "8",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "E",
+         "a": -1,
+         "o": 3
+        }
+       ]
+      },
+      {
+       "d": "q",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "G",
+         "a": -1,
+         "o": 3
+        }
+       ]
+      },
+      {
+       "d": "q",
+       "dots": 1,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "G",
+         "a": -1,
+         "o": 3
+        }
+       ]
+      },
+      {
+       "d": "8",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "A",
+         "a": -1,
+         "o": 3
+        }
+       ]
+      },
+      {
+       "d": "q",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "B",
+         "a": -1,
+         "o": 3
+        }
+       ]
+      },
+      {
+       "d": "q",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "A",
+         "a": -1,
+         "o": 3
+        }
+       ]
+      },
+      {
+       "d": "q",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "A",
+         "a": -1,
+         "o": 3
+        }
+       ]
+      },
+      {
+       "d": "h",
+       "dots": 1,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "F",
+         "a": 0,
+         "o": 3
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "name": "Bajo",
+     "notes": [
+      {
+       "d": "h",
+       "dots": 0,
+       "rest": true,
+       "tie": false,
+       "keys": [],
+       "hid": true
+      },
+      {
+       "d": "8",
+       "dots": 0,
+       "rest": true,
+       "tie": false,
+       "keys": []
+      },
+      {
+       "d": "8",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "C",
+         "a": 0,
+         "o": 3
+        }
+       ]
+      },
+      {
+       "d": "q",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "C",
+         "a": 0,
+         "o": 3
+        }
+       ]
+      },
+      {
+       "d": "q",
+       "dots": 1,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "C",
+         "a": 0,
+         "o": 3
+        }
+       ]
+      },
+      {
+       "d": "8",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "C",
+         "a": 0,
+         "o": 3
+        }
+       ]
+      },
+      {
+       "d": "h",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "B",
+         "a": 0,
+         "o": 2
+        }
+       ]
+      },
+      {
+       "d": "8",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "B",
+         "a": 0,
+         "o": 2
+        }
+       ]
+      },
+      {
+       "d": "8",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "B",
+         "a": 0,
+         "o": 2
+        }
+       ]
+      },
+      {
+       "d": "q",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "A",
+         "a": 0,
+         "o": 2
+        }
+       ]
+      },
+      {
+       "d": "q",
+       "dots": 1,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "A",
+         "a": 0,
+         "o": 2
+        }
+       ]
+      },
+      {
+       "d": "8",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "A",
+         "a": 0,
+         "o": 2
+        }
+       ]
+      },
+      {
+       "d": "q",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "G",
+         "a": 0,
+         "o": 2
+        }
+       ]
+      },
+      {
+       "d": "8",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "G",
+         "a": 0,
+         "o": 2
+        }
+       ]
+      },
+      {
+       "d": "8",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "G",
+         "a": 0,
+         "o": 2
+        }
+       ]
+      },
+      {
+       "d": "8",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "G",
+         "a": 0,
+         "o": 2
+        }
+       ]
+      },
+      {
+       "d": "8",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "G",
+         "a": 0,
+         "o": 2
+        }
+       ]
+      },
+      {
+       "d": "h",
+       "dots": 1,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "F",
+         "a": 0,
+         "o": 2
+        }
+       ]
+      },
+      {
+       "d": "h",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "E",
+         "a": 0,
+         "o": 2
+        }
+       ]
+      },
+      {
+       "d": "8",
+       "dots": 0,
+       "rest": true,
+       "tie": false,
+       "keys": []
+      },
+      {
+       "d": "8",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "E",
+         "a": 0,
+         "o": 3
+        }
+       ]
+      },
+      {
+       "d": "q",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "D",
+         "a": 0,
+         "o": 3
+        }
+       ]
+      },
+      {
+       "d": "q",
+       "dots": 1,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "D",
+         "a": 0,
+         "o": 3
+        }
+       ]
+      },
+      {
+       "d": "8",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "D",
+         "a": 0,
+         "o": 3
+        }
+       ]
+      },
+      {
+       "d": "8",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "A",
+         "a": 0,
+         "o": 2
+        }
+       ]
+      },
+      {
+       "d": "h",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "A",
+         "a": 0,
+         "o": 2
+        }
+       ]
+      },
+      {
+       "d": "8",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "A",
+         "a": 0,
+         "o": 2
+        }
+       ]
+      },
+      {
+       "d": "q",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "D",
+         "a": 0,
+         "o": 3
+        }
+       ]
+      },
+      {
+       "d": "q",
+       "dots": 1,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "D",
+         "a": 0,
+         "o": 3
+        }
+       ]
+      },
+      {
+       "d": "8",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "D",
+         "a": 0,
+         "o": 3
+        }
+       ]
+      },
+      {
+       "d": "q",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "G",
+         "a": 0,
+         "o": 2
+        }
+       ]
+      },
+      {
+       "d": "q",
+       "dots": 1,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "G",
+         "a": 0,
+         "o": 2
+        }
+       ]
+      },
+      {
+       "d": "8",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "G",
+         "a": 0,
+         "o": 2
+        }
+       ]
+      },
+      {
+       "d": "h",
+       "dots": 1,
+       "rest": false,
+       "tie": true,
+       "keys": [
+        {
+         "s": "C",
+         "a": 0,
+         "o": 3
+        }
+       ]
+      },
+      {
+       "d": "h",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "C",
+         "a": 0,
+         "o": 3
+        }
+       ]
+      },
+      {
+       "d": "8",
+       "dots": 0,
+       "rest": true,
+       "tie": false,
+       "keys": []
+      },
+      {
+       "d": "8",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "C",
+         "a": 0,
+         "o": 3
+        }
+       ]
+      },
+      {
+       "d": "q",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "C",
+         "a": 0,
+         "o": 3
+        }
+       ]
+      },
+      {
+       "d": "q",
+       "dots": 1,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "C",
+         "a": 0,
+         "o": 3
+        }
+       ]
+      },
+      {
+       "d": "8",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "C",
+         "a": 0,
+         "o": 3
+        }
+       ]
+      },
+      {
+       "d": "h",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "B",
+         "a": 0,
+         "o": 2
+        }
+       ]
+      },
+      {
+       "d": "8",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "B",
+         "a": 0,
+         "o": 2
+        }
+       ]
+      },
+      {
+       "d": "8",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "B",
+         "a": 0,
+         "o": 2
+        }
+       ]
+      },
+      {
+       "d": "q",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "A",
+         "a": 0,
+         "o": 2
+        }
+       ]
+      },
+      {
+       "d": "q",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "A",
+         "a": 0,
+         "o": 2
+        }
+       ]
+      },
+      {
+       "d": "8",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "A",
+         "a": 0,
+         "o": 2
+        }
+       ]
+      },
+      {
+       "d": "8",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "A",
+         "a": 0,
+         "o": 2
+        }
+       ]
+      },
+      {
+       "d": "q",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "G",
+         "a": 0,
+         "o": 2
+        }
+       ]
+      },
+      {
+       "d": "q",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "G",
+         "a": 0,
+         "o": 2
+        }
+       ]
+      },
+      {
+       "d": "q",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "G",
+         "a": 0,
+         "o": 2
+        }
+       ]
+      },
+      {
+       "d": "h",
+       "dots": 1,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "F",
+         "a": 0,
+         "o": 2
+        }
+       ]
+      },
+      {
+       "d": "h",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "E",
+         "a": 0,
+         "o": 2
+        }
+       ]
+      },
+      {
+       "d": "8",
+       "dots": 0,
+       "rest": true,
+       "tie": false,
+       "keys": []
+      },
+      {
+       "d": "8",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "E",
+         "a": 0,
+         "o": 3
+        }
+       ]
+      },
+      {
+       "d": "q",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "D",
+         "a": 0,
+         "o": 3
+        }
+       ]
+      },
+      {
+       "d": "q",
+       "dots": 1,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "D",
+         "a": 0,
+         "o": 3
+        }
+       ]
+      },
+      {
+       "d": "8",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "D",
+         "a": 0,
+         "o": 3
+        }
+       ]
+      },
+      {
+       "d": "h",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "A",
+         "a": 0,
+         "o": 2
+        }
+       ]
+      },
+      {
+       "d": "8",
+       "dots": 0,
+       "rest": true,
+       "tie": false,
+       "keys": []
+      },
+      {
+       "d": "8",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "A",
+         "a": 0,
+         "o": 2
+        }
+       ]
+      },
+      {
+       "d": "q",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "D",
+         "a": 0,
+         "o": 3
+        }
+       ]
+      },
+      {
+       "d": "q",
+       "dots": 1,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "D",
+         "a": 0,
+         "o": 3
+        }
+       ]
+      },
+      {
+       "d": "8",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "D",
+         "a": 0,
+         "o": 3
+        }
+       ]
+      },
+      {
+       "d": "h",
+       "dots": 0,
+       "rest": false,
+       "tie": true,
+       "keys": [
+        {
+         "s": "G",
+         "a": 0,
+         "o": 2
+        }
+       ]
+      },
+      {
+       "d": "q",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "G",
+         "a": 0,
+         "o": 2
+        }
+       ]
+      },
+      {
+       "d": "h",
+       "dots": 1,
+       "rest": false,
+       "tie": true,
+       "keys": [
+        {
+         "s": "C",
+         "a": 0,
+         "o": 3
+        }
+       ]
+      },
+      {
+       "d": "h",
+       "dots": 1,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "C",
+         "a": 0,
+         "o": 3
+        }
+       ]
+      },
+      {
+       "d": "q",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "C",
+         "a": 0,
+         "o": 3
+        }
+       ]
+      },
+      {
+       "d": "q",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "C",
+         "a": 0,
+         "o": 3
+        }
+       ]
+      },
+      {
+       "d": "q",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "C",
+         "a": 0,
+         "o": 3
+        }
+       ]
+      },
+      {
+       "d": "h",
+       "dots": 1,
+       "rest": false,
+       "tie": true,
+       "keys": [
+        {
+         "s": "F",
+         "a": 0,
+         "o": 3
+        }
+       ]
+      },
+      {
+       "d": "h",
+       "dots": 1,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "F",
+         "a": 0,
+         "o": 3
+        }
+       ]
+      },
+      {
+       "d": "h",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "D",
+         "a": 0,
+         "o": 3
+        }
+       ]
+      },
+      {
+       "d": "8",
+       "dots": 0,
+       "rest": true,
+       "tie": false,
+       "keys": []
+      },
+      {
+       "d": "8",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "D",
+         "a": 0,
+         "o": 3
+        }
+       ]
+      },
+      {
+       "d": "q",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "G",
+         "a": 0,
+         "o": 2
+        }
+       ]
+      },
+      {
+       "d": "q",
+       "dots": 1,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "G",
+         "a": 0,
+         "o": 2
+        }
+       ]
+      },
+      {
+       "d": "8",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "G",
+         "a": 0,
+         "o": 2
+        }
+       ]
+      },
+      {
+       "d": "h",
+       "dots": 1,
+       "rest": false,
+       "tie": true,
+       "keys": [
+        {
+         "s": "C",
+         "a": 0,
+         "o": 3
+        }
+       ]
+      },
+      {
+       "d": "h",
+       "dots": 1,
+       "rest": false,
+       "tie": true,
+       "keys": [
+        {
+         "s": "C",
+         "a": 0,
+         "o": 3
+        }
+       ]
+      },
+      {
+       "d": "h",
+       "dots": 1,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "C",
+         "a": 0,
+         "o": 3
+        }
+       ]
+      },
+      {
+       "d": "q",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "C",
+         "a": 0,
+         "o": 3
+        }
+       ]
+      },
+      {
+       "d": "q",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "D",
+         "a": 0,
+         "o": 3
+        }
+       ]
+      },
+      {
+       "d": "q",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "E",
+         "a": 0,
+         "o": 3
+        }
+       ]
+      },
+      {
+       "d": "h",
+       "dots": 0,
+       "rest": false,
+       "tie": true,
+       "keys": [
+        {
+         "s": "E",
+         "a": 0,
+         "o": 3
+        }
+       ]
+      },
+      {
+       "d": "8",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "E",
+         "a": 0,
+         "o": 3
+        }
+       ]
+      },
+      {
+       "d": "8",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "F",
+         "a": 0,
+         "o": 3
+        }
+       ]
+      },
+      {
+       "d": "h",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "D",
+         "a": 0,
+         "o": 3
+        }
+       ]
+      },
+      {
+       "d": "q",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "C",
+         "a": 0,
+         "o": 3
+        }
+       ]
+      },
+      {
+       "d": "h",
+       "dots": 1,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "B",
+         "a": 0,
+         "o": 2
+        }
+       ]
+      },
+      {
+       "d": "q",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "G",
+         "a": 0,
+         "o": 2
+        }
+       ]
+      },
+      {
+       "d": "q",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "G",
+         "a": 0,
+         "o": 2
+        }
+       ]
+      },
+      {
+       "d": "q",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "G",
+         "a": 0,
+         "o": 2
+        }
+       ]
+      },
+      {
+       "d": "h",
+       "dots": 0,
+       "rest": false,
+       "tie": true,
+       "keys": [
+        {
+         "s": "C",
+         "a": 0,
+         "o": 3
+        }
+       ]
+      },
+      {
+       "d": "8",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "C",
+         "a": 0,
+         "o": 3
+        }
+       ]
+      },
+      {
+       "d": "8",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "C",
+         "a": 0,
+         "o": 3
+        }
+       ]
+      },
+      {
+       "d": "h",
+       "dots": 1,
+       "rest": false,
+       "tie": true,
+       "keys": [
+        {
+         "s": "C",
+         "a": 0,
+         "o": 3
+        }
+       ]
+      },
+      {
+       "d": "h",
+       "dots": 1,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "C",
+         "a": 0,
+         "o": 3
+        }
+       ]
+      },
+      {
+       "d": "q",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "C",
+         "a": 0,
+         "o": 3
+        }
+       ]
+      },
+      {
+       "d": "q",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "C",
+         "a": 0,
+         "o": 3
+        }
+       ]
+      },
+      {
+       "d": "q",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "C",
+         "a": 0,
+         "o": 3
+        }
+       ]
+      },
+      {
+       "d": "h",
+       "dots": 1,
+       "rest": false,
+       "tie": true,
+       "keys": [
+        {
+         "s": "F",
+         "a": 0,
+         "o": 3
+        }
+       ]
+      },
+      {
+       "d": "h",
+       "dots": 1,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "F",
+         "a": 0,
+         "o": 3
+        }
+       ]
+      },
+      {
+       "d": "h",
+       "dots": 1,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "D",
+         "a": 0,
+         "o": 3
+        }
+       ]
+      },
+      {
+       "d": "q",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "G",
+         "a": 0,
+         "o": 2
+        }
+       ]
+      },
+      {
+       "d": "q",
+       "dots": 1,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "G",
+         "a": 0,
+         "o": 2
+        }
+       ]
+      },
+      {
+       "d": "8",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "G",
+         "a": 0,
+         "o": 2
+        }
+       ]
+      },
+      {
+       "d": "h",
+       "dots": 1,
+       "rest": false,
+       "tie": true,
+       "keys": [
+        {
+         "s": "C",
+         "a": 0,
+         "o": 3
+        }
+       ]
+      },
+      {
+       "d": "h",
+       "dots": 1,
+       "rest": false,
+       "tie": true,
+       "keys": [
+        {
+         "s": "C",
+         "a": 0,
+         "o": 3
+        }
+       ]
+      },
+      {
+       "d": "h",
+       "dots": 1,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "C",
+         "a": 0,
+         "o": 3
+        }
+       ]
+      },
+      {
+       "d": "q",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "C",
+         "a": 1,
+         "o": 3
+        }
+       ]
+      },
+      {
+       "d": "q",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "D",
+         "a": 0,
+         "o": 3
+        }
+       ]
+      },
+      {
+       "d": "q",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "E",
+         "a": 0,
+         "o": 3
+        }
+       ]
+      },
+      {
+       "d": "h",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "E",
+         "a": 0,
+         "o": 3
+        }
+       ]
+      },
+      {
+       "d": "8",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "E",
+         "a": 0,
+         "o": 3
+        }
+       ]
+      },
+      {
+       "d": "8",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "F",
+         "a": 0,
+         "o": 3
+        }
+       ]
+      },
+      {
+       "d": "h",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "D",
+         "a": 0,
+         "o": 3
+        }
+       ]
+      },
+      {
+       "d": "q",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "C",
+         "a": 0,
+         "o": 3
+        }
+       ]
+      },
+      {
+       "d": "h",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "B",
+         "a": 0,
+         "o": 2
+        }
+       ]
+      },
+      {
+       "d": "8",
+       "dots": 0,
+       "rest": true,
+       "tie": false,
+       "keys": []
+      },
+      {
+       "d": "8",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "F",
+         "a": 0,
+         "o": 2
+        }
+       ]
+      },
+      {
+       "d": "q",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "F",
+         "a": 0,
+         "o": 2
+        }
+       ]
+      },
+      {
+       "d": "q",
+       "dots": 1,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "F",
+         "a": 0,
+         "o": 2
+        }
+       ]
+      },
+      {
+       "d": "8",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "F",
+         "a": 0,
+         "o": 2
+        }
+       ]
+      },
+      {
+       "d": "q",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "G",
+         "a": 0,
+         "o": 2
+        }
+       ]
+      },
+      {
+       "d": "q",
+       "dots": 1,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "G",
+         "a": 0,
+         "o": 2
+        }
+       ]
+      },
+      {
+       "d": "8",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "G",
+         "a": 0,
+         "o": 2
+        }
+       ]
+      },
+      {
+       "d": "h",
+       "dots": 1,
+       "rest": false,
+       "tie": true,
+       "keys": [
+        {
+         "s": "C",
+         "a": 0,
+         "o": 3
+        }
+       ]
+      },
+      {
+       "d": "h",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "C",
+         "a": 0,
+         "o": 3
+        }
+       ]
+      },
+      {
+       "d": "q",
+       "dots": 0,
+       "rest": true,
+       "tie": false,
+       "keys": []
+      },
+      {
+       "d": "8",
+       "dots": 0,
+       "rest": true,
+       "tie": false,
+       "keys": []
+      },
+      {
+       "d": "8",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "F",
+         "a": 0,
+         "o": 3
+        }
+       ]
+      },
+      {
+       "d": "h",
+       "dots": 0,
+       "rest": true,
+       "tie": false,
+       "keys": [],
+       "hid": true
+      },
+      {
+       "d": "q",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "G",
+         "a": -1,
+         "o": 3
+        }
+       ]
+      },
+      {
+       "d": "q",
+       "dots": 1,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "G",
+         "a": -1,
+         "o": 3
+        }
+       ]
+      },
+      {
+       "d": "8",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "G",
+         "a": -1,
+         "o": 3
+        }
+       ]
+      },
+      {
+       "d": "8",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "G",
+         "a": -1,
+         "o": 3
+        }
+       ]
+      },
+      {
+       "d": "q",
+       "dots": 1,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "F",
+         "a": 0,
+         "o": 3
+        }
+       ]
+      },
+      {
+       "d": "8",
+       "dots": 0,
+       "rest": true,
+       "tie": false,
+       "keys": []
+      },
+      {
+       "d": "8",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "E",
+         "a": -1,
+         "o": 3
+        }
+       ]
+      },
+      {
+       "d": "q",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "G",
+         "a": -1,
+         "o": 3
+        }
+       ]
+      },
+      {
+       "d": "q",
+       "dots": 1,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "G",
+         "a": -1,
+         "o": 3
+        }
+       ]
+      },
+      {
+       "d": "8",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "A",
+         "a": -1,
+         "o": 3
+        }
+       ]
+      },
+      {
+       "d": "q",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "B",
+         "a": -1,
+         "o": 3
+        }
+       ]
+      },
+      {
+       "d": "q",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "A",
+         "a": -1,
+         "o": 3
+        }
+       ]
+      },
+      {
+       "d": "q",
+       "dots": 0,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "A",
+         "a": -1,
+         "o": 2
+        }
+       ]
+      },
+      {
+       "d": "h",
+       "dots": 1,
+       "rest": false,
+       "tie": false,
+       "keys": [
+        {
+         "s": "D",
+         "a": -1,
+         "o": 3
+        }
+       ]
+      }
+     ]
+    }
+   ]
+  }
+ ]
+}

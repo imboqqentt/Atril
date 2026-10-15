@@ -2173,6 +2173,28 @@ function speak(k) {
   } catch (e) {}
 }
 
+/* ================= app de escritorio (Tauri) ================= */
+// En la app de escritorio no hay File System Access: abrir y guardar usan los diálogos de Windows y rutas de
+// archivo, con los comandos de src-tauri/src/lib.rs. En el navegador `desktop` es null y nada de esto corre.
+const desktop = window.__TAURI__ && window.__TAURI__.core ? {
+  invoke: (cmd, args, opts) => window.__TAURI__.core.invoke(cmd, args, opts),
+  async read(path) { return new Uint8Array(await this.invoke("leer", { ruta: path })); },
+  async write(path, data) {
+    const bytes = typeof data === "string" ? new TextEncoder().encode(data) : data instanceof Blob ? new Uint8Array(await data.arrayBuffer()) : new Uint8Array(data);
+    return this.invoke("escribir", bytes, { headers: { ruta: encodeURIComponent(path) } });
+  },
+  pickOpen() { return this.invoke("elegir_abrir"); },
+  pickSave(nombre, tipo, extensiones) { return this.invoke("elegir_guardar", { nombre, tipo, extensiones }); },
+  setTitle(t) { try { window.__TAURI__.window.getCurrentWindow().setTitle(t); } catch (e) {} },
+} : null;
+const baseName = (path) => String(path).split(/[\\/]/).pop();
+const FILE_TYPES = { atril: "Partitura de Atril", pdf: "Documento PDF", svg: "Imagen SVG", zip: "Archivo ZIP", mp3: "Audio MP3", mp4: "Audio MP4", webm: "Audio WebM", wav: "Audio WAV" };
+// Abre un archivo por su ruta (diálogo de Windows, doble clic o recientes).
+async function openPath(path) {
+  try { await importFile(new File([await desktop.read(path)], baseName(path)), path); }
+  catch (e) { toast(`No se pudo abrir ${baseName(path)}. ¿Se movió o se borró?`); }
+}
+
 /* ================= guardado: archivos .atril y recientes ================= */
 // Cada partitura es un archivo .atril (el JSON de `score`). Con File System Access API se escribe sobre el mismo
 // archivo; sin ella, guardar descarga el archivo. Aparte, el borrador se copia a localStorage en cada cambio
@@ -2184,14 +2206,15 @@ const canPick = typeof window.showSaveFilePicker === "function" && typeof window
 const ATRIL_TYPES = [{ description: "Partitura de Atril", accept: { "application/json": [".atril"] } }];
 const OPEN_TYPES = [{ description: "Partituras (Atril o MusicXML)", accept: { "application/json": [".atril", ".json"], "application/vnd.recordare.musicxml+xml": [".musicxml", ".xml"], "application/vnd.recordare.musicxml": [".mxl"], "application/zip": [".zip"] } }];
 const RECENT = idbStore("atril-recientes", "archivos"), RECENT_MAX = 12;
-let fileHandle = null, fileName = ""; // archivo de la partitura abierta ("" = nunca guardada)
+let fileHandle = null, fileName = ""; // archivo de la partitura abierta: FileSystemFileHandle, o la ruta en escritorio ("" = nunca guardada)
 
 function saveDraft() { lsSet(LS_DRAFT, JSON.stringify(score)); setSaveState(); }
 function setSaveState() {
   const el = document.getElementById("savestate");
   el.dataset.s = dirty ? "dirty" : "saved";
   el.textContent = score.sample && !dirty ? "" : !fileName ? "Sin guardar" : dirty ? `${fileName} · cambios sin guardar` : fileName;
-  el.title = fileName ? "Archivo: " + fileName : "";
+  el.title = fileName ? "Archivo: " + (typeof fileHandle === "string" ? fileHandle : fileName) : "";
+  if (desktop) desktop.setTitle(`${score.title || "Sin título"}${dirty ? " •" : ""} — Atril`);
   lsSet(LS_FILE, JSON.stringify({ id: score.id, name: fileName, dirty }));
 }
 async function addRecent() {
@@ -2212,7 +2235,16 @@ async function saveFile(as = false) {
   saving = true;
   try {
     if (score.sample) delete score.sample;
-    if (canPick) {
+    if (desktop) {
+      let path = !as && typeof fileHandle === "string" ? fileHandle : null;
+      if (!path) {
+        path = await desktop.pickSave(as && fileName ? fileName : slug() + ".atril", FILE_TYPES.atril, ["atril"]);
+        if (!path) return; // canceló el diálogo
+        if (fileHandle && path !== fileHandle) score.id = uid(); // "Guardar como" en otro archivo: copia aparte
+      }
+      await desktop.write(path, JSON.stringify(score, null, 1));
+      fileHandle = path; fileName = baseName(path);
+    } else if (canPick) {
       let h = as ? null : fileHandle;
       if (h && !(await canWrite(h))) h = null;
       if (!h) {
@@ -2229,7 +2261,7 @@ async function saveFile(as = false) {
       fileName = name;
     }
     dirty = false; saveDraft(); addRecent();
-    toast(canPick ? `Guardada en ${fileName}.` : `Descargando “${fileName}”. Guárdalo en tu carpeta de partituras para abrirlo después.`);
+    toast(canPick || desktop ? `Guardada en ${fileName}.` : `Descargando “${fileName}”. Guárdalo en tu carpeta de partituras para abrirlo después.`);
   } catch (e) {
     if (e && e.name === "AbortError") return; // canceló el diálogo
     toast("No se pudo guardar. Prueba con “Guardar como…” en otra carpeta.");
@@ -2242,6 +2274,7 @@ function openScore(sc, handle, name) {
   render(); syncProps(); saveDraft(); addRecent();
 }
 async function pickAndOpen() {
+  if (desktop) { const path = await desktop.pickOpen().catch(() => null); if (path) { closeModal(); openPath(path); } return; }
   if (!canPick) { document.getElementById("fileIn").click(); return; }
   let h;
   try { [h] = await window.showOpenFilePicker({ id: "atril", types: OPEN_TYPES }); } catch (e) { return; }
@@ -2251,7 +2284,10 @@ async function pickAndOpen() {
 async function openRecent(it) {
   let text = null, h = it.handle || null;
   if (h) {
-    try { if (!(await canWrite(h))) throw 0; text = await (await h.getFile()).text(); }
+    try {
+      if (typeof h === "string") text = new TextDecoder().decode(await desktop.read(h));
+      else { if (!(await canWrite(h))) throw 0; text = await (await h.getFile()).text(); }
+    }
     catch (e) { h = null; }
   }
   try {
@@ -2280,7 +2316,7 @@ async function openDialog() {
   let prev = null; try { prev = JSON.parse(lsGet(LS_PREV) || "null"); } catch (e) {}
   if (prev && Array.isArray(prev.staves)) {
     const row = document.createElement("div"); row.className = "libitem"; row.id = "recPrev";
-    row.innerHTML = `<button class="open"><b>${esc(prev.title || "Sin título")}</b><span>Borrador sin guardar, de antes de abrir un enlace</span></button><button class="btn" data-del>Descartar</button>`;
+    row.innerHTML = `<button class="open"><b>${esc(prev.title || "Sin título")}</b><span>Borrador sin guardar, de antes de abrir otra partitura</span></button><button class="btn" data-del>Descartar</button>`;
     row.querySelector(".open").onclick = () => {
       if (dirty) lsSet(LS_PREV, JSON.stringify(score)); else { try { localStorage.removeItem(LS_PREV); } catch (e) {} }
       closeModal(); openScore(prev, null, ""); dirty = true; saveDraft(); toast("Recuperaste tu borrador. Guárdalo con Ctrl+S.");
@@ -2323,7 +2359,7 @@ async function unpackScore(str) {
 // si está en <meta name="atril-url">, para que el enlace funcione en otros equipos.
 function linkBase() {
   const here = location.origin + location.pathname;
-  const local = !/^https?:$/.test(location.protocol) || /^(localhost|127\.0\.0\.1|\[::1\])$/.test(location.hostname);
+  const local = !/^https?:$/.test(location.protocol) || /^(localhost|127\.0\.0\.1|\[::1\]|tauri\.localhost)$/.test(location.hostname);
   const pub = (document.querySelector('meta[name="atril-url"]') || {}).content || "";
   return { url: local && pub ? pub : here, localOnly: local && !pub };
 }
@@ -2350,6 +2386,8 @@ async function shareDialog() {
   });
   document.querySelector('#modal [data-x="copy"]').focus(); // Enter copia; el campo muestra el comienzo del enlace
 }
+// Antes de abrir algo que llega de afuera (enlace, doble clic): los cambios sin guardar quedan como "borrador anterior" en Abrir.
+function stashDraft() { if (!dirty) return false; lsSet(LS_PREV, JSON.stringify(score)); return true; }
 // Abre la partitura que viene en el enlace (#s=…). Si había cambios sin guardar, quedan como "borrador anterior" en Abrir.
 async function openFromHash() {
   const m = location.hash.match(/^#s=([A-Za-z0-9_-]+)/);
@@ -2358,10 +2396,10 @@ async function openFromHash() {
   let sc = null;
   try { sc = await unpackScore(m[1]); } catch (e) {}
   if (!sc || !Array.isArray(sc.staves)) { toast("Este enlace está incompleto o dañado. Pide que te lo envíen de nuevo, o que te manden el archivo .atril."); return false; }
-  if (dirty) lsSet(LS_PREV, JSON.stringify(score));
+  const kept = stashDraft();
   sc.id = uid(); delete sc.sample;
   openScore(sc, null, "");
-  setTimeout(() => toast(`Te compartieron «${sc.title || "Sin título"}». Pulsa ▶ para escucharla; guárdala con Ctrl+S para tener tu copia.`), 300);
+  setTimeout(() => toast(`Te compartieron «${sc.title || "Sin título"}». Pulsa ▶ para escucharla; guárdala con Ctrl+S para tener tu copia.${kept ? " Tus cambios sin guardar quedaron en Abrir." : ""}`), 300);
   return true;
 }
 
@@ -2378,6 +2416,14 @@ function browserDownload(filename, data) {
 }
 // Entrega un archivo con la descarga normal del navegador.
 async function offer(filename, data) {
+  if (desktop) {
+    const ext = filename.split(".").pop().toLowerCase();
+    try {
+      const path = await desktop.pickSave(filename, FILE_TYPES[ext] || ext.toUpperCase(), [ext]);
+      if (!path) return false;
+      await desktop.write(path, data); toast(`Guardado: ${baseName(path)}.`); return true;
+    } catch (e) { toast("No se pudo guardar el archivo. Prueba en otra carpeta."); return false; }
+  }
   const ok = browserDownload(filename, data);
   toast(ok ? `Descargando “${filename}”.` : "No se pudo descargar el archivo.");
   return ok;
@@ -3113,7 +3159,7 @@ function buildFromOmr(ctx) {
 // La lectura de PDF sin IA (Audiveris) llega con la app de escritorio. Mientras tanto, se importa MusicXML.
 function omrDialog() {
   openModal(`<h3>Leer partitura de PDF</h3>
-    <p>La lectura automática de PDF estará en la app de escritorio de Atril. Por ahora, abre el PDF en un programa que lo convierta a MusicXML (por ejemplo Audiveris o MuseScore) e importa aquí el archivo .musicxml o .mxl.</p>
+    <p>${desktop ? "La lectura automática de PDF llegará en una próxima versión de Atril." : "La lectura automática de PDF estará en la app de escritorio de Atril."} Por ahora, abre el PDF en un programa que lo convierta a MusicXML (por ejemplo Audiveris o MuseScore) e importa aquí el archivo .musicxml o .mxl.</p>
     <div class="actions"><button class="btn" data-x="close">Cerrar</button><button class="btn primary" data-x="import">Importar MusicXML…</button></div>`, (d) => {
     d.querySelector('[data-x="close"]').onclick = closeModal;
     d.querySelector('[data-x="import"]').onclick = () => { closeModal(); document.getElementById("fileIn").click(); };
@@ -3302,7 +3348,7 @@ function helpDialog() {
     <p><b>Letra:</b> con L se abre la barra de letra. Escribe la sílaba y pulsa Espacio para pasar a la nota siguiente, o guion para separar sílabas de una misma palabra. Con “Pegar estrofa” puedes poner una estrofa entera escrita así: Al-ce-mos hoy la voz.</p>
     <p><b>Cambios de compás o tonalidad:</b> pon el cursor en el compás donde empieza el cambio y elige el compás o la tonalidad en el panel Partitura.</p>
     <p>Para ensayar una voz del coro, usa la S de esa voz para escucharla sola, o la M para silenciarla.</p>
-    <p><b>Tus archivos:</b> cada partitura se guarda como un archivo .atril en la carpeta que elijas; “Abrir” muestra las recientes. Para compartirla, usa “Compartir”: el enlace lleva la partitura adentro, sin subirla a ningún servidor. También puedes enviar el archivo .atril, o el PDF, MusicXML o audio desde el menú Archivo.${canPick ? "" : " Este navegador no puede escribir directo en tus carpetas: al guardar se descarga el archivo .atril."}</p>
+    <p><b>Tus archivos:</b> cada partitura se guarda como un archivo .atril en la carpeta que elijas; “Abrir” muestra las recientes. Para compartirla, usa “Compartir”: el enlace lleva la partitura adentro, sin subirla a ningún servidor. También puedes enviar el archivo .atril, o el PDF, MusicXML o audio desde el menú Archivo.${canPick || desktop ? "" : " Este navegador no puede escribir directo en tus carpetas: al guardar se descarga el archivo .atril."}</p>
     <p>Atril funciona en tu equipo, sin cuenta y sin internet: escribir, reproducir, letra, acordes, transponer y generar PDF, MusicXML y audio. Si cierras la pestaña sin guardar, al volver encontrarás tu último borrador.</p>
     <div class="actions"><button class="btn primary" data-x="close">Entendido</button></div>`, (d) => { d.querySelector('[data-x="close"]').onclick = closeModal; });
 }
@@ -3509,8 +3555,14 @@ function start() {
   setSaveState();
   // archivos .atril o MusicXML abiertos con Atril instalada como app
   if ("launchQueue" in window) launchQueue.setConsumer(async (p) => { const h = p.files && p.files[0]; if (h) importFile(await h.getFile(), h); });
+  // escritorio: el .atril del doble clic, y los que llegan con Atril ya abierta
+  if (desktop) {
+    const openExternal = (path) => { if (!path) return; if (stashDraft()) setTimeout(() => toast("Tus cambios sin guardar quedaron en Abrir."), 3500); openPath(path); };
+    desktop.invoke("archivo_inicial").then(openExternal).catch(() => {});
+    window.__TAURI__.event.listen("abrir-archivo", (e) => openExternal(e.payload));
+  }
   if (embedded) setTimeout(() => toast(`«${embedded.title || "Sin título"}» — pulsa ▶ para escucharla. Puedes transponerla y descargar PDF, audio o MusicXML.`), 600);
-  else if (!draft && !location.hash.startsWith("#s=")) setTimeout(() => toast("Partitura de ejemplo. Pulsa ▶ para escucharla o “Nueva” para empezar la tuya."), 600);
+  else if (!draft && !location.hash.startsWith("#s=")) setTimeout(() => score.sample && toast("Partitura de ejemplo. Pulsa ▶ para escucharla o “Nueva” para empezar la tuya."), 600);
   document.getElementById("desk").focus({ preventScroll: true });
   // enlace compartido: al cargar o si se pega otro enlace en la misma pestaña
   openFromHash();
@@ -3518,6 +3570,6 @@ function start() {
 }
 start();
 </script>
-<script>if ("serviceWorker" in navigator && location.protocol.startsWith("http")) navigator.serviceWorker.register("sw.js").catch(() => {});</script>
+<script>if ("serviceWorker" in navigator && location.protocol.startsWith("http") && !window.__TAURI__) navigator.serviceWorker.register("sw.js").catch(() => {});</script>
 </body>
 </html>

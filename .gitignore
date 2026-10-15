@@ -5,3 +5,6 @@ Thumbs.db
 *.log
 test-results/
 playwright-report/
+dist/
+_site/
+src-tauri/gen/

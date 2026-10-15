@@ -74,7 +74,7 @@ Ese JSON es el formato `.atril`. Los `.atril.json` antiguos también se abren.
 
 ### Fase 4 — leer PDF sin IA
 - [ ] Integrar Audiveris como “sidecar” de Tauri: `Audiveris -batch -export -output <dir> <archivo.pdf>` → `.mxl` → `importFile`.
-- [ ] En la versión web, ofrecer “Importar MusicXML” y explicar que la lectura de PDF está en la app de escritorio.
+- [x] En la versión web, ofrecer “Importar MusicXML” y explicar que la lectura de PDF está en la app de escritorio.
 - [ ] Importar el JSON compacto que produce la skill `skills/leer-partitura` reutilizando `buildFromOmr` (ver formato en `omrPrompt`).
 
 ### Calidad

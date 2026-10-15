@@ -87,7 +87,7 @@ Ese JSON es el formato `.atril`. Los `.atril.json` antiguos también se abren.
 - `npm run escritorio` — Atril de escritorio en modo desarrollo (lee los archivos de la carpeta).
 - `npm run test:escritorio` — compila en modo depuración y prueba la app real por el puerto de depuración de WebView2.
 - `npm run instalador` — instaladores `.exe` (NSIS) y `.msi`.
-- Publicar una versión: subir `version` en `package.json`, commit, `git tag vX.Y.Z` y `git push origin vX.Y.Z`. El workflow `release.yml` corre las pruebas, compila en Windows y deja un **borrador** de Release con el `.exe` y el `.msi` para revisar y publicar.
+- Publicar una versión: correr `npm test` y `npm run test:escritorio` en Windows (en GitHub las de escritorio no bloquean: WebView2 no abre el puerto de depuración allá), subir `version` en `package.json` y `src-tauri/Cargo.toml`, commit, `git tag vX.Y.Z` y `git push origin vX.Y.Z`. El workflow `release.yml` corre las pruebas, compila en Windows y deja un **borrador** de Release con el `.exe` y el `.msi` para revisar y publicar.
 - Requisitos para compilar: Rust (rustup) y Visual Studio Build Tools con C++.
 
 ## Reglas

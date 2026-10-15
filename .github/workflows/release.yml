@@ -44,9 +44,12 @@ jobs:
       - name: Compilar instaladores (.exe y .msi)
         run: npx tauri build
 
-      - name: Pruebas de escritorio sobre la app final
+      # Informativas: en los servidores de GitHub WebView2 no abre su puerto de depuración (la app arranca pero
+      # Playwright no puede conectarse). Las que valen se corren en Windows antes de etiquetar: npm run test:escritorio
+      - name: Pruebas de escritorio sobre la app final (informativas)
+        continue-on-error: true
         shell: bash
-        run: ATRIL_EXE="$PWD/src-tauri/target/release/atril.exe" npx playwright test -c playwright.escritorio.config.mjs
+        run: ATRIL_EXE="$PWD/src-tauri/target/release/atril.exe" npx playwright test -c playwright.escritorio.config.mjs --max-failures=1
 
       - name: Guardar el informe si fallan
         if: failure()

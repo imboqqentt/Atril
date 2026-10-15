@@ -1,7 +1,7 @@
 {
   "$schema": "../gen/schemas/desktop-schema.json",
   "identifier": "default",
-  "description": "Permisos de la ventana principal: lo básico de Tauri (eventos) y cambiar el título de la ventana. Los diálogos y archivos van por los comandos propios de src/lib.rs.",
+  "description": "Permisos de la ventana principal: lo básico de Tauri (eventos), cambiar el título de la ventana y abrir enlaces web en el navegador (página de Audiveris). Los diálogos y archivos van por los comandos propios de src/lib.rs.",
   "windows": ["main"],
-  "permissions": ["core:default", "core:window:allow-set-title"]
+  "permissions": ["core:default", "core:window:allow-set-title", "opener:allow-open-url", "opener:allow-default-urls"]
 }

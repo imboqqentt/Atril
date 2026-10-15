@@ -34,7 +34,7 @@ Todo vive en **`index.html`** (un solo archivo, ~3.600 líneas: CSS + HTML + JS 
 | Compartir | enlace con la partitura adentro: `shareDialog`, `shareLink`, `packScore`/`unpackScore` (`#s=` + deflate-raw + base64url), `openFromHash` (al cargar y en `hashchange`), `linkBase` (usa `<meta name="atril-url">` cuando se comparte desde el equipo), borrador anterior en `LS_PREV` |
 | Exportar | `exportPDF` (jsPDF), `exportSVG`, `toMusicXML`, `exportMXL`, `offer` → `browserDownload` |
 | Importar | `importFile` (.atril/.json abre con su archivo; .musicxml, .xml, .mxl, .zip importa), `fromMusicXML` |
-| Lectura de PDF | `omrDialog` (hoy solo explica y ofrece importar MusicXML); se conservan `detectSystems`, `cropBlob`, `omrPrompt` (formato JSON compacto), `parseToken`, `mergeOmr`, `buildFromOmr` para la Fase 4 |
+| Lectura de PDF | escritorio: `omrDialog`, `readWithAudiveris`, `audiverisMissingDialog`, `findAudiveris`; navegador: `webOmrDialog`. JSON compacto de la skill (`.atril-omr.json`): `importFile` → `openOmrJson` → `mergeOmr` + `buildFromOmr` (formato en `omrPrompt`). Sin uso por ahora: `detectSystems`, `cropBlob` |
 | Escritorio (Tauri) | `desktop` (null en el navegador): `read`/`write` por ruta, `pickOpen`/`pickSave`, `setTitle`; `openPath`, `stashDraft`. En escritorio `fileHandle` es la ruta (texto). Lado Rust en `src-tauri/src/lib.rs`: `leer`, `escribir`, `elegir_abrir`, `elegir_guardar`, `archivo_inicial`, evento `abrir-archivo` |
 | Partitura incrustada | `<script type="application/json" id="atril-embed">` → `start()` la abre en vez del ejemplo |
 
@@ -75,9 +75,9 @@ Ese JSON es el formato `.atril`. Los `.atril.json` antiguos también se abren.
 - [x] Instalador `.msi`/`.exe` para Windows: `npm run instalador` → `src-tauri/target/release/bundle/{nsis,msi}/`.
 
 ### Fase 4 — leer PDF sin IA
-- [ ] Integrar Audiveris como “sidecar” de Tauri: `Audiveris -batch -export -output <dir> <archivo.pdf>` → `.mxl` → `importFile`.
+- [x] Audiveris **instalado aparte** (decisión de Daniel: no se empaqueta; AGPL y 85 MB): `buscar_audiveris` lo encuentra (o la ruta en `atril.audiveris`), `leer_pdf` corre `Audiveris -batch -export -output <tmp> [-sheets a-b] -- <pdf>` sin consola y manda cada línea como evento `audiveris`; `cancelar_audiveris`. En la página: `omrDialog` → `readWithAudiveris` → `mxlText` + `fromMusicXML` → `showOmrReport`. Sin idiomas OCR, Audiveris no lee letra ni título (se avisa).
 - [x] En la versión web, ofrecer “Importar MusicXML” y explicar que la lectura de PDF está en la app de escritorio.
-- [ ] Importar el JSON compacto que produce la skill `skills/leer-partitura` reutilizando `buildFromOmr` (ver formato en `omrPrompt`).
+- [x] Importar el JSON compacto que produce la skill `skills/leer-partitura` reutilizando `buildFromOmr` (ver formato en `omrPrompt`).
 
 ### Calidad
 - [x] Pruebas con Playwright (`tests/`, `npm install` y `npm test`; abren Atril con internet bloqueado): cargar, escribir notas, reproducir, transponer, exportar MusicXML ida y vuelta, `playOrder` con repeticiones/casillas/D.S. al Coda. Falta: escribir notas. Comprobaciones conocidas que pasaban: casillas → `1 2 3 1 2 4 5 6`; D.S. al Coda → `1 2 3 4 5 6 2 3 4 7 8`.

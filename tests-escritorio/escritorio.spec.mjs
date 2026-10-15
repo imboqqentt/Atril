@@ -16,9 +16,12 @@ let port = 9340;
 async function launch(dataDir, args = []) {
   const p = port++;
   const proc = spawn(EXE, args, { env: { ...process.env, WEBVIEW2_USER_DATA_FOLDER: dataDir, WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS: `--remote-debugging-port=${p}` } });
+  let out = "", exited = null;
+  proc.stdout.on("data", (d) => (out += d)); proc.stderr.on("data", (d) => (out += d)); proc.on("exit", (c) => (exited = c));
+  // el primer arranque de WebView2 en un equipo nuevo (como en GitHub Actions) puede tardar bastante
   let browser;
-  for (let i = 0; i < 60 && !browser; i++) { try { browser = await chromium.connectOverCDP(`http://127.0.0.1:${p}`); } catch { await new Promise((r) => setTimeout(r, 250)); } }
-  if (!browser) throw new Error("La app no abrió el puerto de depuración");
+  for (let i = 0; i < 240 && !browser && exited === null; i++) { try { browser = await chromium.connectOverCDP(`http://127.0.0.1:${p}`); } catch { await new Promise((r) => setTimeout(r, 250)); } }
+  if (!browser) throw new Error(`La app no abrió el puerto de depuración (${exited === null ? "sigue abierta" : "se cerró con código " + exited}). Salida: ${out.slice(-2000) || "(nada)"}`);
   let page;
   for (let i = 0; i < 40 && !page; i++) { page = browser.contexts()[0]?.pages()[0]; if (!page) await new Promise((r) => setTimeout(r, 250)); }
   const errors = [];
@@ -117,4 +120,61 @@ test("con Atril abierta, el doble clic en otro .atril lo abre en la misma ventan
   // los cambios sin guardar no se pierden
   await page.keyboard.press("Control+o");
   await expect(page.locator("#recPrev")).toContainText("Cambio sin guardar");
+});
+
+// ---------- lectura de PDF con Audiveris (se salta si Audiveris no está instalado) ----------
+const PDF = resolve(import.meta.dirname, "fixtures/himno.pdf"); // el himno de ejemplo, exportado a PDF por Atril
+
+test("sin Audiveris, explica cómo instalarlo", async () => {
+  test.skip(!existsSync(EXE), "Falta compilar");
+  app = await launch(join(dir, "datos"));
+  const { page } = app;
+  await page.evaluate(() => { const inv = desktop.invoke; desktop.invoke = (c, a, o) => (c === "buscar_audiveris" ? Promise.resolve(null) : inv(c, a, o)); });
+  await expect(page.locator("#omrHint")).toHaveText("Con Audiveris, en tu equipo y sin internet");
+  await page.click("#bFile");
+  await page.click('#mFile [data-act="omr"]');
+  await expect(page.locator("#modal")).toContainText("No lo encontré en este equipo");
+  await expect(page.locator('#modal [data-x="web"]')).toBeVisible();
+  await expect(page.locator('#modal [data-x="locate"]')).toBeVisible();
+});
+
+test("lee un PDF con Audiveris y lo abre como partitura nueva", async () => {
+  test.skip(!existsSync(EXE), "Falta compilar");
+  test.setTimeout(240_000);
+  app = await launch(join(dir, "datos"));
+  const { page } = app;
+  const exe = await page.evaluate(() => findAudiveris());
+  test.skip(!exe, "Audiveris no está instalado");
+  const steps = [];
+  await page.exposeFunction("__step", (t) => steps.push(t));
+  const r = await page.evaluate(async (pdf) => {
+    const { score: sc, parts, ocrMissing } = await readWithAudiveris(await findAudiveris(), pdf, null, (t) => window.__step(t));
+    return { title: sc.title, key: sc.key, time: sc.time, parts, ocrMissing: typeof ocrMissing, staves: sc.staves.length,
+      sop: sc.staves[0].voices[0].notes.slice(0, 8).map((n) => n.rest ? "-" : n.keys[0].s + n.keys[0].o + n.d) };
+  }, PDF);
+  expect(r).toMatchObject({ title: "himno", key: 1, time: "4/4", parts: 1, ocrMissing: "boolean", staves: 2 });
+  expect(r.sop).toEqual(["B4q", "B4q", "C5q", "D5q", "D5q", "C5q", "B4q", "A4q"]);
+  expect(steps).toContain("Leyendo: buscando los pentagramas");
+  expect(steps).toContain("Abriendo en Atril");
+  expect(app.errors).toEqual([]);
+});
+
+test("detener la lectura cierra Audiveris", async () => {
+  test.skip(!existsSync(EXE), "Falta compilar");
+  test.setTimeout(120_000);
+  app = await launch(join(dir, "datos"));
+  const { page } = app;
+  test.skip(!(await page.evaluate(() => findAudiveris())), "Audiveris no está instalado");
+  const t0 = Date.now();
+  const msg = await page.evaluate(async (pdf) => {
+    const exe = await findAudiveris();
+    const run = desktop.invoke("leer_pdf", { audiveris: exe, pdf }).then(() => "terminó", (e) => String(e));
+    await new Promise((res) => window.__TAURI__.event.listen("audiveris", (e) => { if (/StepMonitoring/.test(e.payload)) res(); }));
+    await desktop.invoke("cancelar_audiveris");
+    return run;
+  }, PDF);
+  expect(msg).toBe("cancelado");
+  expect(Date.now() - t0).toBeLessThan(60_000);
+  const { execSync } = await import("node:child_process");
+  expect(execSync('tasklist /FI "IMAGENAME eq Audiveris.exe" /NH', { encoding: "utf8" })).not.toMatch(/Audiveris\.exe/i);
 });

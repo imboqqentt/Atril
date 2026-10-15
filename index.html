@@ -298,7 +298,7 @@ textarea.xml { width: 100%; height: 220px; font-family: var(--font-mono); font-s
     <div class="menuwrap">
       <button class="btn" id="bFile" aria-haspopup="true" aria-expanded="false">Archivo ▾</button>
       <div class="menu" id="mFile" hidden>
-        <button data-act="omr">Leer partitura de PDF…<span>Por ahora, importa el MusicXML del PDF</span></button>
+        <button data-act="omr">Leer partitura de PDF…<span id="omrHint">En la app de escritorio; aquí, importa MusicXML</span></button>
         <button data-act="lyrics">Pegar estrofa de letra…<span>Una estrofa completa, sílabas separadas con guion</span></button>
         <button data-act="transpose">Transponer…<span>A otra tonalidad o por intervalo</span></button>
         <button data-act="pdf">Descargar PDF<span>Páginas A4 listas para imprimir</span></button>
@@ -2183,7 +2183,7 @@ const desktop = window.__TAURI__ && window.__TAURI__.core ? {
     const bytes = typeof data === "string" ? new TextEncoder().encode(data) : data instanceof Blob ? new Uint8Array(await data.arrayBuffer()) : new Uint8Array(data);
     return this.invoke("escribir", bytes, { headers: { ruta: encodeURIComponent(path) } });
   },
-  pickOpen() { return this.invoke("elegir_abrir"); },
+  pickOpen(tipo, extensiones) { return this.invoke("elegir_abrir", { tipo, extensiones }); },
   pickSave(nombre, tipo, extensiones) { return this.invoke("elegir_guardar", { nombre, tipo, extensiones }); },
   setTitle(t) { try { window.__TAURI__.window.getCurrentWindow().setTitle(t); } catch (e) {} },
 } : null;
@@ -2733,6 +2733,15 @@ async function audioDialog() {
 }
 
 /* importación */
+// MusicXML comprimido (.mxl): el archivo que indica META-INF/container.xml, o el primer .xml.
+async function mxlText(zip) {
+  let path = null;
+  const cont = zip.file("META-INF/container.xml");
+  if (cont) { const m = (await cont.async("string")).match(/full-path="([^"]+)"/); if (m) path = m[1]; }
+  if (!path) path = Object.keys(zip.files).find((p) => !p.startsWith("META-INF") && /\.(xml|musicxml)$/i.test(p));
+  if (!path || !zip.file(path)) throw new Error("Ese archivo comprimido no contiene una partitura MusicXML.");
+  return zip.file(path).async("string");
+}
 // Abre un archivo: .atril (o el .json de versiones anteriores) queda asociado para volver a guardarlo;
 // MusicXML se importa como partitura nueva. `handle` viene de File System Access API, si la hay.
 async function importFile(file, handle = null) {
@@ -2752,17 +2761,12 @@ async function importFile(file, handle = null) {
     } else if (name.endsWith(".mxl") || name.endsWith(".zip")) {
       if (!window.JSZip) throw new Error("No se pudo abrir el archivo comprimido.");
       const zip = await JSZip.loadAsync(await file.arrayBuffer());
-      let path = null;
       // .zip descargado desde Atril: puede traer un .musicxml, un .mxl o una copia .json
       const inner = Object.keys(zip.files).filter((p) => !p.startsWith("__MACOSX") && !zip.files[p].dir);
       const js = inner.find((p) => /\.(json|atril)$/i.test(p)), mx = inner.find((p) => /\.mxl$/i.test(p));
       if (name.endsWith(".zip") && js && !inner.some((p) => /\.(musicxml|xml)$/i.test(p))) return importFile(new File([await zip.file(js).async("blob")], js.split("/").pop()));
       if (name.endsWith(".zip") && mx && !inner.some((p) => /\.(musicxml|xml)$/i.test(p))) return importFile(new File([await zip.file(mx).async("blob")], mx.split("/").pop()));
-      const cont = zip.file("META-INF/container.xml");
-      if (cont) { const m = (await cont.async("string")).match(/full-path="([^"]+)"/); if (m) path = m[1]; }
-      if (!path) path = Object.keys(zip.files).find((p) => !p.startsWith("META-INF") && /\.(xml|musicxml)$/i.test(p));
-      if (!path) throw new Error("Ese archivo comprimido no contiene una partitura MusicXML.");
-      sc = fromMusicXML(await zip.file(path).async("string"));
+      sc = fromMusicXML(await mxlText(zip));
     } else {
       sc = fromMusicXML(await file.text());
     }
@@ -3169,8 +3173,100 @@ function buildFromOmr(ctx) {
   [sc.time, ...sc.changes.map((c) => c.time).filter(Boolean)].forEach((t) => { if (!TIMES.includes(t)) TIMES.push(t); });
   return { score: sc, report };
 }
-// La lectura de PDF sin IA (Audiveris) llega con la app de escritorio. Mientras tanto, se importa MusicXML.
-function omrDialog() {
+/* ---------- lectura de PDF con Audiveris (app de escritorio) ---------- */
+// Audiveris (gratis, código abierto) se instala aparte; Atril lo busca, lo corre en modo batch (src-tauri/src/lib.rs:
+// buscar_audiveris, leer_pdf, cancelar_audiveris) y abre el MusicXML que exporta.
+const LS_AUDIVERIS = "atril.audiveris", AUDIVERIS_URL = "https://github.com/Audiveris/audiveris/releases/latest";
+const AUD_STEPS = { LOAD: "abriendo la página", BINARY: "limpiando la imagen", SCALE: "midiendo", GRID: "buscando los pentagramas", HEADERS: "claves y armaduras", STEM_SEEDS: "plicas", BEAMS: "barras", LEDGERS: "líneas adicionales", HEADS: "cabezas de nota", STEMS: "plicas", REDUCTION: "notas", TEXTS: "textos", MEASURES: "compases", CHORDS: "acordes", CURVES: "ligaduras", SYMBOLS: "símbolos", LINKS: "símbolos", RHYTHMS: "ritmos", PAGE: "armando la página" };
+const findAudiveris = () => desktop.invoke("buscar_audiveris", { ruta: lsGet(LS_AUDIVERIS) || null }).catch(() => null);
+// Lee un PDF (o imagen) con Audiveris y devuelve la partitura sin abrirla. `say(texto)` muestra el avance.
+async function readWithAudiveris(exe, path, pages, say) {
+  let total = 0, ocrMissing = false;
+  const unlisten = await window.__TAURI__.event.listen("audiveris", (e) => {
+    const line = String(e.payload); let m;
+    if ((m = line.match(/(\d+) sheets? in /))) total = +m[1];
+    if (/No installed OCR languages|Missing support for/.test(line)) ocrMissing = true;
+    if ((m = line.match(/\[[^\]]*?(?:#(\d+))?\]\s+StepMonitoring\s+\d+\s+\|\s+(\w+)/)) && AUD_STEPS[m[2]]) say(`${total > 1 ? `Hoja ${m[1] || 1} de ${total}` : "Leyendo"}: ${AUD_STEPS[m[2]]}`);
+    if (/exported to/.test(line)) say("Abriendo en Atril");
+  });
+  try {
+    const files = await desktop.invoke("leer_pdf", { audiveris: exe, pdf: path, paginas: pages || null });
+    const sc = fromMusicXML(await mxlText(await JSZip.loadAsync(await desktop.read(files[0]))));
+    if (!sc.title || sc.title === "Partitura importada") sc.title = baseName(path).replace(/\.[^.]+$/, "");
+    return { score: sc, parts: files.length, ocrMissing };
+  } finally { unlisten(); }
+}
+function audiverisMissingDialog() {
+  openModal(`<h3>Leer partitura de PDF</h3>
+    <p>Para leer PDF, Atril usa <b>Audiveris</b>, un programa gratuito y de código abierto que se instala aparte (unos 85 MB). No lo encontré en este equipo.</p>
+    <div class="report"><ul><li>Descarga e instala “Audiveris-…-windows-x86_64.msi” desde su página.</li><li>Vuelve aquí y pulsa “Buscar de nuevo”.</li></ul></div>
+    <p class="hint">Si lo instalaste en otra carpeta, usa “Ubicar Audiveris.exe…”.</p>
+    <div class="actions"><button class="btn" data-x="locate" style="margin-right:auto">Ubicar Audiveris.exe…</button><button class="btn" data-x="close">Cerrar</button><button class="btn" data-x="again">Buscar de nuevo</button><button class="btn primary" data-x="web">Ir a la página de Audiveris</button></div>`, (d) => {
+    d.querySelector('[data-x="close"]').onclick = closeModal;
+    d.querySelector('[data-x="web"]').onclick = () => window.__TAURI__.opener.openUrl(AUDIVERIS_URL).catch(() => toast("No se pudo abrir el navegador. Busca “Audiveris” en GitHub."));
+    d.querySelector('[data-x="again"]').onclick = async () => { if (await findAudiveris()) omrDialog(); else toast("Todavía no encuentro Audiveris. Si ya lo instalaste, usa “Ubicar Audiveris.exe…”."); };
+    d.querySelector('[data-x="locate"]').onclick = async () => {
+      const path = await desktop.pickOpen("Audiveris", ["exe"]).catch(() => null); if (!path) return;
+      if (await desktop.invoke("buscar_audiveris", { ruta: path }).catch(() => null) === path) { lsSet(LS_AUDIVERIS, path); omrDialog(); }
+      else toast("Ese archivo no sirve. Elige Audiveris.exe, en la carpeta donde instalaste Audiveris.");
+    };
+  });
+}
+async function omrDialog() {
+  if (!desktop) return webOmrDialog();
+  const exe = await findAudiveris();
+  if (!exe) return audiverisMissingDialog();
+  let path = null, running = false;
+  openModal(`<h3>Leer partitura de PDF</h3>
+    ${dirtyNote()}
+    <p>Atril la lee con Audiveris, en tu equipo y sin internet, y la abre como partitura nueva para que la revises. Funciona mejor con partituras impresas y nítidas; tarda alrededor de un minuto por página.</p>
+    <div><button class="btn" data-x="pick">Elegir PDF o imagen…</button> <span class="hint" id="oName"></span></div>
+    <div class="row" id="oPages" hidden>
+      <div class="field"><label for="oFrom">Desde la página</label><input id="oFrom" type="number" min="1" value="1"></div>
+      <div class="field"><label for="oTo">Hasta la página</label><input id="oTo" type="number" min="1" value="1"></div>
+    </div>
+    <div class="steps" id="oSteps" hidden></div>
+    <div class="actions"><button class="btn" data-x="cancel">Cancelar</button><button class="btn primary" data-x="go" disabled>Leer partitura</button></div>`, (d) => {
+    wireDirtyNote(d);
+    const go = d.querySelector('[data-x="go"]'), cancel = d.querySelector('[data-x="cancel"]'), steps = d.querySelector("#oSteps");
+    const say = (text, st = "now") => { const cur = steps.querySelector('[data-s="now"]'); if (cur) cur.remove(); const r = document.createElement("div"); r.dataset.s = st; r.textContent = text; steps.appendChild(r); };
+    d.querySelector('[data-x="pick"]').onclick = async () => {
+      const p = await desktop.pickOpen("PDF o imagen", ["pdf", "png", "jpg", "jpeg", "tif", "tiff"]).catch(() => null); if (!p) return;
+      path = p; d.querySelector("#oName").textContent = baseName(p); go.disabled = false;
+      const isPdf = /\.pdf$/i.test(p); d.querySelector("#oPages").hidden = !isPdf;
+      if (isPdf) {
+        try { await ensurePdf(); const doc = await pdfjsLib.getDocument({ data: await desktop.read(p), isEvalSupported: false }).promise; const to = d.querySelector("#oTo"); to.value = to.max = d.querySelector("#oFrom").max = doc.numPages; }
+        catch (e) { d.querySelector("#oPages").hidden = true; }
+      }
+    };
+    cancel.onclick = () => { if (running) desktop.invoke("cancelar_audiveris"); else closeModal(); };
+    go.onclick = async () => {
+      if (running || !path) return;
+      running = true; go.disabled = true; cancel.textContent = "Detener"; steps.hidden = false; steps.innerHTML = "";
+      const pg = d.querySelector("#oPages"), from = +d.querySelector("#oFrom").value || 1, to = +d.querySelector("#oTo").value || from;
+      const pages = pg.hidden ? null : from === 1 && to >= +d.querySelector("#oTo").max ? null : `${Math.min(from, to)}-${Math.max(from, to)}`;
+      say("Iniciando Audiveris");
+      try {
+        const { score: sc, parts, ocrMissing } = await readWithAudiveris(exe, path, pages, say);
+        stopPlayback(); if (lyricMode) endLyrics();
+        load(sc); fileHandle = null; fileName = ""; dirty = true;
+        render(); syncProps(); saveDraft();
+        const warnings = [];
+        if (ocrMissing) warnings.push("Audiveris no leyó textos (letra, título, tempo) porque no tiene idiomas instalados. Para que los lea, abre Audiveris y, en el menú Tools, instala el idioma Spanish.");
+        if (parts > 1) warnings.push(`Audiveris separó la obra en ${parts} partes y se abrió la primera. Para las demás, vuelve a leer eligiendo sus páginas.`);
+        showOmrReport({ measures: scoreLen(buildModel()), uneven: [], filledPickup: false, badTokens: 0, warnings }, sc);
+      } catch (e) {
+        const msg = String((e && e.message) || e || "");
+        if (!document.getElementById("oSteps")) return;
+        say(msg === "cancelado" ? "Lectura detenida." : msg.split("\n")[0] || "No se pudo leer la partitura.", "warn");
+      } finally {
+        running = false; go.disabled = !path; if (cancel.isConnected) cancel.textContent = "Cerrar";
+      }
+    };
+  });
+}
+// En el navegador: la lectura de PDF está en la app de escritorio; aquí se importa MusicXML o la lectura de la skill.
+function webOmrDialog() {
   openModal(`<h3>Leer partitura de PDF</h3>
     <p>La lectura de PDF está en la app de escritorio de Atril, que usa Audiveris (gratis) en tu equipo. En el navegador puedes importar:</p>
     <p>· el MusicXML (.musicxml o .mxl) que entregue otro programa, como Audiveris o MuseScore;<br>· la lectura hecha con la skill “leer-partitura” (archivo .atril-omr.json).</p>
@@ -3573,6 +3669,7 @@ function start() {
   if (desktop) {
     const openExternal = (path) => { if (!path) return; if (stashDraft()) setTimeout(() => toast("Tus cambios sin guardar quedaron en Abrir."), 3500); openPath(path); };
     desktop.invoke("archivo_inicial").then(openExternal).catch(() => {});
+    document.getElementById("omrHint").textContent = "Con Audiveris, en tu equipo y sin internet";
     window.__TAURI__.event.listen("abrir-archivo", (e) => openExternal(e.payload));
   }
   if (embedded) setTimeout(() => toast(`«${embedded.title || "Sin título"}» — pulsa ▶ para escucharla. Puedes transponerla y descargar PDF, audio o MusicXML.`), 600);

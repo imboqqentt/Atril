@@ -3252,7 +3252,7 @@ async function omrDialog() {
         load(sc); fileHandle = null; fileName = ""; dirty = true;
         render(); syncProps(); saveDraft();
         const warnings = [];
-        if (ocrMissing) warnings.push("Audiveris no leyó textos (letra, título, tempo) porque no tiene idiomas instalados. Para que los lea, abre Audiveris y, en el menú Tools, instala el idioma Spanish.");
+        if (ocrMissing) warnings.push("Audiveris no leyó textos (letra, título, tempo) porque no tiene idiomas instalados. Para que los lea, abre Audiveris, ve a Tools → Languages y marca “spa” (Spanish) y “eng”; Atril los usará solo.");
         if (parts > 1) warnings.push(`Audiveris separó la obra en ${parts} partes y se abrió la primera. Para las demás, vuelve a leer eligiendo sus páginas.`);
         showOmrReport({ measures: scoreLen(buildModel()), uneven: [], filledPickup: false, badTokens: 0, warnings }, sc);
       } catch (e) {

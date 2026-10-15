@@ -176,5 +176,7 @@ test("detener la lectura cierra Audiveris", async () => {
   expect(msg).toBe("cancelado");
   expect(Date.now() - t0).toBeLessThan(60_000);
   const { execSync } = await import("node:child_process");
-  expect(execSync('tasklist /FI "IMAGENAME eq Audiveris.exe" /NH', { encoding: "utf8" })).not.toMatch(/Audiveris\.exe/i);
+  // solo cuentan los Audiveris en modo batch (los que abre Atril); una ventana de Audiveris abierta por la persona no
+  const batch = execSync(`powershell -NoProfile -Command "(Get-CimInstance Win32_Process -Filter \\"Name='Audiveris.exe'\\" | Where-Object { $_.CommandLine -match '-batch' }).Count"`, { encoding: "utf8" }).trim();
+  expect(batch).toBe("0");
 });

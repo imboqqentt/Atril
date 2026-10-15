@@ -121,6 +121,18 @@ async fn leer_pdf(app: AppHandle, audiveris: String, pdf: String, paginas: Optio
         .map_err(|e| e.to_string())?
 }
 
+/// Idiomas de OCR para la letra: español e inglés, si están instalados en Audiveris (Tools → Languages).
+/// Audiveris busca los idiomas en TESSDATA_PREFIX o en su carpeta de configuración; sin esto, usaría solo inglés.
+fn idiomas_ocr() -> Option<String> {
+    let carpeta = std::env::var("TESSDATA_PREFIX")
+        .map(PathBuf::from)
+        .ok()
+        .filter(|p| p.is_dir())
+        .or_else(|| std::env::var("APPDATA").ok().map(|a| PathBuf::from(a).join("AudiverisLtd").join("audiveris").join("config").join("tessdata")))?;
+    let idiomas: Vec<&str> = ["spa", "eng"].into_iter().filter(|c| carpeta.join(format!("{c}.traineddata")).is_file()).collect();
+    (!idiomas.is_empty()).then(|| idiomas.join("+"))
+}
+
 fn correr_audiveris(app: &AppHandle, audiveris: &str, pdf: &str, paginas: Option<String>) -> Result<Vec<String>, String> {
     let salida = std::env::temp_dir().join("atril-audiveris");
     let _ = fs::remove_dir_all(&salida);
@@ -129,6 +141,9 @@ fn correr_audiveris(app: &AppHandle, audiveris: &str, pdf: &str, paginas: Option
     cmd.arg("-batch").arg("-export").arg("-output").arg(&salida);
     if let Some(p) = paginas.filter(|p| !p.is_empty()) {
         cmd.arg("-sheets").arg(p);
+    }
+    if let Some(idiomas) = idiomas_ocr() {
+        cmd.arg("-constant").arg(format!("org.audiveris.omr.text.Language.defaultSpecification={idiomas}"));
     }
     cmd.arg("--").arg(pdf).stdin(Stdio::null()).stdout(Stdio::piped()).stderr(Stdio::piped());
     #[cfg(windows)]

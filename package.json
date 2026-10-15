@@ -1,0 +1,12 @@
+{
+  "name": "atril",
+  "private": true,
+  "description": "Solo para las pruebas: la app no usa npm ni build (se abre index.html tal cual).",
+  "scripts": {
+    "serve": "node tests/serve.mjs",
+    "test": "playwright test"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.64.1"
+  }
+}

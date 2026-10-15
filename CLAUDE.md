@@ -61,7 +61,7 @@ Ese JSON es el formato `.atril`. Los `.atril.json` antiguos también se abren.
 - [x] Biblioteca local: reemplazar “Mis partituras” por archivos `.atril` (File System Access API con respaldo `<input type=file>` + descarga) y una lista de recientes en IndexedDB.
 - [x] Atajos: Ctrl+S guardar, Ctrl+O abrir, Ctrl+Shift+S guardar como.
 - [x] Actualizar la ayuda (`helpDialog`, cuadro “En esta vista”) para la app local.
-- [ ] PWA: `manifest.webmanifest` y `sw.js` ya están; revisar que el service worker cachee todo `snd/` bajo demanda y el resto al instalar.
+- [x] PWA: `sw.js` guarda la app al instalar y `snd/` bajo demanda; la página va primero a la red (las versiones nuevas llegan al recargar), `snd/` sale de la caché y `vendor/`, `fonts/` e íconos se refrescan por detrás. Si cambia algo de `vendor/`, subir `CACHE`.
 
 ### Fase 2 — compartir sin servidor
 - [ ] “Copiar enlace”: comprimir el JSON (`CompressionStream('deflate-raw')` + base64url) en `#s=…`; al cargar, si existe, abrir esa partitura (igual que `atril-embed`). Avisar si el enlace supera ~30.000 caracteres y ofrecer el archivo.

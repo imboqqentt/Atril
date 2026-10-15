@@ -307,7 +307,7 @@ textarea.xml { width: 100%; height: 220px; font-family: var(--font-mono); font-s
         <button data-act="saveas">Guardar como…<span>Otro nombre o carpeta para el archivo .atril (Ctrl+Mayús+S)</span></button>
         <button data-act="audio">Descargar audio…<span>MP4 para el celular o WAV; también pistas de ensayo por voz</span></button>
         <button data-act="xmltext">Ver MusicXML<span>Copiar el texto sin descargar</span></button>
-        <button data-act="import">Importar…<span>MusicXML (.musicxml, .xml, .mxl, o el .zip que descarga Atril)</span></button>
+        <button data-act="import">Importar…<span>MusicXML (.musicxml, .xml, .mxl, o el .zip que descarga Atril) o una lectura de partitura (.atril-omr.json)</span></button>
       </div>
     </div>
     <button class="btn" id="bHelp" aria-label="Atajos de teclado">?</button>
@@ -2742,6 +2742,8 @@ async function importFile(file, handle = null) {
     if (/\.(atril|json)$/.test(name)) {
       let d = null;
       try { d = JSON.parse(await file.text()); } catch (e) {}
+      // JSON compacto de lectura de partituras (skill leer-partitura, .atril-omr.json): se arma con buildFromOmr
+      if (d && Array.isArray(d.systems)) { openOmrJson(d); return; }
       if (!d || !Array.isArray(d.staves)) throw new Error("Ese archivo no es una partitura de Atril.");
       d.id = d.id || uid();
       openScore(d, name.endsWith(".atril") ? handle : null, name.endsWith(".atril") ? file.name : "");
@@ -3093,6 +3095,17 @@ function mergeOmr(ctx, res, header) {
     })));
   });
 }
+// Abre como partitura nueva el JSON compacto (formato de omrPrompt) y muestra el informe de lo leído.
+function openOmrJson(d) {
+  const ctx = { staves: null, key: 0, time: "4/4", tempo: null, title: "", composer: "", pickup: false, systems: [], warnings: [], wholePages: [] };
+  mergeOmr(ctx, d, true);
+  if (!ctx.systems.length) throw new Error("El archivo de lectura no trae compases.");
+  const { score: sc, report } = buildFromOmr(ctx);
+  stopPlayback(); if (lyricMode) endLyrics();
+  load(sc); fileHandle = null; fileName = ""; dirty = true;
+  render(); syncProps(); saveDraft();
+  showOmrReport(report, sc);
+}
 function buildFromOmr(ctx) {
   const S = ctx.staves.length;
   const sc = {
@@ -3159,8 +3172,9 @@ function buildFromOmr(ctx) {
 // La lectura de PDF sin IA (Audiveris) llega con la app de escritorio. Mientras tanto, se importa MusicXML.
 function omrDialog() {
   openModal(`<h3>Leer partitura de PDF</h3>
-    <p>${desktop ? "La lectura automática de PDF llegará en una próxima versión de Atril." : "La lectura automática de PDF estará en la app de escritorio de Atril."} Por ahora, abre el PDF en un programa que lo convierta a MusicXML (por ejemplo Audiveris o MuseScore) e importa aquí el archivo .musicxml o .mxl.</p>
-    <div class="actions"><button class="btn" data-x="close">Cerrar</button><button class="btn primary" data-x="import">Importar MusicXML…</button></div>`, (d) => {
+    <p>La lectura de PDF está en la app de escritorio de Atril, que usa Audiveris (gratis) en tu equipo. En el navegador puedes importar:</p>
+    <p>· el MusicXML (.musicxml o .mxl) que entregue otro programa, como Audiveris o MuseScore;<br>· la lectura hecha con la skill “leer-partitura” (archivo .atril-omr.json).</p>
+    <div class="actions"><button class="btn" data-x="close">Cerrar</button><button class="btn primary" data-x="import">Importar…</button></div>`, (d) => {
     d.querySelector('[data-x="close"]').onclick = closeModal;
     d.querySelector('[data-x="import"]').onclick = () => { closeModal(); document.getElementById("fileIn").click(); };
   });

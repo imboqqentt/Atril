@@ -28,6 +28,13 @@ test("carga sin errores y sin pedir nada a internet", async ({ page }) => {
   });
   expect(libs).toEqual([true, true, true, true, true, true]);
 
+  // reproducir y detener
+  await page.click("#tPlay");
+  await expect(page.locator("#tPlay")).toHaveAttribute("aria-pressed", "true");
+  await page.waitForTimeout(800);
+  await page.click("#tPlay");
+  await expect(page.locator("#tPlay")).toHaveAttribute("aria-pressed", "false");
+
   // nada depende de la plataforma Claude
   expect(await page.content()).not.toMatch(/window\.claude|Claude/);
 

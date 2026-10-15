@@ -30,10 +30,10 @@ Todo vive en **`index.html`** (un solo archivo, ~3.600 líneas: CSS + HTML + JS 
 | Sonidos | `BUILTIN`, `BANK_ROOTS`, `loadSound` (lee `snd/<banco>/<midi>.mp3`), samples propios del usuario en IndexedDB (`instruments`, `decodeInst`) |
 | Acordes | `CHORD_T`, `nameChord`, `measureChords`, `chordAtTick`, `chordText` (inglés/latino) |
 | Transponer | `intervalForKeys`, `fifthsForSemis`, `transposeKey`, `transposeScore`, `transposeDialog` |
-| Exportar | `exportPDF` (jsPDF), `exportSVG`, `toMusicXML`, `exportMXL`, `exportJSON`, `offer` → `browserDownload` |
-| Importar | `importFile` (.json, .musicxml, .xml, .mxl, .zip), `fromMusicXML` |
-| Lectura PDF con IA | `omrDialog`, `detectSystems`, `cropBlob`, `omrPrompt`, `parseToken`, `mergeOmr`, `buildFromOmr` — hoy usa `window.claude` (capacidad `sample`) |
-| Plataforma Claude | todo lo que cuelga de `window.claude` en `start()`: `downloads`, `sample`, `db`, `user`; `makeDbLib`, `share*`, `initShare`, `shareDialog`, `openShared`, `showShareBar` |
+| Guardar | archivos `.atril`: `saveFile` (File System Access o descarga), `openDialog` + `openRecent` (recientes en IndexedDB, `RECENT`), `openScore`, `saveDraft` (borrador en localStorage), `fileHandle`/`fileName`/`dirty` |
+| Exportar | `exportPDF` (jsPDF), `exportSVG`, `toMusicXML`, `exportMXL`, `offer` → `browserDownload` |
+| Importar | `importFile` (.atril/.json abre con su archivo; .musicxml, .xml, .mxl, .zip importa), `fromMusicXML` |
+| Lectura de PDF | `omrDialog` (hoy solo explica y ofrece importar MusicXML); se conservan `detectSystems`, `cropBlob`, `omrPrompt` (formato JSON compacto), `parseToken`, `mergeOmr`, `buildFromOmr` para la Fase 4 |
 | Partitura incrustada | `<script type="application/json" id="atril-embed">` → `start()` la abre en vez del ejemplo |
 
 ### Formato de datos
@@ -51,16 +51,16 @@ note = { d:"w"|"h"|"q"|"8"|"16", dots:0|1, rest, tie, keys:[{s:"C".."B", a:-1|0|
          ly:[{t, h}|null], hid? }       // a = alteración real (no relativa a la armadura)
 ```
 
-Ese JSON es el formato `.atril` (hoy se exporta como `.atril.json`).
+Ese JSON es el formato `.atril`. Los `.atril.json` antiguos también se abren.
 
 ## Tareas, en orden
 
 ### Fase 1 — independizar (prioridad)
-- [ ] Servir localmente y comprobar que todo funciona sin internet (fuentes, librerías, sonidos, worker de pdf.js).
-- [ ] Quitar o aislar el código de `window.claude`: `makeDbLib`, compartir por base de datos (`share*`), lectura con IA vía `sample`. Mantener `offer()` pero sin mensajes que mencionen Claude.
-- [ ] Biblioteca local: reemplazar “Mis partituras” por archivos `.atril` (File System Access API con respaldo `<input type=file>` + descarga) y una lista de recientes en IndexedDB.
-- [ ] Atajos: Ctrl+S guardar, Ctrl+O abrir, Ctrl+Shift+S guardar como.
-- [ ] Actualizar la ayuda (`helpDialog`, cuadro “En esta vista”) para la app local.
+- [x] Servir localmente y comprobar que todo funciona sin internet (fuentes, librerías, sonidos, worker de pdf.js).
+- [x] Quitar o aislar el código de `window.claude`: `makeDbLib`, compartir por base de datos (`share*`), lectura con IA vía `sample`. Mantener `offer()` pero sin mensajes que mencionen Claude.
+- [x] Biblioteca local: reemplazar “Mis partituras” por archivos `.atril` (File System Access API con respaldo `<input type=file>` + descarga) y una lista de recientes en IndexedDB.
+- [x] Atajos: Ctrl+S guardar, Ctrl+O abrir, Ctrl+Shift+S guardar como.
+- [x] Actualizar la ayuda (`helpDialog`, cuadro “En esta vista”) para la app local.
 - [ ] PWA: `manifest.webmanifest` y `sw.js` ya están; revisar que el service worker cachee todo `snd/` bajo demanda y el resto al instalar.
 
 ### Fase 2 — compartir sin servidor
@@ -78,7 +78,7 @@ Ese JSON es el formato `.atril` (hoy se exporta como `.atril.json`).
 - [ ] Importar el JSON compacto que produce la skill `skills/leer-partitura` reutilizando `buildFromOmr` (ver formato en `omrPrompt`).
 
 ### Calidad
-- [ ] Pruebas con Playwright (`tests/`): cargar, escribir notas, reproducir, transponer, exportar MusicXML ida y vuelta, `playOrder` con repeticiones/casillas/D.S. al Coda. Comprobaciones conocidas que pasaban: casillas → `1 2 3 1 2 4 5 6`; D.S. al Coda → `1 2 3 4 5 6 2 3 4 7 8`.
+- [x] Pruebas con Playwright (`tests/`, `npm install` y `npm test`; abren Atril con internet bloqueado): cargar, escribir notas, reproducir, transponer, exportar MusicXML ida y vuelta, `playOrder` con repeticiones/casillas/D.S. al Coda. Falta: escribir notas. Comprobaciones conocidas que pasaban: casillas → `1 2 3 1 2 4 5 6`; D.S. al Coda → `1 2 3 4 5 6 2 3 4 7 8`.
 
 ## Reglas
 - No agregar servicios externos (ni analítica, ni CDNs, ni backends) sin que Daniel lo pida.

@@ -31,6 +31,7 @@ Todo vive en **`index.html`** (un solo archivo, ~3.600 líneas: CSS + HTML + JS 
 | Acordes | `CHORD_T`, `nameChord`, `measureChords`, `chordAtTick`, `chordText` (inglés/latino) |
 | Transponer | `intervalForKeys`, `fifthsForSemis`, `transposeKey`, `transposeScore`, `transposeDialog` |
 | Guardar | archivos `.atril`: `saveFile` (File System Access o descarga), `openDialog` + `openRecent` (recientes en IndexedDB, `RECENT`), `openScore`, `saveDraft` (borrador en localStorage), `fileHandle`/`fileName`/`dirty` |
+| Compartir | enlace con la partitura adentro: `shareDialog`, `shareLink`, `packScore`/`unpackScore` (`#s=` + deflate-raw + base64url), `openFromHash` (al cargar y en `hashchange`), `linkBase` (usa `<meta name="atril-url">` cuando se comparte desde el equipo), borrador anterior en `LS_PREV` |
 | Exportar | `exportPDF` (jsPDF), `exportSVG`, `toMusicXML`, `exportMXL`, `offer` → `browserDownload` |
 | Importar | `importFile` (.atril/.json abre con su archivo; .musicxml, .xml, .mxl, .zip importa), `fromMusicXML` |
 | Lectura de PDF | `omrDialog` (hoy solo explica y ofrece importar MusicXML); se conservan `detectSystems`, `cropBlob`, `omrPrompt` (formato JSON compacto), `parseToken`, `mergeOmr`, `buildFromOmr` para la Fase 4 |
@@ -64,8 +65,8 @@ Ese JSON es el formato `.atril`. Los `.atril.json` antiguos también se abren.
 - [x] PWA: `sw.js` guarda la app al instalar y `snd/` bajo demanda; la página va primero a la red (las versiones nuevas llegan al recargar), `snd/` sale de la caché y `vendor/`, `fonts/` e íconos se refrescan por detrás. Si cambia algo de `vendor/`, subir `CACHE`.
 
 ### Fase 2 — compartir sin servidor
-- [ ] “Copiar enlace”: comprimir el JSON (`CompressionStream('deflate-raw')` + base64url) en `#s=…`; al cargar, si existe, abrir esa partitura (igual que `atril-embed`). Avisar si el enlace supera ~30.000 caracteres y ofrecer el archivo.
-- [ ] Publicar en GitHub Pages con un workflow de Actions (`.github/workflows/pages.yml`).
+- [x] “Copiar enlace”: comprimir el JSON (`CompressionStream('deflate-raw')` + base64url) en `#s=…`; al cargar, si existe, abrir esa partitura (igual que `atril-embed`). Avisar si el enlace supera ~30.000 caracteres y ofrecer el archivo.
+- [x] Publicar en GitHub Pages con un workflow de Actions (`.github/workflows/pages.yml`): corre las pruebas y publica solo lo que usa la app. Dirección: https://imboqqentt.github.io/Atril/ (también en `<meta name="atril-url">`; cambiarla ahí si se mueve).
 
 ### Fase 3 — escritorio (Tauri 2)
 - [ ] `npm create tauri-app` apuntando a esta carpeta como frontend estático (sin bundler).

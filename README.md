@@ -15,7 +15,9 @@ Funciona en tu equipo, sin cuenta y sin internet.
 python -m http.server 8080
 npx serve -l 8080 .
 ```
-Las partituras se guardan como archivos `.atril` donde tú elijas (Ctrl+S guarda, Ctrl+O abre o muestra las recientes). En Chrome y Edge Atril escribe directo en el archivo; en otros navegadores, guardar descarga el `.atril`.
+En internet: https://imboqqentt.github.io/Atril/ (se puede instalar como app y funciona sin conexión).
+
+Las partituras se guardan como archivos `.atril` donde tú elijas (Ctrl+S guarda, Ctrl+O abre o muestra las recientes). En Chrome y Edge Atril escribe directo en el archivo; en otros navegadores, guardar descarga el `.atril`. “Compartir” crea un enlace que lleva la partitura adentro, sin subirla a ningún servidor.
 
 (Abrir `index.html` directamente con doble clic también funciona, pero el navegador bloquea algunas cosas desde `file://`, como los bancos de sonido; por eso conviene el servidor local.)
 

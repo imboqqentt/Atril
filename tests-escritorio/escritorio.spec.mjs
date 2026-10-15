@@ -150,9 +150,16 @@ test("lee un PDF con Audiveris y lo abre como partitura nueva", async () => {
   const r = await page.evaluate(async (pdf) => {
     const { score: sc, parts, ocrMissing } = await readWithAudiveris(await findAudiveris(), pdf, null, (t) => window.__step(t));
     return { title: sc.title, key: sc.key, time: sc.time, parts, ocrMissing: typeof ocrMissing, staves: sc.staves.length,
-      sop: sc.staves[0].voices[0].notes.slice(0, 8).map((n) => n.rest ? "-" : n.keys[0].s + n.keys[0].o + n.d) };
+      sop: sc.staves[0].voices[0].notes.slice(0, 8).map((n) => n.rest ? "-" : n.keys[0].s + n.keys[0].o + n.d),
+      ly: sc.staves[0].voices[0].notes.filter((n) => n.ly).map((n) => n.ly.map((l) => (l ? l.t + (l.h ? "-" : "") : "")).join("|")) };
   }, PDF);
-  expect(r).toMatchObject({ title: "himno", key: 1, time: "4/4", parts: 1, ocrMissing: "boolean", staves: 2 });
+  // con los idiomas de OCR instalados (Tools → Languages), Audiveris también lee el título y la letra
+  const tess = join(process.env.APPDATA || "", "AudiverisLtd/audiveris/config/tessdata/spa.traineddata");
+  expect(r).toMatchObject({ key: 1, time: "4/4", parts: 1, ocrMissing: "boolean", staves: 2 });
+  if (existsSync(tess)) {
+    expect(r.title).toBe("Himno a la alegría");
+    expect(r.ly.slice(0, 3)).toEqual(["Al-|To-", "ce-|dos", "mos|jun-"]); // la letra queda en la soprano
+  } else expect(r.title).toBe("himno");
   expect(r.sop).toEqual(["B4q", "B4q", "C5q", "D5q", "D5q", "C5q", "B4q", "A4q"]);
   expect(steps).toContain("Leyendo: buscando los pentagramas");
   expect(steps).toContain("Abriendo en Atril");

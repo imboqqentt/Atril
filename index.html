@@ -3179,6 +3179,20 @@ function buildFromOmr(ctx) {
 const LS_AUDIVERIS = "atril.audiveris", AUDIVERIS_URL = "https://github.com/Audiveris/audiveris/releases/latest";
 const AUD_STEPS = { LOAD: "abriendo la página", BINARY: "limpiando la imagen", SCALE: "midiendo", GRID: "buscando los pentagramas", HEADERS: "claves y armaduras", STEM_SEEDS: "plicas", BEAMS: "barras", LEDGERS: "líneas adicionales", HEADS: "cabezas de nota", STEMS: "plicas", REDUCTION: "notas", TEXTS: "textos", MEASURES: "compases", CHORDS: "acordes", CURVES: "ligaduras", SYMBOLS: "símbolos", LINKS: "símbolos", RHYTHMS: "ritmos", PAGE: "armando la página" };
 const findAudiveris = () => desktop.invoke("buscar_audiveris", { ruta: lsGet(LS_AUDIVERIS) || null }).catch(() => null);
+// Audiveris deja la letra en la voz cuya plica va hacia abajo (en un himnario, la contralto). Atril la espera en la voz
+// de arriba del pentagrama: si esa no tiene letra, se le pasa la de abajo, nota por nota, donde empiezan juntas.
+function liftLyrics(sc) {
+  let moved = 0;
+  sc.staves.forEach((st) => {
+    const [up, low] = st.voices;
+    if (!low || up.notes.some((n) => n.ly && n.ly.some(Boolean))) return;
+    const at = new Map(); let t = 0;
+    up.notes.forEach((n, i) => { if (singable(up.notes, i)) at.set(t, n); t += noteTicks(n); });
+    t = 0;
+    low.notes.forEach((n) => { const u = at.get(t); if (u && n.ly && n.ly.some(Boolean)) { u.ly = n.ly; delete n.ly; moved++; } t += noteTicks(n); });
+  });
+  return moved;
+}
 // Lee un PDF (o imagen) con Audiveris y devuelve la partitura sin abrirla. `say(texto)` muestra el avance.
 async function readWithAudiveris(exe, path, pages, say) {
   let total = 0, ocrMissing = false;
@@ -3193,6 +3207,7 @@ async function readWithAudiveris(exe, path, pages, say) {
     const files = await desktop.invoke("leer_pdf", { audiveris: exe, pdf: path, paginas: pages || null });
     const sc = fromMusicXML(await mxlText(await JSZip.loadAsync(await desktop.read(files[0]))));
     if (!sc.title || sc.title === "Partitura importada") sc.title = baseName(path).replace(/\.[^.]+$/, "");
+    liftLyrics(sc);
     return { score: sc, parts: files.length, ocrMissing };
   } finally { unlisten(); }
 }

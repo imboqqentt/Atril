@@ -15,7 +15,7 @@ Idioma: la app y los mensajes al usuario van en **español (Chile)**. El código
 
 ## Estado actual del código
 
-Todo vive en **`index.html`** (un solo archivo, ~3.600 líneas: CSS + HTML + JS sin build). Las librerías están en `vendor/`, las fuentes en `fonts/`, los sonidos en `snd/`. No hay npm ni bundler: se mantiene así a propósito (independencia). Si se divide en módulos, usar ES modules nativos (`<script type="module">`) sin herramientas de build.
+Todo vive en **`index.html`** (un solo archivo, ~3.600 líneas: CSS + HTML + JS sin build). Las librerías están en `vendor/`, las fuentes en `fonts/`, los sonidos en `snd/`. No hay bundler: se mantiene así a propósito (independencia); npm solo trae las herramientas (Playwright, CLI de Tauri). Si se divide en módulos, usar ES modules nativos (`<script type="module">`) sin herramientas de build.
 
 ### Mapa del código (buscar por nombre de función)
 
@@ -35,6 +35,7 @@ Todo vive en **`index.html`** (un solo archivo, ~3.600 líneas: CSS + HTML + JS 
 | Exportar | `exportPDF` (jsPDF), `exportSVG`, `toMusicXML`, `exportMXL`, `offer` → `browserDownload` |
 | Importar | `importFile` (.atril/.json abre con su archivo; .musicxml, .xml, .mxl, .zip importa), `fromMusicXML` |
 | Lectura de PDF | `omrDialog` (hoy solo explica y ofrece importar MusicXML); se conservan `detectSystems`, `cropBlob`, `omrPrompt` (formato JSON compacto), `parseToken`, `mergeOmr`, `buildFromOmr` para la Fase 4 |
+| Escritorio (Tauri) | `desktop` (null en el navegador): `read`/`write` por ruta, `pickOpen`/`pickSave`, `setTitle`; `openPath`, `stashDraft`. En escritorio `fileHandle` es la ruta (texto). Lado Rust en `src-tauri/src/lib.rs`: `leer`, `escribir`, `elegir_abrir`, `elegir_guardar`, `archivo_inicial`, evento `abrir-archivo` |
 | Partitura incrustada | `<script type="application/json" id="atril-embed">` → `start()` la abre en vez del ejemplo |
 
 ### Formato de datos
@@ -69,9 +70,9 @@ Ese JSON es el formato `.atril`. Los `.atril.json` antiguos también se abren.
 - [x] Publicar en GitHub Pages con un workflow de Actions (`.github/workflows/pages.yml`): corre las pruebas y publica solo lo que usa la app. Dirección: https://imboqqentt.github.io/Atril/ (también en `<meta name="atril-url">`; cambiarla ahí si se mueve).
 
 ### Fase 3 — escritorio (Tauri 2)
-- [ ] `npm create tauri-app` apuntando a esta carpeta como frontend estático (sin bundler).
-- [ ] Diálogos nativos para abrir/guardar; asociar la extensión `.atril`; abrir el archivo recibido por argumento.
-- [ ] Instalador `.msi`/`.exe` para Windows.
+- [x] `src-tauri/` hecho a mano (sin `create`): `tools/armar-sitio.mjs` copia la app a `dist/` y Tauri la mete en el `.exe`.
+- [x] Diálogos nativos para abrir/guardar; asociar la extensión `.atril`; abrir el archivo recibido por argumento (y, con Atril abierta, en la misma ventana).
+- [x] Instalador `.msi`/`.exe` para Windows: `npm run instalador` → `src-tauri/target/release/bundle/{nsis,msi}/`.
 
 ### Fase 4 — leer PDF sin IA
 - [ ] Integrar Audiveris como “sidecar” de Tauri: `Audiveris -batch -export -output <dir> <archivo.pdf>` → `.mxl` → `importFile`.
@@ -80,6 +81,13 @@ Ese JSON es el formato `.atril`. Los `.atril.json` antiguos también se abren.
 
 ### Calidad
 - [x] Pruebas con Playwright (`tests/`, `npm install` y `npm test`; abren Atril con internet bloqueado): cargar, escribir notas, reproducir, transponer, exportar MusicXML ida y vuelta, `playOrder` con repeticiones/casillas/D.S. al Coda. Falta: escribir notas. Comprobaciones conocidas que pasaban: casillas → `1 2 3 1 2 4 5 6`; D.S. al Coda → `1 2 3 4 5 6 2 3 4 7 8`.
+
+## Comandos
+- `npm test` — pruebas web (Playwright, Chromium, internet bloqueado).
+- `npm run escritorio` — Atril de escritorio en modo desarrollo (lee los archivos de la carpeta).
+- `npm run test:escritorio` — compila en modo depuración y prueba la app real por el puerto de depuración de WebView2.
+- `npm run instalador` — instaladores `.exe` (NSIS) y `.msi`.
+- Requisitos para compilar: Rust (rustup) y Visual Studio Build Tools con C++.
 
 ## Reglas
 - No agregar servicios externos (ni analítica, ni CDNs, ni backends) sin que Daniel lo pida.

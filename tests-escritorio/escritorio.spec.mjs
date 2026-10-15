@@ -8,7 +8,7 @@ import { mkdtempSync, copyFileSync, readFileSync, existsSync, rmSync } from "nod
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 
-const EXE = resolve(import.meta.dirname, "../src-tauri/target/debug/atril.exe");
+const EXE = process.env.ATRIL_EXE || resolve(import.meta.dirname, "../src-tauri/target/debug/atril.exe"); // ATRIL_EXE: probar otra compilación
 const EJEMPLOS = resolve(import.meta.dirname, "../ejemplos");
 test.describe.configure({ mode: "serial" });
 

@@ -8,6 +8,8 @@ Funciona en tu equipo, sin cuenta y sin internet.
 
 ## Usarlo
 
+**App de escritorio (Windows):** instala `Atril_<versión>_x64-setup.exe`. Abre los `.atril` con doble clic y guarda con los diálogos de Windows.
+
 **Opción rápida (Windows):** doble clic en `iniciar-atril.bat`. Abre Atril en el navegador desde tu equipo.
 
 **A mano:** en esta carpeta, ejecuta uno de estos y abre http://localhost:8080
@@ -31,6 +33,8 @@ ejemplos/               partituras de ejemplo (.atril)
 skills/leer-partitura/  skill para que Claude transcriba un PDF o foto (opcional)
 manifest.webmanifest, sw.js   instalación como app (PWA)
 tests/                  pruebas con Playwright (npm install, luego npm test)
+src-tauri/              app de escritorio (Tauri 2); tests-escritorio/ la prueba
+tools/armar-sitio.mjs   copia solo la app (para GitHub Pages y el escritorio)
 CLAUDE.md               plan de trabajo para Claude Code
 ```
 

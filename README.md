@@ -15,6 +15,8 @@ Funciona en tu equipo, sin cuenta y sin internet.
 python -m http.server 8080
 npx serve -l 8080 .
 ```
+Las partituras se guardan como archivos `.atril` donde tú elijas (Ctrl+S guarda, Ctrl+O abre o muestra las recientes). En Chrome y Edge Atril escribe directo en el archivo; en otros navegadores, guardar descarga el `.atril`.
+
 (Abrir `index.html` directamente con doble clic también funciona, pero el navegador bloquea algunas cosas desde `file://`, como los bancos de sonido; por eso conviene el servidor local.)
 
 ## Estructura
@@ -23,9 +25,10 @@ index.html              la aplicación completa
 vendor/                 librerías (VexFlow, jsPDF, JSZip, pdf.js, lamejs, muxers)
 fonts/                  fuentes (IBM Plex, Libre Caslon)
 snd/                    bancos de sonido (piano, órganos, cuerdas, vientos, arpa)
-ejemplos/               partituras de ejemplo (.atril.json)
+ejemplos/               partituras de ejemplo (.atril)
 skills/leer-partitura/  skill para que Claude transcriba un PDF o foto (opcional)
 manifest.webmanifest, sw.js   instalación como app (PWA)
+tests/                  pruebas con Playwright (npm install, luego npm test)
 CLAUDE.md               plan de trabajo para Claude Code
 ```
 

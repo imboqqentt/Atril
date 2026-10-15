@@ -288,7 +288,7 @@ textarea.xml { width: 100%; height: 220px; font-family: var(--font-mono); font-s
     <div class="savestate" id="savestate" aria-live="polite"></div>
     <div class="spacer"></div>
     <button class="btn" id="bNew">Nueva</button>
-    <button class="btn" id="bLib">Mis partituras</button>
+    <button class="btn" id="bOpen" title="Ctrl+O">Abrir</button>
     <button class="btn primary" id="bSave" title="Ctrl+S">Guardar</button>
     <div class="menuwrap">
       <button class="btn" id="bFile" aria-haspopup="true" aria-expanded="false">Archivo ▾</button>
@@ -299,14 +299,14 @@ textarea.xml { width: 100%; height: 220px; font-family: var(--font-mono); font-s
         <button data-act="pdf">Descargar PDF<span>Páginas A4 listas para imprimir</span></button>
         <button data-act="mxl">Descargar MusicXML<span>Para MuseScore, Sibelius, Dorico (en .zip)</span></button>
         <button data-act="svg">Descargar SVG<span>Gráfico vectorial de todas las páginas</span></button>
-        <button data-act="json">Descargar copia Atril<span>Archivo .json que Atril vuelve a abrir</span></button>
+        <button data-act="saveas">Guardar como…<span>Otro nombre o carpeta para el archivo .atril (Ctrl+Mayús+S)</span></button>
         <button data-act="audio">Descargar audio…<span>MP4 para el celular o WAV; también pistas de ensayo por voz</span></button>
         <button data-act="xmltext">Ver MusicXML<span>Copiar el texto sin descargar</span></button>
-        <button data-act="import">Importar…<span>MusicXML (.musicxml, .xml, .mxl, o el .zip que descarga Atril) o copia Atril (.json)</span></button>
+        <button data-act="import">Importar…<span>MusicXML (.musicxml, .xml, .mxl, o el .zip que descarga Atril)</span></button>
       </div>
     </div>
     <button class="btn" id="bHelp" aria-label="Atajos de teclado">?</button>
-    <input type="file" id="fileIn" accept=".json,.musicxml,.xml,.mxl,.zip" hidden>
+    <input type="file" id="fileIn" accept=".atril,.json,.musicxml,.xml,.mxl,.zip" hidden>
   </header>
 
   <div class="palette" role="toolbar" aria-label="Herramientas de escritura y reproducción">
@@ -550,7 +550,7 @@ let inputDur = "q", inputDots = 0;
 let undoStack = [], redoStack = [];
 let solfeoOn = false, speakOn = false, metroOn = false, countOn = false;
 let layout = null; // resultado del último dibujo
-let dirty = false, savedOnce = false;
+let dirty = false;
 
 // Acepta partituras de versiones anteriores (un solo "notes" por pentagrama).
 function migrate(sc) {
@@ -1110,10 +1110,10 @@ function commit(fn) {
 function changed() {
   if (score.sample) delete score.sample;
   dirty = true;
-  render(); syncProps(); scheduleSave();
+  render(); syncProps(); saveDraft();
 }
-function undo() { if (!undoStack.length) return; redoStack.push(JSON.stringify({ score, cursor })); const s = JSON.parse(undoStack.pop()); score = migrate(s.score); cursor = s.cursor; dirty = true; render(); syncProps(); scheduleSave(); }
-function redo() { if (!redoStack.length) return; undoStack.push(JSON.stringify({ score, cursor })); const s = JSON.parse(redoStack.pop()); score = migrate(s.score); cursor = s.cursor; dirty = true; render(); syncProps(); scheduleSave(); }
+function undo() { if (!undoStack.length) return; redoStack.push(JSON.stringify({ score, cursor })); const s = JSON.parse(undoStack.pop()); score = migrate(s.score); cursor = s.cursor; dirty = true; render(); syncProps(); saveDraft(); }
+function redo() { if (!redoStack.length) return; undoStack.push(JSON.stringify({ score, cursor })); const s = JSON.parse(redoStack.pop()); score = migrate(s.score); cursor = s.cursor; dirty = true; render(); syncProps(); saveDraft(); }
 
 function keyAtTick(tick) { const T = meterTable(); return T.key(T.measureAt(tick)); }
 function keyAtIndex(vc, idx) { return keyAtTick(startTickOf(vc, idx)); }
@@ -1700,24 +1700,29 @@ function detectPitch(buf) {
   const m = 69 + 12 * Math.log2(sr / lag / 440);
   return m >= 20 && m <= 110 ? m : null;
 }
-const IDB = {
-  db: null, ok: typeof indexedDB !== "undefined",
-  open() {
-    if (this.db) return Promise.resolve(this.db);
-    return new Promise((res, rej) => {
-      try {
-        const r = indexedDB.open("atril-sonidos", 1);
-        r.onupgradeneeded = () => r.result.createObjectStore("instrumentos", { keyPath: "id" });
-        r.onsuccess = () => { this.db = r.result; res(this.db); };
-        r.onerror = () => rej(r.error);
-      } catch (e) { rej(e); }
-    });
-  },
-  async run(mode, fn) { const db = await this.open(); return new Promise((res, rej) => { const tx = db.transaction("instrumentos", mode); const q = fn(tx.objectStore("instrumentos")); tx.oncomplete = () => res(q && q.result); tx.onerror = () => rej(tx.error); tx.onabort = () => rej(tx.error); }); },
-  all() { return this.run("readonly", (s) => s.getAll()); },
-  put(v) { return this.run("readwrite", (s) => s.put(v)); },
-  del(id) { return this.run("readwrite", (s) => s.delete(id)); },
-};
+// Un almacén de IndexedDB con lo justo: todos, guardar, borrar.
+function idbStore(dbName, store) {
+  return {
+    db: null, ok: typeof indexedDB !== "undefined",
+    open() {
+      if (this.db) return Promise.resolve(this.db);
+      return new Promise((res, rej) => {
+        try {
+          const r = indexedDB.open(dbName, 1);
+          r.onupgradeneeded = () => r.result.createObjectStore(store, { keyPath: "id" });
+          r.onsuccess = () => { this.db = r.result; res(this.db); };
+          r.onerror = () => rej(r.error);
+        } catch (e) { rej(e); }
+      });
+    },
+    async run(mode, fn) { const db = await this.open(); return new Promise((res, rej) => { const tx = db.transaction(store, mode); const q = fn(tx.objectStore(store)); tx.oncomplete = () => res(q && q.result); tx.onerror = () => rej(tx.error); tx.onabort = () => rej(tx.error); }); },
+    all() { return this.run("readonly", (s) => s.getAll()); },
+    get(id) { return this.run("readonly", (s) => s.get(id)); },
+    put(v) { return this.run("readwrite", (s) => s.put(v)); },
+    del(id) { return this.run("readwrite", (s) => s.delete(id)); },
+  };
+}
+const IDB = idbStore("atril-sonidos", "instrumentos");
 let soundsPersist = true;
 async function loadInstruments() {
   try {
@@ -2163,42 +2168,118 @@ function speak(k) {
   } catch (e) {}
 }
 
-/* ================= guardado ================= */
-const LS_DRAFT = "atril.borrador", LS_LIB = "atril.biblioteca";
+/* ================= guardado: archivos .atril y recientes ================= */
+// Cada partitura es un archivo .atril (el JSON de `score`). Con File System Access API se escribe sobre el mismo
+// archivo; sin ella, guardar descarga el archivo. Aparte, el borrador se copia a localStorage en cada cambio
+// (por si se cierra la pestaña) y los últimos archivos quedan en IndexedDB para reabrirlos.
+const LS_DRAFT = "atril.borrador", LS_FILE = "atril.archivo";
 const lsGet = (k) => { try { return localStorage.getItem(k); } catch (e) { return null; } };
 const lsSet = (k, v) => { try { localStorage.setItem(k, v); return true; } catch (e) { return false; } };
-const localLib = {
-  kind: "local",
-  all() { try { return JSON.parse(lsGet(LS_LIB) || "{}"); } catch (e) { return {}; } },
-  async list() { const a = this.all(); return Object.keys(a).map((id) => ({ id, title: a[id].title, composer: a[id].composer, updatedAt: a[id].updatedAt })).sort((x, y) => (y.updatedAt || "").localeCompare(x.updatedAt || "")); },
-  async save(sc) { const a = this.all(); a[sc.id] = { title: sc.title, composer: sc.composer, updatedAt: new Date().toISOString(), data: JSON.stringify(sc) }; if (!lsSet(LS_LIB, JSON.stringify(a))) throw new Error("storage"); },
-  async load(id) { const a = this.all(); return a[id] ? JSON.parse(a[id].data) : null; },
-  async remove(id) { const a = this.all(); delete a[id]; lsSet(LS_LIB, JSON.stringify(a)); },
-};
-let lib = localLib;
-let saveTimer = null, saving = false;
-function scheduleSave() {
-  lsSet(LS_DRAFT, JSON.stringify(score));
-  setSaveState(savedOnce ? "dirty" : "draft");
-  if (!savedOnce) return;
-  clearTimeout(saveTimer);
-  saveTimer = setTimeout(() => saveNow(true), 2500);
+const canPick = typeof window.showSaveFilePicker === "function" && typeof window.showOpenFilePicker === "function";
+const ATRIL_TYPES = [{ description: "Partitura de Atril", accept: { "application/json": [".atril"] } }];
+const OPEN_TYPES = [{ description: "Partituras (Atril o MusicXML)", accept: { "application/json": [".atril", ".json"], "application/vnd.recordare.musicxml+xml": [".musicxml", ".xml"], "application/vnd.recordare.musicxml": [".mxl"], "application/zip": [".zip"] } }];
+const RECENT = idbStore("atril-recientes", "archivos"), RECENT_MAX = 12;
+let fileHandle = null, fileName = ""; // archivo de la partitura abierta ("" = nunca guardada)
+
+function saveDraft() { lsSet(LS_DRAFT, JSON.stringify(score)); setSaveState(); }
+function setSaveState() {
+  const el = document.getElementById("savestate");
+  el.dataset.s = dirty ? "dirty" : "saved";
+  el.textContent = score.sample && !dirty ? "" : !fileName ? "Sin guardar" : dirty ? `${fileName} · cambios sin guardar` : fileName;
+  el.title = fileName ? "Archivo: " + fileName : "";
+  lsSet(LS_FILE, JSON.stringify({ id: score.id, name: fileName, dirty }));
 }
-async function saveNow(auto) {
-  if (saving) { clearTimeout(saveTimer); saveTimer = setTimeout(() => saveNow(auto), 1200); return; }
-  saving = true; setSaveState("saving");
+async function addRecent() {
+  if (!fileName) return;
+  try {
+    await RECENT.put({ id: score.id, name: fileName, title: score.title || "", composer: score.composer || "", at: Date.now(), handle: fileHandle, data: JSON.stringify(score) });
+    const all = (await RECENT.all()).sort((a, b) => b.at - a.at);
+    for (const x of all.slice(RECENT_MAX)) await RECENT.del(x.id);
+  } catch (e) {}
+}
+async function canWrite(h) {
+  try { return (await h.queryPermission({ mode: "readwrite" })) === "granted" || (await h.requestPermission({ mode: "readwrite" })) === "granted"; }
+  catch (e) { return false; }
+}
+let saving = false;
+async function saveFile(as = false) {
+  if (saving) return;
+  saving = true;
   try {
     if (score.sample) delete score.sample;
-    await lib.save(score); savedOnce = true; dirty = false; setSaveState("saved");
-    if (!auto) toast("Guardada en este navegador.");
+    if (canPick) {
+      let h = as ? null : fileHandle;
+      if (h && !(await canWrite(h))) h = null;
+      if (!h) {
+        h = await window.showSaveFilePicker({ id: "atril", suggestedName: as && fileName ? fileName : slug() + ".atril", types: ATRIL_TYPES });
+        // "Guardar como" en otro archivo crea una copia: queda como partitura aparte en los recientes
+        if (fileHandle && !(await h.isSameEntry(fileHandle))) score.id = uid();
+      }
+      const w = await h.createWritable();
+      await w.write(JSON.stringify(score, null, 1)); await w.close();
+      fileHandle = h; fileName = h.name;
+    } else {
+      const name = !as && fileName ? fileName : slug() + ".atril";
+      if (!browserDownload(name, new Blob([JSON.stringify(score, null, 1)], { type: "application/json" }))) throw new Error("descarga");
+      fileName = name;
+    }
+    dirty = false; saveDraft(); addRecent();
+    toast(canPick ? `Guardada en ${fileName}.` : `Descargando “${fileName}”. Guárdalo en tu carpeta de partituras para abrirlo después.`);
   } catch (e) {
-    setSaveState("dirty");
-    toast(e && e.code === "quota_exceeded" ? "No hay espacio para más partituras. Borra alguna en Mis partituras." : "No se pudo guardar. Revisa tu conexión e inténtalo de nuevo.");
+    if (e && e.name === "AbortError") return; // canceló el diálogo
+    toast("No se pudo guardar. Prueba con “Guardar como…” en otra carpeta.");
   } finally { saving = false; }
 }
-function setSaveState(s) {
-  const el = document.getElementById("savestate"); el.dataset.s = s;
-  el.textContent = { draft: "Sin guardar en tu biblioteca", dirty: "Cambios sin guardar", saving: "Guardando…", saved: "Guardado en este navegador" }[s] || "";
+// Abre una partitura de Atril ya leída; `handle` permite volver a guardar en el mismo archivo.
+function openScore(sc, handle, name) {
+  stopPlayback(); if (lyricMode) endLyrics();
+  load(sc); fileHandle = handle || null; fileName = name || ""; dirty = false;
+  render(); syncProps(); saveDraft(); addRecent();
+}
+async function pickAndOpen() {
+  if (!canPick) { document.getElementById("fileIn").click(); return; }
+  let h;
+  try { [h] = await window.showOpenFilePicker({ id: "atril", types: OPEN_TYPES }); } catch (e) { return; }
+  closeModal();
+  importFile(await h.getFile(), h);
+}
+async function openRecent(it) {
+  let text = null, h = it.handle || null;
+  if (h) {
+    try { if (!(await canWrite(h))) throw 0; text = await (await h.getFile()).text(); }
+    catch (e) { h = null; }
+  }
+  try {
+    const sc = JSON.parse(text != null ? text : it.data);
+    closeModal(); openScore(sc, h, h || !it.handle ? it.name : "");
+    toast(text == null && it.handle ? `No se pudo abrir ${it.name}; se abrió la última copia que guardaste. Guárdala de nuevo.` : `Abriste «${sc.title || "Sin título"}».`);
+  } catch (e) { toast("No se pudo abrir esa partitura."); }
+}
+const dirtyNote = () => dirty ? `<p class="hint">Tienes cambios sin guardar en «${esc(score.title || "Sin título")}». <button class="linkbtn" data-x="savefirst" style="display:inline;padding:0">Guardar ahora</button></p>` : "";
+function wireDirtyNote(d) { const b = d.querySelector('[data-x="savefirst"]'); if (b) b.onclick = async () => { await saveFile(); if (!dirty) b.parentElement.remove(); }; }
+async function openDialog() {
+  openModal(`<h3>Abrir</h3>
+    <p>Abre una partitura de Atril (.atril) o importa MusicXML (.musicxml, .xml, .mxl).</p>
+    ${dirtyNote()}
+    <div><button class="btn primary" data-x="pick">Elegir archivo…</button></div>
+    <div class="sub">Recientes</div>
+    <div class="liblist" id="recList"><p>Cargando…</p></div>
+    <div class="actions"><button class="btn" data-x="close">Cerrar</button></div>`, (d) => {
+    d.querySelector('[data-x="close"]').onclick = closeModal;
+    d.querySelector('[data-x="pick"]').onclick = pickAndOpen;
+    wireDirtyNote(d);
+  });
+  let items = [];
+  try { items = (await RECENT.all()).sort((a, b) => b.at - a.at); } catch (e) {}
+  const list = document.getElementById("recList"); if (!list) return;
+  if (!items.length) { list.innerHTML = `<p class="hint">Aquí aparecerán las partituras que guardes o abras.</p>`; return; }
+  const fmt = (t) => { try { return new Date(t).toLocaleString("es-CL", { dateStyle: "medium", timeStyle: "short" }); } catch (e) { return ""; } };
+  list.innerHTML = items.map((it) => `<div class="libitem ${it.id === score.id ? "current" : ""}" data-id="${esc(it.id)}"><button class="open"><b>${esc(it.title || "Sin título")}</b><span>${esc(it.name)} · ${fmt(it.at)}</span></button><button class="btn" data-del title="Quitar de la lista (no borra el archivo)">Quitar</button></div>`).join("");
+  list.querySelectorAll(".libitem").forEach((row) => {
+    const it = items.find((x) => x.id === row.dataset.id);
+    row.querySelector(".open").onclick = () => openRecent(it);
+    row.querySelector("[data-del]").onclick = async () => { try { await RECENT.del(it.id); } catch (e) {} row.remove(); };
+  });
 }
 
 /* ================= exportación ================= */
@@ -2343,7 +2424,6 @@ async function exportMXL() {
   const blob = await zip.generateAsync({ type: "blob" });
   offer(slug() + "-musicxml.zip", blob);
 }
-function exportJSON() { offer(slug() + ".atril.json", JSON.stringify(score, null, 1)); }
 
 /* ================= exportación de audio ================= */
 const MP4MUX_URL = "vendor/mp4-muxer.js";
@@ -2524,21 +2604,27 @@ async function audioDialog() {
 }
 
 /* importación */
-async function importFile(file) {
+// Abre un archivo: .atril (o el .json de versiones anteriores) queda asociado para volver a guardarlo;
+// MusicXML se importa como partitura nueva. `handle` viene de File System Access API, si la hay.
+async function importFile(file, handle = null) {
   try {
     const name = file.name.toLowerCase();
     let sc;
-    if (name.endsWith(".json")) {
-      const d = JSON.parse(await file.text());
-      if (!d || !Array.isArray(d.staves)) throw new Error("Ese archivo .json no es una partitura de Atril.");
-      sc = d; sc.id = sc.id || uid();
+    if (/\.(atril|json)$/.test(name)) {
+      let d = null;
+      try { d = JSON.parse(await file.text()); } catch (e) {}
+      if (!d || !Array.isArray(d.staves)) throw new Error("Ese archivo no es una partitura de Atril.");
+      d.id = d.id || uid();
+      openScore(d, name.endsWith(".atril") ? handle : null, name.endsWith(".atril") ? file.name : "");
+      toast(`Abriste «${d.title || "Sin título"}».`);
+      return;
     } else if (name.endsWith(".mxl") || name.endsWith(".zip")) {
       if (!window.JSZip) throw new Error("No se pudo abrir el archivo comprimido.");
       const zip = await JSZip.loadAsync(await file.arrayBuffer());
       let path = null;
       // .zip descargado desde Atril: puede traer un .musicxml, un .mxl o una copia .json
       const inner = Object.keys(zip.files).filter((p) => !p.startsWith("__MACOSX") && !zip.files[p].dir);
-      const js = inner.find((p) => /\.json$/i.test(p)), mx = inner.find((p) => /\.mxl$/i.test(p));
+      const js = inner.find((p) => /\.(json|atril)$/i.test(p)), mx = inner.find((p) => /\.mxl$/i.test(p));
       if (name.endsWith(".zip") && js && !inner.some((p) => /\.(musicxml|xml)$/i.test(p))) return importFile(new File([await zip.file(js).async("blob")], js.split("/").pop()));
       if (name.endsWith(".zip") && mx && !inner.some((p) => /\.(musicxml|xml)$/i.test(p))) return importFile(new File([await zip.file(mx).async("blob")], mx.split("/").pop()));
       const cont = zip.file("META-INF/container.xml");
@@ -2550,9 +2636,10 @@ async function importFile(file) {
       sc = fromMusicXML(await file.text());
     }
     stopPlayback();
-    load(sc); savedOnce = false; dirty = true;
-    render(); syncProps(); scheduleSave();
-    toast("Partitura importada. Guárdala para tenerla en Mis partituras.");
+    if (lyricMode) endLyrics();
+    load(sc); fileHandle = null; fileName = ""; dirty = true;
+    render(); syncProps(); saveDraft();
+    toast("Partitura importada. Guárdala con Ctrl+S como archivo .atril.");
   } catch (e) {
     toast(e && e.message ? e.message : "No se pudo leer el archivo.");
   }
@@ -2988,31 +3075,6 @@ function closeModal() { document.getElementById("modal").innerHTML = ""; documen
 const modalOpen = () => !!document.getElementById("modal").firstChild;
 
 
-async function libraryDialog() {
-  openModal(`<h3>Mis partituras</h3><p id="libNote"></p><div class="liblist" id="libList"><p>Cargando…</p></div><div class="actions"><button class="btn" data-x="close">Cerrar</button></div>`, (d) => {
-    d.querySelector('[data-x="close"]').onclick = closeModal;
-  });
-  const note = document.getElementById("libNote");
-  if (note) note.textContent = "Se guardan solo en este navegador. Descarga una copia para no perderlas.";
-  let items = [];
-  try { items = await lib.list(); } catch (e) { const l = document.getElementById("libList"); if (l) l.innerHTML = "<p>No se pudo cargar la lista. Revisa tu conexión.</p>"; return; }
-  const list = document.getElementById("libList"); if (!list) return;
-  if (!items.length) { list.innerHTML = "<p>Aún no guardas ninguna partitura. Usa “Guardar” para agregar la actual.</p>"; return; }
-  const fmt = (iso) => { try { return new Date(iso).toLocaleString("es-CL", { dateStyle: "medium", timeStyle: "short" }); } catch (e) { return iso || ""; } };
-  list.innerHTML = items.map((it) => `<div class="libitem ${it.id === score.id ? "current" : ""}" data-id="${esc(it.id)}"><button class="open"><b>${esc(it.title || "Sin título")}</b><span>${esc(it.composer || "")}${it.composer ? " · " : ""}${fmt(it.updatedAt)}</span></button><button class="btn" data-del>Borrar</button></div>`).join("");
-  list.querySelectorAll(".libitem").forEach((row) => {
-    const id = row.dataset.id;
-    row.querySelector(".open").onclick = async () => {
-      try { const sc = await lib.load(id); if (!sc) throw 0; stopPlayback(); load(sc); savedOnce = true; dirty = false; closeModal(); render(); syncProps(); lsSet(LS_DRAFT, JSON.stringify(score)); setSaveState("saved"); }
-      catch (e) { toast("No se pudo abrir esa partitura."); }
-    };
-    const del = row.querySelector("[data-del]");
-    del.onclick = async () => {
-      if (del.dataset.confirm !== "1") { del.dataset.confirm = "1"; del.textContent = "¿Borrar? Sí"; setTimeout(() => { if (del.isConnected) { del.dataset.confirm = ""; del.textContent = "Borrar"; } }, 3500); return; }
-      try { await lib.remove(id); row.remove(); if (id === score.id) { savedOnce = false; setSaveState("draft"); } toast("Partitura borrada."); } catch (e) { toast("No se pudo borrar."); }
-    };
-  });
-}
 function showXml(xml) {
   openModal(`<h3>MusicXML</h3><p>Copia este texto y guárdalo en un archivo con extensión .musicxml para abrirlo en MuseScore, Sibelius o Dorico.</p><textarea class="xml" id="xmlTxt" readonly></textarea><div class="actions"><button class="btn" data-x="close">Cerrar</button><button class="btn primary" data-x="copy">Copiar</button></div>`, (d) => {
     d.querySelector("#xmlTxt").value = xml;
@@ -3108,6 +3170,7 @@ function newScoreDialog() {
   let tpl = "satb2";
   openModal(`
     <h3>Nueva partitura</h3>
+    ${dirtyNote()}
     <div class="field"><label for="nTitle">Título</label><input id="nTitle" placeholder="Ej.: Cuán grande es Él"></div>
     <div class="field"><label for="nComp">Compositor / arreglo</label><input id="nComp"></div>
     <div class="field"><label>Plantilla</label><div class="tpls">${Object.entries(TEMPLATES).map(([k, t]) => `<button class="tpl" data-t="${k}" aria-pressed="${k === tpl}"><b>${t.label}</b><span>${t.desc}</span></button>`).join("")}</div></div>
@@ -3118,13 +3181,14 @@ function newScoreDialog() {
     <div class="field"><label for="nTempo">Tempo (negras por minuto)</label><input id="nTempo" type="number" min="30" max="240" value="90"></div>
     <div class="actions"><button class="btn" data-x="omr" style="margin-right:auto">Leer desde PDF…</button><button class="btn" data-x="cancel">Cancelar</button><button class="btn primary" data-x="ok">Crear partitura</button></div>`, (d) => {
     d.querySelector('[data-x="omr"]').onclick = () => { closeModal(); omrDialog(); };
+    wireDirtyNote(d);
     d.querySelectorAll(".tpl").forEach((b) => b.addEventListener("click", () => { tpl = b.dataset.t; d.querySelectorAll(".tpl").forEach((x) => x.setAttribute("aria-pressed", String(x === b))); }));
     d.querySelector('[data-x="cancel"]').onclick = closeModal;
     d.querySelector('[data-x="ok"]').onclick = () => {
       const t = TEMPLATES[tpl];
       stopPlayback(); if (lyricMode) endLyrics();
       load({ id: uid(), title: d.querySelector("#nTitle").value.trim() || "Sin título", composer: d.querySelector("#nComp").value.trim(), tempo: Math.max(30, Math.min(240, +d.querySelector("#nTempo").value || 90)), time: d.querySelector("#nTime").value, key: +d.querySelector("#nKey").value, changes: [], layout: { staff: score.layout.staff || 6, perSystem: 0 }, groups: clone(t.groups), staves: t.staves.map(staffFromTemplate) });
-      savedOnce = false; closeModal(); render(); syncProps(); scheduleSave();
+      fileHandle = null; fileName = ""; dirty = false; closeModal(); render(); syncProps(); saveDraft();
       toast("Partitura creada. Escribe notas con las letras A–G; Alt+2 pasa a la segunda voz del pentagrama.");
     };
   });
@@ -3148,25 +3212,35 @@ function helpDialog() {
       <kbd>Retroceso</kbd><span>Borrar la nota seleccionada</span>
       <kbd>Espacio</kbd><span>Reproducir desde el compás del cursor</span>
       <kbd>Ctrl + Z · Ctrl + Y</kbd><span>Deshacer, rehacer</span>
-      <kbd>Ctrl + S</kbd><span>Guardar en Mis partituras</span>
+      <kbd>Ctrl + S</kbd><span>Guardar en el archivo .atril (la primera vez pregunta dónde)</span>
+      <kbd>Ctrl + Mayús + S</kbd><span>Guardar como, con otro nombre o en otra carpeta</span>
+      <kbd>Ctrl + O</kbd><span>Abrir un archivo o una partitura reciente</span>
     </div>
     <p><b>Letra:</b> con L se abre la barra de letra. Escribe la sílaba y pulsa Espacio para pasar a la nota siguiente, o guion para separar sílabas de una misma palabra. Con “Pegar estrofa” puedes poner una estrofa entera escrita así: Al-ce-mos hoy la voz.</p>
     <p><b>Cambios de compás o tonalidad:</b> pon el cursor en el compás donde empieza el cambio y elige el compás o la tonalidad en el panel Partitura.</p>
     <p>Para ensayar una voz del coro, usa la S de esa voz para escucharla sola, o la M para silenciarla.</p>
-    <p>Atril funciona en tu equipo, sin cuenta y sin internet: escribir, reproducir, letra, acordes, transponer y generar PDF, MusicXML y audio.</p>
+    <p><b>Tus archivos:</b> cada partitura se guarda como un archivo .atril en la carpeta que elijas; “Abrir” muestra las recientes. Para compartirla, envía el archivo .atril, o el PDF, MusicXML o audio desde el menú Archivo.${canPick ? "" : " Este navegador no puede escribir directo en tus carpetas: al guardar se descarga el archivo .atril."}</p>
+    <p>Atril funciona en tu equipo, sin cuenta y sin internet: escribir, reproducir, letra, acordes, transponer y generar PDF, MusicXML y audio. Si cierras la pestaña sin guardar, al volver encontrarás tu último borrador.</p>
     <div class="actions"><button class="btn primary" data-x="close">Entendido</button></div>`, (d) => { d.querySelector('[data-x="close"]').onclick = closeModal; });
 }
 
 /* ================= eventos ================= */
 function onKey(e) {
-  if (modalOpen()) { if (e.key === "Escape") closeModal(); return; }
-  const tag = (e.target.tagName || "").toLowerCase();
-  if (tag === "input" || tag === "select" || tag === "textarea") return;
   const ctrl = e.ctrlKey || e.metaKey;
   const k = e.key;
+  const tag = (e.target.tagName || "").toLowerCase();
+  if (ctrl && !e.altKey && /^[sSoO]$/.test(k)) {
+    e.preventDefault();
+    if (modalOpen() && !(k === "o" || k === "O")) return;
+    if ((tag === "input" || tag === "select") && e.target.closest(".side")) e.target.blur(); // confirma el campo antes de guardar
+    if (k === "o" || k === "O") { if (modalOpen()) closeModal(); openDialog(); }
+    else saveFile(e.shiftKey);
+    return;
+  }
+  if (modalOpen()) { if (e.key === "Escape") closeModal(); return; }
+  if (tag === "input" || tag === "select" || tag === "textarea") return;
   if (ctrl && (k === "z" || k === "Z")) { e.preventDefault(); e.shiftKey ? redo() : undo(); return; }
   if (ctrl && (k === "y" || k === "Y")) { e.preventDefault(); redo(); return; }
-  if (ctrl && (k === "s" || k === "S")) { e.preventDefault(); saveNow(false); return; }
   if (k === " ") { if (tag === "button") return; e.preventDefault(); player ? stopPlayback() : startPlayback(); return; }
   if (ctrl) return;
   if (e.altKey && (e.code === "Digit1" || e.code === "Digit2")) { e.preventDefault(); switchVoice(e.code === "Digit1" ? 0 : 1); return; }
@@ -3300,8 +3374,8 @@ function wire() {
   document.getElementById("tSounds").onclick = soundsDialog;
   document.getElementById("sound").onchange = (e) => { lsSet("atril.sonido", e.target.value); if (isBank(e.target.value)) loadSound(e.target.value).catch(() => {}); };
   document.getElementById("bNew").onclick = newScoreDialog;
-  document.getElementById("bLib").onclick = libraryDialog;
-  document.getElementById("bSave").onclick = () => saveNow(false);
+  document.getElementById("bOpen").onclick = openDialog;
+  document.getElementById("bSave").onclick = () => saveFile();
   document.getElementById("bHelp").onclick = helpDialog;
   const bf = document.getElementById("bFile"), mf = document.getElementById("mFile");
   bf.onclick = (e) => { e.stopPropagation(); mf.hidden = !mf.hidden; bf.setAttribute("aria-expanded", String(!mf.hidden)); };
@@ -3309,7 +3383,7 @@ function wire() {
   mf.addEventListener("click", (e) => {
     const b = e.target.closest("button"); if (!b) return; mf.hidden = true; bf.setAttribute("aria-expanded", "false");
     const a = b.dataset.act;
-    if (a === "pdf") exportPDF(); if (a === "svg") exportSVG(); if (a === "json") exportJSON(); if (a === "mxl") exportMXL();
+    if (a === "pdf") exportPDF(); if (a === "svg") exportSVG(); if (a === "saveas") saveFile(true); if (a === "mxl") exportMXL();
     if (a === "xmltext") showXml(toMusicXML());
     if (a === "audio") audioDialog();
     if (a === "omr") omrDialog();
@@ -3340,7 +3414,17 @@ function start() {
   loadInstruments();
   const warm = () => { document.removeEventListener("pointerdown", warm, true); document.removeEventListener("keydown", warm, true); preloadSounds(); };
   document.addEventListener("pointerdown", warm, true); document.addEventListener("keydown", warm, true);
-  setSaveState("draft");
+  // el borrador recuerda de qué archivo venía, para que Ctrl+S siga guardando ahí
+  if (draft) {
+    let f = null; try { f = JSON.parse(lsGet(LS_FILE) || "null"); } catch (e) {}
+    if (f && f.id === score.id) {
+      fileName = f.name || ""; dirty = !!f.dirty;
+      if (fileName) RECENT.get(score.id).then((it) => { if (it && it.handle && it.name === fileName && !fileHandle) fileHandle = it.handle; }).catch(() => {});
+    } else dirty = true;
+  }
+  setSaveState();
+  // archivos .atril o MusicXML abiertos con Atril instalada como app
+  if ("launchQueue" in window) launchQueue.setConsumer(async (p) => { const h = p.files && p.files[0]; if (h) importFile(await h.getFile(), h); });
   if (embedded) setTimeout(() => toast(`«${embedded.title || "Sin título"}» — pulsa ▶ para escucharla. Puedes transponerla y descargar PDF, audio o MusicXML.`), 600);
   else if (!draft) setTimeout(() => toast("Partitura de ejemplo. Pulsa ▶ para escucharla o “Nueva” para empezar la tuya."), 600);
   document.getElementById("desk").focus({ preventScroll: true });

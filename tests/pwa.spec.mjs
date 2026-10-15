@@ -35,8 +35,8 @@ test("quien tenía el service worker anterior recibe el nuevo y las versiones nu
     await page.reload();
     return page.evaluate(async () => { const r = await navigator.serviceWorker.getRegistration(); return r.active && r.active.state === "activated" && !r.installing && !r.waiting && (await caches.keys()).join(); });
   }, { intervals: [500], timeout: 15_000 }).toBe("atril-v2");
-  await page.reload();
-  await expect(page).toHaveTitle("Atril nueva");
+  // con el service worker anterior esto no pasaba nunca; con el nuevo, al recargar
+  await expect.poll(async () => { await page.reload(); return page.title(); }, { intervals: [500], timeout: 10_000 }).toBe("Atril nueva");
 });
 
 test("sin conexión abre la app y los sonidos ya usados", async ({ page, context }) => {

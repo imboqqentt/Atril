@@ -79,6 +79,20 @@ Ese JSON es el formato `.atril`. Los `.atril.json` antiguos también se abren.
 - [x] En la versión web, ofrecer “Importar MusicXML” y explicar que la lectura de PDF está en la app de escritorio.
 - [x] Importar el JSON compacto que produce la skill `skills/leer-partitura` reutilizando `buildFromOmr` (ver formato en `omrPrompt`).
 
+### Fase 5 — pulir y mantener (propuesta, 2026-10-15)
+Orden sugerido: el bloque 1 en una v0.1.2; luego actualizaciones automáticas.
+1. Detalles que molestan
+   - [ ] Escritorio: preguntar al cerrar si hay cambios sin guardar (hoy cierra sin avisar; el borrador sí se recupera).
+   - [ ] MusicXML: conservar los nombres de las dos voces de un pentagrama (hoy vuelven como “Voz 1/Voz 2”).
+   - [ ] Audiveris: corregir errores típicos de OCR en la letra (“ﬁ” por “ñ”, “]” por “l”…).
+   - [ ] Prueba de “escribir notas” (la única que faltaba de Calidad).
+2. [ ] Actualizaciones automáticas: plugin updater de Tauri con GitHub Releases (requiere firmar las actualizaciones con una clave propia de Tauri, no un certificado de pago).
+3. Mejor lectura de partituras
+   - [ ] Compás de anacrusa (hoy se completa con silencios).
+   - [ ] Calibrar con partituras reales de Daniel: pares PDF → partitura corregida en `ejemplos/`, medir errores de Audiveris y de la skill.
+4. [ ] Mantenimiento: dividir `index.html` en ES modules nativos (sin build), con las pruebas como red.
+5. Opcionales: firmar el instalador (certificado de pago, evita SmartScreen); versiones para macOS/Linux.
+
 ### Calidad
 - [x] Pruebas con Playwright (`tests/`, `npm install` y `npm test`; abren Atril con internet bloqueado): cargar, escribir notas, reproducir, transponer, exportar MusicXML ida y vuelta, `playOrder` con repeticiones/casillas/D.S. al Coda. Falta: escribir notas. Comprobaciones conocidas que pasaban: casillas → `1 2 3 1 2 4 5 6`; D.S. al Coda → `1 2 3 4 5 6 2 3 4 7 8`.
 

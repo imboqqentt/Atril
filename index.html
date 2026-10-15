@@ -155,9 +155,6 @@ button { cursor: pointer; }
 .mkrow label { display: inline-flex; align-items: center; gap: 6px; }
 .mkrow input { width: 16px; height: 16px; accent-color: var(--accent); }
 .mkrow select { border: 1px solid var(--line); border-radius: 7px; padding: 5px 7px; background: var(--panel); }
-.avail { display: grid; grid-template-columns: auto 1fr; gap: 4px 10px; font-size: 13px; }
-.avail b { font-weight: 600; }
-.avail .ok { color: var(--play); } .avail .no { color: var(--warn); }
 .staves { display: grid; gap: 6px; }
 .staff {
   display: grid; gap: 4px;
@@ -265,8 +262,6 @@ button { cursor: pointer; }
 .stat b { display: block; font-family: var(--font-engrave); font-size: 26px; font-weight: 400; color: var(--fg); }
 textarea.xml { width: 100%; height: 220px; font-family: var(--font-mono); font-size: 11px; border: 1px solid var(--line); border-radius: 8px; padding: 8px; background: var(--panel-2); color: var(--fg); }
 
-.sharebar { position: fixed; left: 50%; top: 72px; transform: translateX(-50%); z-index: 60; display: flex; align-items: center; gap: 10px; max-width: min(640px, calc(100vw - 32px)); padding: 10px 12px 10px 16px; background: var(--panel); color: var(--fg); border: 1px solid var(--accent); border-radius: 10px; box-shadow: var(--shadow); font-size: 14px; }
-.sharebar span { flex: 1; }
 .toast {
   position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(20px + env(safe-area-inset-bottom, 0px)); z-index: 60;
   background: var(--fg); color: var(--bg); padding: 9px 14px; border-radius: 9px; font-size: 13px; box-shadow: var(--shadow); max-width: calc(100% - 32px);
@@ -293,13 +288,12 @@ textarea.xml { width: 100%; height: 220px; font-family: var(--font-mono); font-s
     <div class="savestate" id="savestate" aria-live="polite"></div>
     <div class="spacer"></div>
     <button class="btn" id="bNew">Nueva</button>
-    <button class="btn" id="bShare" hidden>Compartir</button>
     <button class="btn" id="bLib">Mis partituras</button>
     <button class="btn primary" id="bSave" title="Ctrl+S">Guardar</button>
     <div class="menuwrap">
       <button class="btn" id="bFile" aria-haspopup="true" aria-expanded="false">Archivo ▾</button>
       <div class="menu" id="mFile" hidden>
-        <button data-act="omr">Leer partitura de PDF o foto…<span>Claude la transcribe y la abres para corregir</span></button>
+        <button data-act="omr">Leer partitura de PDF…<span>Por ahora, importa el MusicXML del PDF</span></button>
         <button data-act="lyrics">Pegar estrofa de letra…<span>Una estrofa completa, sílabas separadas con guion</span></button>
         <button data-act="transpose">Transponer…<span>A otra tonalidad o por intervalo</span></button>
         <button data-act="pdf">Descargar PDF<span>Páginas A4 listas para imprimir</span></button>
@@ -451,7 +445,6 @@ textarea.xml { width: 100%; height: 220px; font-family: var(--font-mono); font-s
 
 <div id="modal"></div>
 <div class="toast" id="toast" hidden></div>
-<div class="sharebar" id="shareBar" hidden role="status"><span id="shareBarText"></span><button class="btn primary" id="shareBarOpen">Abrir</button><button class="btn" id="shareBarClose" aria-label="Cerrar">✕</button></div>
 
 <script src="vendor/vexflow.js"></script>
 <script src="vendor/jspdf.umd.min.js"></script>
@@ -2183,16 +2176,6 @@ const localLib = {
   async remove(id) { const a = this.all(); delete a[id]; lsSet(LS_LIB, JSON.stringify(a)); },
 };
 let lib = localLib;
-function makeDbLib(db, uidStr) {
-  const col = db.collection("data/users/" + uidStr);
-  return {
-    kind: "cloud",
-    async list() { const snap = await col.orderBy("updatedAt", "desc").limit(300).get(); return snap.docs.map((d) => { const b = d.data() || {}; return { id: d.id, title: b.title, composer: b.composer, updatedAt: b.updatedAt }; }); },
-    async save(sc) { await col.doc(sc.id).set({ title: sc.title || "Sin título", composer: sc.composer || "", updatedAt: new Date().toISOString(), data: JSON.stringify(sc) }); },
-    async load(id) { const snap = await col.doc(id).get(); if (!snap.exists) return null; return JSON.parse(snap.data().data); },
-    async remove(id) { await col.doc(id).delete(); },
-  };
-}
 let saveTimer = null, saving = false;
 function scheduleSave() {
   lsSet(LS_DRAFT, JSON.stringify(score));
@@ -2207,8 +2190,7 @@ async function saveNow(auto) {
   try {
     if (score.sample) delete score.sample;
     await lib.save(score); savedOnce = true; dirty = false; setSaveState("saved");
-    if (share.owner && isShared(score.id)) publishShared(score).catch(() => toast("Guardada, pero no se pudo actualizar la copia compartida."));
-    if (!auto) toast(lib.kind === "cloud" ? "Guardada en Mis partituras." : "Guardada en este navegador.");
+    if (!auto) toast("Guardada en este navegador.");
   } catch (e) {
     setSaveState("dirty");
     toast(e && e.code === "quota_exceeded" ? "No hay espacio para más partituras. Borra alguna en Mis partituras." : "No se pudo guardar. Revisa tu conexión e inténtalo de nuevo.");
@@ -2216,110 +2198,11 @@ async function saveNow(auto) {
 }
 function setSaveState(s) {
   const el = document.getElementById("savestate"); el.dataset.s = s;
-  el.textContent = { draft: "Sin guardar en tu biblioteca", dirty: "Cambios sin guardar", saving: "Guardando…", saved: lib.kind === "cloud" ? "Guardado en tu cuenta" : "Guardado en este navegador" }[s] || "";
-}
-
-/* ================= compartir ================= */
-// Las partituras compartidas viven en la colección "shared": cualquiera con el enlace (con sesión de Claude) las lee; solo el dueño de Atril las escribe.
-const share = { db: null, owner: false, list: [], ready: false, autoOpened: false, unsub: null };
-const SHARE_MAX = 240000;
-function sharedDoc(id) { return share.db.collection("shared").doc(id); }
-function isShared(id) { return share.list.some((x) => x.id === id); }
-async function publishShared(sc) {
-  const data = JSON.stringify(sc);
-  if (data.length > SHARE_MAX) throw { code: "too_big" };
-  await sharedDoc(sc.id).set({ title: sc.title || "Sin título", composer: sc.composer || "", updatedAt: new Date().toISOString(), data });
-}
-function initShare(db, owner, hadDraft) {
-  share.db = db; share.owner = owner;
-  const b = document.getElementById("bShare");
-  if (owner) { b.hidden = false; b.textContent = "Compartir"; }
-  share.unsub = db.collection("shared").orderBy("updatedAt", "desc").limit(100).onSnapshot((snap) => {
-    share.list = snap.docs.map((d) => { const x = d.data() || {}; return { id: d.id, title: x.title, composer: x.composer, updatedAt: x.updatedAt }; });
-    share.ready = true;
-    if (!owner) {
-      b.hidden = !share.list.length;
-      b.textContent = `Compartidas (${share.list.length})`;
-      // quien llega por el enlace ve directamente la última partitura compartida
-      if (!share.autoOpened && share.list.length) {
-        share.autoOpened = true;
-        const top = share.list[0];
-        const mine = hadDraft && !isShared(score.id) && score.title !== "Himno a la alegría";
-        if (!mine) openShared(top.id, true);
-        else showShareBar(top);
-      }
-    }
-    updateShareBtn();
-  }, () => { b.hidden = !owner; });
-}
-function showShareBar(it) {
-  const bar = document.getElementById("shareBar");
-  document.getElementById("shareBarText").textContent = `Te compartieron «${it.title || "Sin título"}».`;
-  document.getElementById("shareBarOpen").onclick = () => { bar.hidden = true; openShared(it.id, false); };
-  document.getElementById("shareBarClose").onclick = () => { bar.hidden = true; };
-  bar.hidden = false;
-}
-function updateShareBtn() {
-  const b = document.getElementById("bShare");
-  if (share.owner) b.setAttribute("aria-pressed", String(isShared(score.id)));
-}
-async function openShared(id, auto) {
-  try {
-    const snap = await sharedDoc(id).get();
-    if (!snap.exists) throw 0;
-    const sc = JSON.parse(snap.data().data);
-    stopPlayback(); load(sc); savedOnce = false; dirty = false; render(); syncProps(); setSaveState("draft"); updateShareBtn();
-    toast(auto ? `Estás viendo «${sc.title || "Sin título"}», compartida contigo. Pulsa ▶ para escucharla.` : `Abriste «${sc.title || "Sin título"}».`);
-  } catch (e) { toast("No se pudo abrir esa partitura compartida."); }
-}
-function sharedListHtml() {
-  const fmt = (iso) => { try { return new Date(iso).toLocaleString("es-CL", { dateStyle: "medium", timeStyle: "short" }); } catch (e) { return iso || ""; } };
-  return share.list.map((it) => `<div class="libitem ${it.id === score.id ? "current" : ""}" data-id="${esc(it.id)}"><button class="open"><b>${esc(it.title || "Sin título")}</b><span>${esc(it.composer || "")}${it.composer ? " · " : ""}${fmt(it.updatedAt)}</span></button>${share.owner ? '<button class="btn" data-unshare>Dejar de compartir</button>' : ""}</div>`).join("");
-}
-function wireSharedList(root) {
-  root.querySelectorAll(".libitem").forEach((row) => {
-    const id = row.dataset.id;
-    row.querySelector(".open").onclick = () => { closeModal(); openShared(id, false); };
-    const u = row.querySelector("[data-unshare]");
-    if (u) u.onclick = async () => {
-      if (u.dataset.confirm !== "1") { u.dataset.confirm = "1"; u.textContent = "¿Seguro? Sí"; setTimeout(() => { if (u.isConnected) { u.dataset.confirm = ""; u.textContent = "Dejar de compartir"; } }, 3500); return; }
-      try { await sharedDoc(id).delete(); row.remove(); toast("Ya no está compartida."); } catch (e) { toast("No se pudo quitar."); }
-    };
-  });
-}
-function shareDialog() {
-  if (!share.db) { toast("Para compartir, abre Atril dentro de Claude con tu sesión iniciada."); return; }
-  if (!share.owner) {
-    openModal(`<h3>Partituras compartidas</h3><p>El autor de este Atril compartió estas partituras. Puedes abrirlas, escucharlas, transponerlas y descargarlas; tus cambios no modifican la original.</p><div class="liblist" id="shList">${sharedListHtml() || "<p>Aún no hay partituras compartidas.</p>"}</div><div class="actions"><button class="btn" data-x="close">Cerrar</button></div>`, (d) => {
-      d.querySelector('[data-x="close"]').onclick = closeModal; wireSharedList(d);
-    });
-    return;
-  }
-  const on = isShared(score.id);
-  openModal(`<h3>Compartir</h3>
-    <p>${on ? `«${esc(score.title || "Sin título")}» está compartida. Cada vez que la guardes, quienes tengan el enlace verán la versión nueva.` : `Comparte «${esc(score.title || "Sin título")}» con quienes tengan el enlace de Atril. Al abrirlo verán la última partitura que compartiste y podrán elegir las demás en “Compartidas”.`}</p>
-    <p class="hint">Para verla necesitan una cuenta de Claude con la sesión iniciada, y tú debes tener activado “Cualquiera con el enlace” en el menú Compartir de Claude. Solo tú puedes cambiar o quitar lo compartido; ellos pueden escuchar, transponer y descargar su propia copia.</p>
-    <div class="actions">${on ? '<button class="btn" data-x="off">Dejar de compartir</button>' : ""}<button class="btn" data-x="close">Cerrar</button><button class="btn primary" data-x="on">${on ? "Actualizar ahora" : "Compartir esta partitura"}</button></div>
-    ${share.list.length ? `<h4 style="margin:18px 0 6px">Compartidas (${share.list.length})</h4><div class="liblist" id="shList">${sharedListHtml()}</div>` : ""}`, (d) => {
-    d.querySelector('[data-x="close"]').onclick = closeModal;
-    wireSharedList(d);
-    d.querySelector('[data-x="on"]').onclick = async () => {
-      try {
-        if (score.sample) delete score.sample;
-        await publishShared(score);
-        if (lib.kind === "cloud" && !savedOnce) { try { await lib.save(score); savedOnce = true; dirty = false; setSaveState("saved"); } catch (e) {} }
-        closeModal(); updateShareBtn();
-        toast(on ? "Copia compartida actualizada." : "Compartida. Envía el enlace de Atril y la verán al abrirlo.");
-      } catch (e) { toast(e && e.code === "too_big" ? "La partitura es demasiado grande para compartirla. Envía el PDF o el audio." : "No se pudo compartir. Revisa tu conexión."); }
-    };
-    const off = d.querySelector('[data-x="off"]');
-    if (off) off.onclick = async () => { try { await sharedDoc(score.id).delete(); closeModal(); toast("Ya no está compartida."); } catch (e) { toast("No se pudo quitar."); } };
-  });
+  el.textContent = { draft: "Sin guardar en tu biblioteca", dirty: "Cambios sin guardar", saving: "Guardando…", saved: "Guardado en este navegador" }[s] || "";
 }
 
 /* ================= exportación ================= */
 
-let downloads = null;
 function browserDownload(filename, data) {
   try {
     const url = URL.createObjectURL(data instanceof Blob ? data : new Blob([data]));
@@ -2329,21 +2212,11 @@ function browserDownload(filename, data) {
     return true;
   } catch (e) { return false; }
 }
-const DL_FALLBACK = ["unavailable", "not_granted", "capability_disabled", "capability_removed", "rejected_extension", "extension_not_enabled", "transform_error"];
-// Entrega un archivo: por Claude cuando la vista lo permite; si no, descarga normal del navegador.
+// Entrega un archivo con la descarga normal del navegador.
 async function offer(filename, data) {
-  if (downloads) {
-    try { await downloads.save({ filename, data }); toast("Listo: " + filename); return true; }
-    catch (e) {
-      if (e && e.code === "declined") return false;
-      if (e && e.code === "rate_limited") { toast("Ya hay una descarga esperando tu confirmación."); return false; }
-      if (e && e.code === "too_large") { toast("El archivo es demasiado grande para descargarlo aquí."); return false; }
-      if (!e || !DL_FALLBACK.includes(e.code)) { toast("No se pudo descargar el archivo."); return false; }
-    }
-  }
-  browserDownload(filename, data);
-  toast(`Descargando “${filename}”.`);
-  return true;
+  const ok = browserDownload(filename, data);
+  toast(ok ? `Descargando “${filename}”.` : "No se pudo descargar el archivo.");
+  return ok;
 }
 const slug = () => (score.title || "partitura").normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[^\w\- ]+/g, "").trim().replace(/\s+/g, "-").toLowerCase() || "partitura";
 function cleanSvg(svg) {
@@ -2597,7 +2470,7 @@ async function audioDialog() {
     <div class="range" id="aOthersRow"><label for="aOthers">Las demás voces</label><input type="range" id="aOthers" min="0" max="0.7" step="0.05" value="0.3"><span id="aOthersV">30%</span></div>
     <div class="field"><label>Formato</label>
       ${fmtCompressed ? `<label class="check"><input type="radio" name="aFmt" value="cmp" checked><span>${fmtCompressed}</span></label>` : ""}
-      <label class="check"><input type="radio" name="aFmt" value="mp3"><span>MP3<small>${downloads ? "Claude no permite descargar .mp3 sueltos, así que va dentro de un .zip; el celular lo abre sin problema." : "Se descarga directo como .mp3."} Para WhatsApp también sirve el MP4.</small></span></label>
+      <label class="check"><input type="radio" name="aFmt" value="mp3"><span>MP3<small>Se descarga directo como .mp3. Para WhatsApp también sirve el MP4.</small></span></label>
       <label class="check"><input type="radio" name="aFmt" value="wav" ${fmtCompressed ? "" : "checked"}><span>WAV sin compresión<small>Máxima calidad para editar. Se descarga dentro de un .zip.</small></span></label>
     </div>
     <label class="check"><input type="checkbox" id="aCount"><span>Compás de entrada<small>Un compás de metrónomo antes de empezar.</small></span></label>
@@ -2628,7 +2501,7 @@ async function audioDialog() {
           const f = await encode(buf);
           say(`Audio listo: ${Math.round(buf.duration)} s`, "done");
           if (f.ext === "wav" || f.ext === "mp3") {
-            if (!downloads && f.ext === "mp3") await offer(slug() + ".mp3", f.data);
+            if (f.ext === "mp3") await offer(slug() + ".mp3", f.data);
             else { const zip = new JSZip(); zip.file(slug() + "." + f.ext, f.data); await offer(slug() + "-" + f.ext + ".zip", await zip.generateAsync({ type: "blob" })); }
           } else await offer(slug() + "." + f.ext, new Blob([f.data]));
         } else {
@@ -2810,9 +2683,10 @@ function fromMusicXML(text) {
 }
 
 /* ================= lectura de partituras (PDF o foto → Atril) ================= */
+// Recortes de sistemas y formato JSON compacto (omrPrompt, parseToken, mergeOmr, buildFromOmr):
+// se reutilizan para importar lo que produce la skill skills/leer-partitura y, en la Fase 4, Audiveris.
 const PDFJS_URL = "vendor/pdf.min.js";
 const PDFJS_WORKER_URL = "vendor/pdf.worker.min.js";
-let sampleFn = null, sampleImgMax = 0;
 function loadScript(src) {
   return new Promise((res, rej) => { const s = document.createElement("script"); s.src = src; s.onload = res; s.onerror = () => rej(new Error("No se pudo cargar el lector de PDF. Revisa tu conexión.")); document.head.appendChild(s); });
 }
@@ -3066,127 +2940,13 @@ function buildFromOmr(ctx) {
   [sc.time, ...sc.changes.map((c) => c.time).filter(Boolean)].forEach((t) => { if (!TIMES.includes(t)) TIMES.push(t); });
   return { score: sc, report };
 }
-async function runOmr(file, opts, ui, signal) {
-  const isPdf = /pdf$/i.test(file.type) || /\.pdf$/i.test(file.name);
-  let doc = null, nPages = 1;
-  if (isPdf) {
-    ui.step("Abriendo el PDF");
-    await ensurePdf();
-    doc = await pdfjsLib.getDocument({ data: new Uint8Array(await file.arrayBuffer()), isEvalSupported: false }).promise;
-    nPages = doc.numPages;
-  }
-  const from = Math.max(1, Math.min(nPages, opts.from || 1));
-  const to = Math.max(from, Math.min(nPages, opts.to || nPages, from + 19));
-  const ctx = { staves: null, key: 0, time: "4/4", tempo: null, title: "", composer: "", pickup: false, systems: [], warnings: [], wholePages: [] };
-  const per = Math.max(1, Math.min(6, (sampleImgMax || 6) - 1));
-  for (let p = from; p <= to; p++) {
-    if (signal.aborted) throw { code: "cancelled" };
-    const label = isPdf ? `Página ${p} de ${to}` : "Imagen";
-    ui.step(`${label}: buscando los sistemas`);
-    const canvas = isPdf ? await renderPdfPage(doc, p) : await imageToCanvas(file);
-    const det = detectSystems(canvas);
-    let chunks = [], header = null, whole = false;
-    if (det && det.systems.length) {
-      const blobs = [];
-      for (const s of det.systems) blobs.push(await cropBlob(canvas, s.cropTop, s.cropBottom));
-      if (p === from && det.headerBottom > canvas.height * 0.04) header = await cropBlob(canvas, 0, det.headerBottom);
-      for (let i = 0; i < blobs.length; i += per) chunks.push(blobs.slice(i, i + per));
-      ui.done(`${label}: ${det.systems.length} ${det.systems.length === 1 ? "sistema" : "sistemas"} de ${det.systems[0].staves} ${det.systems[0].staves === 1 ? "pentagrama" : "pentagramas"}`);
-    } else {
-      chunks = [[await canvasBlob(canvas)]]; whole = true; ctx.wholePages.push(p);
-      ui.warn(`${label}: no se distinguieron los pentagramas; se enviará la página completa (menos precisa)`);
-    }
-    for (let c = 0; c < chunks.length; c++) {
-      if (signal.aborted) throw { code: "cancelled" };
-      const withHeader = !!header && c === 0;
-      ui.step(`${label}: Claude está leyendo ${chunks.length > 1 ? `la parte ${c + 1} de ${chunks.length}` : "la música"} (puede tardar un par de minutos)`);
-      const images = withHeader ? [header, ...chunks[c]] : chunks[c];
-      const res = await sampleFn.json(omrPrompt(ctx, chunks[c].length, withHeader, whole, opts), { images, modelTier: "complex", signal });
-      mergeOmr(ctx, res, withHeader);
-      ui.done(`${label}: leída${chunks.length > 1 ? ` (parte ${c + 1})` : ""}`);
-    }
-  }
-  return buildFromOmr(ctx);
-}
-
-const OMR_ERR = {
-  not_granted: "Atril necesita tu permiso para usar Claude. Puedes darlo desde el menú de permisos de esta página.",
-  sampling_disabled: "Claude no está disponible para tu cuenta en este momento.",
-  images_unavailable: "Esta vista no puede enviar imágenes a Claude.",
-  image_rejected: "La imagen no se pudo enviar. Prueba con un PDF o una foto JPG o PNG más pequeña.",
-  rate_limited: "Llegaste al límite de uso por ahora. Inténtalo más tarde.",
-  session_expired: "Tu sesión expiró. Vuelve a iniciar sesión en Claude.",
-  invalid_json: "Claude respondió en un formato que no se pudo leer. Inténtalo de nuevo.",
-  refused: "Claude no pudo transcribir esta página.",
-  upstream_error: "Se cortó la conexión con Claude. Inténtalo de nuevo.",
-};
+// La lectura de PDF sin IA (Audiveris) llega con la app de escritorio. Mientras tanto, se importa MusicXML.
 function omrDialog() {
-  if (!sampleFn) {
-    openModal(`<h3>Leer partitura</h3>
-      <p>Esta función le pide a Claude que lea la partitura, usando la cuenta de Claude de quien la ocupa. En esta vista no hay conexión con Claude.</p>
-      <p>Para usarla, abre Atril dentro de claude.ai o de la app de Claude, con tu sesión iniciada, y acepta el permiso cuando lo pida.</p>
-      <div class="actions"><button class="btn primary" data-x="close">Entendido</button></div>`, (d) => { d.querySelector('[data-x="close"]').onclick = closeModal; });
-    return;
-  }
-  let file = null, ctl = null, running = false;
-  openModal(`
-    <h3>Leer partitura</h3>
-    <p>Sube un PDF o una foto de una partitura impresa. Claude la transcribe y se abre como partitura nueva para que la revises y corrijas. También lee la letra impresa. La lectura automática se equivoca a veces, sobre todo con fotos torcidas o borrosas y con figuras pequeñas.</p>
-    <label class="drop" id="oDrop"><b id="oName">Elegir PDF o imagen</b><span>o arrastra el archivo aquí · PDF, JPG, PNG</span>
-      <input type="file" id="oFile" accept=".pdf,application/pdf,image/png,image/jpeg,image/webp" hidden></label>
-    <div class="row" id="oPages" hidden>
-      <div class="field"><label for="oFrom">Desde la página</label><input id="oFrom" type="number" min="1" value="1"></div>
-      <div class="field"><label for="oTo">Hasta la página</label><input id="oTo" type="number" min="1" value="1"></div>
-    </div>
-    <label class="check"><input type="checkbox" id="oSplit" checked><span>Leer las dos voces de cada pentagrama<small>Para himnarios a 4 voces: soprano y contralto arriba, tenor y bajo abajo, cada una con su plica. Así podrás escuchar cada voz sola. Desmárcalo para partituras de una voz por pentagrama.</small></span></label>
-    <div class="steps" id="oSteps" hidden></div>
-    <p style="font-size:12px">Usa tu cuenta de Claude: cada página es una consulta. Se abrirá como partitura nueva; guarda antes la actual si la necesitas.</p>
-    <div class="actions"><button class="btn" data-x="cancel">Cancelar</button><button class="btn primary" data-x="go" disabled>Leer partitura</button></div>`, (d) => {
-    const fi = d.querySelector("#oFile"), go = d.querySelector('[data-x="go"]'), drop = d.querySelector("#oDrop");
-    const steps = d.querySelector("#oSteps");
-    const setFile = async (f) => {
-      if (!f) return;
-      if (!/pdf|image\/(png|jpe?g|webp)/i.test(f.type) && !/\.(pdf|png|jpe?g|webp)$/i.test(f.name)) { toast("Elige un PDF o una imagen JPG o PNG."); return; }
-      file = f; d.querySelector("#oName").textContent = f.name; go.disabled = false;
-      const isPdf = /pdf/i.test(f.type) || /\.pdf$/i.test(f.name);
-      d.querySelector("#oPages").hidden = !isPdf;
-      if (isPdf) {
-        try { await ensurePdf(); const doc = await pdfjsLib.getDocument({ data: new Uint8Array(await f.arrayBuffer()), isEvalSupported: false }).promise; d.querySelector("#oTo").value = Math.min(doc.numPages, 20); d.querySelector("#oTo").max = doc.numPages; d.querySelector("#oFrom").max = doc.numPages; }
-        catch (e) { toast(e.message || "No se pudo abrir el PDF."); }
-      }
-    };
-    fi.onchange = () => setFile(fi.files[0]);
-    drop.addEventListener("dragover", (e) => { e.preventDefault(); drop.classList.add("over"); });
-    drop.addEventListener("dragleave", () => drop.classList.remove("over"));
-    drop.addEventListener("drop", (e) => { e.preventDefault(); drop.classList.remove("over"); setFile(e.dataTransfer.files[0]); });
-    d.querySelector('[data-x="cancel"]').onclick = () => { if (ctl) ctl.abort(); closeModal(); };
-    const ui = {
-      add(text, s) { const row = document.createElement("div"); row.dataset.s = s; row.textContent = text; steps.appendChild(row); return row; },
-      step(text) { const cur = steps.querySelector('[data-s="now"]'); if (cur) cur.remove(); this.add(text, "now"); },
-      done(text) { const cur = steps.querySelector('[data-s="now"]'); if (cur) cur.remove(); this.add(text, "done"); },
-      warn(text) { const cur = steps.querySelector('[data-s="now"]'); if (cur) cur.remove(); this.add(text, "warn"); },
-    };
-    go.onclick = async () => {
-      if (running || !file) return;
-      running = true; go.disabled = true; steps.hidden = false; steps.innerHTML = "";
-      d.querySelector('[data-x="cancel"]').textContent = "Detener";
-      ctl = new AbortController();
-      const opts = { split: d.querySelector("#oSplit").checked, from: +d.querySelector("#oFrom").value || 1, to: +d.querySelector("#oTo").value || 1 };
-      try {
-        const { score: sc, report } = await runOmr(file, opts, ui, ctl.signal);
-        stopPlayback(); load(sc); savedOnce = false; dirty = true;
-        render(); syncProps(); scheduleSave();
-        showOmrReport(report, sc);
-      } catch (e) {
-        const cur = steps.querySelector('[data-s="now"]'); if (cur) cur.remove();
-        if (e && e.code === "cancelled") { if (document.getElementById("oSteps")) ui.warn("Lectura detenida."); }
-        else ui.warn((e && OMR_ERR[e.code]) || (e && e.message) || "No se pudo leer la partitura.");
-        if (e && e.code === "not_granted") go.hidden = true;
-      } finally {
-        running = false; ctl = null; go.disabled = false;
-        const c = document.querySelector('#modal [data-x="cancel"]'); if (c) c.textContent = "Cerrar";
-      }
-    };
+  openModal(`<h3>Leer partitura de PDF</h3>
+    <p>La lectura automática de PDF estará en la app de escritorio de Atril. Por ahora, abre el PDF en un programa que lo convierta a MusicXML (por ejemplo Audiveris o MuseScore) e importa aquí el archivo .musicxml o .mxl.</p>
+    <div class="actions"><button class="btn" data-x="close">Cerrar</button><button class="btn primary" data-x="import">Importar MusicXML…</button></div>`, (d) => {
+    d.querySelector('[data-x="close"]').onclick = closeModal;
+    d.querySelector('[data-x="import"]').onclick = () => { closeModal(); document.getElementById("fileIn").click(); };
   });
 }
 function showOmrReport(report, sc) {
@@ -3233,7 +2993,7 @@ async function libraryDialog() {
     d.querySelector('[data-x="close"]').onclick = closeModal;
   });
   const note = document.getElementById("libNote");
-  if (note) note.textContent = lib.kind === "cloud" ? "Se guardan en tu cuenta de Claude y solo tú puedes verlas." : "Se guardan solo en este navegador, porque esta vista no está conectada a una cuenta de Claude. Para guardarlas en tu cuenta, abre Atril dentro de claude.ai o la app de Claude con tu sesión iniciada. Mientras tanto, descarga una copia para no perderlas.";
+  if (note) note.textContent = "Se guardan solo en este navegador. Descarga una copia para no perderlas.";
   let items = [];
   try { items = await lib.list(); } catch (e) { const l = document.getElementById("libList"); if (l) l.innerHTML = "<p>No se pudo cargar la lista. Revisa tu conexión.</p>"; return; }
   const list = document.getElementById("libList"); if (!list) return;
@@ -3282,7 +3042,7 @@ function syncProps() {
   document.getElementById("docname").textContent = score.title || "Sin título";
   document.getElementById("pSize").value = String(score.layout.staff || 6);
   document.getElementById("pPer").value = String(score.layout.perSystem || 0);
-  syncMeterFields(); syncPalette(); updateShareBtn();
+  syncMeterFields(); syncPalette();
 }
 function syncMeterFields() {
   if (!score) return;
@@ -3356,7 +3116,7 @@ function newScoreDialog() {
       <div class="field"><label for="nKey">Tonalidad</label><select id="nKey">${Object.keys(KEY_ES).sort((a, b) => a - b).map((k) => `<option value="${k}" ${k === "0" ? "selected" : ""}>${KEY_ES[k]}</option>`).join("")}</select></div>
     </div>
     <div class="field"><label for="nTempo">Tempo (negras por minuto)</label><input id="nTempo" type="number" min="30" max="240" value="90"></div>
-    <div class="actions"><button class="btn" data-x="omr" style="margin-right:auto">Leer desde PDF o foto…</button><button class="btn" data-x="cancel">Cancelar</button><button class="btn primary" data-x="ok">Crear partitura</button></div>`, (d) => {
+    <div class="actions"><button class="btn" data-x="omr" style="margin-right:auto">Leer desde PDF…</button><button class="btn" data-x="cancel">Cancelar</button><button class="btn primary" data-x="ok">Crear partitura</button></div>`, (d) => {
     d.querySelector('[data-x="omr"]').onclick = () => { closeModal(); omrDialog(); };
     d.querySelectorAll(".tpl").forEach((b) => b.addEventListener("click", () => { tpl = b.dataset.t; d.querySelectorAll(".tpl").forEach((x) => x.setAttribute("aria-pressed", String(x === b))); }));
     d.querySelector('[data-x="cancel"]').onclick = closeModal;
@@ -3393,14 +3153,7 @@ function helpDialog() {
     <p><b>Letra:</b> con L se abre la barra de letra. Escribe la sílaba y pulsa Espacio para pasar a la nota siguiente, o guion para separar sílabas de una misma palabra. Con “Pegar estrofa” puedes poner una estrofa entera escrita así: Al-ce-mos hoy la voz.</p>
     <p><b>Cambios de compás o tonalidad:</b> pon el cursor en el compás donde empieza el cambio y elige el compás o la tonalidad en el panel Partitura.</p>
     <p>Para ensayar una voz del coro, usa la S de esa voz para escucharla sola, o la M para silenciarla.</p>
-    <p><b>En esta vista:</b></p>
-    <div class="avail">
-      <b class="${lib.kind === "cloud" ? "ok" : "no"}">${lib.kind === "cloud" ? "Sí" : "No"}</b><span>Guardar en tu cuenta de Claude${lib.kind === "cloud" ? "" : " (se guarda en este navegador)"}</span>
-      <b class="${downloads ? "ok" : "no"}">${downloads ? "Sí" : "Parcial"}</b><span>Descargas por Claude${downloads ? "" : " (se intenta la descarga normal del navegador)"}</span>
-      <b class="${sampleFn ? "ok" : "no"}">${sampleFn ? "Sí" : "No"}</b><span>Leer partituras de PDF o foto con Claude</span>
-      <b class="ok">Sí</b><span>Escribir, reproducir, letra, acordes y generar audio (funcionan en cualquier navegador)</span>
-    </div>
-    <p>Si algo aparece en “No”, abre Atril dentro de claude.ai o la app de Claude con tu sesión iniciada.</p>
+    <p>Atril funciona en tu equipo, sin cuenta y sin internet: escribir, reproducir, letra, acordes, transponer y generar PDF, MusicXML y audio.</p>
     <div class="actions"><button class="btn primary" data-x="close">Entendido</button></div>`, (d) => { d.querySelector('[data-x="close"]').onclick = closeModal; });
 }
 
@@ -3548,7 +3301,6 @@ function wire() {
   document.getElementById("sound").onchange = (e) => { lsSet("atril.sonido", e.target.value); if (isBank(e.target.value)) loadSound(e.target.value).catch(() => {}); };
   document.getElementById("bNew").onclick = newScoreDialog;
   document.getElementById("bLib").onclick = libraryDialog;
-  document.getElementById("bShare").onclick = shareDialog;
   document.getElementById("bSave").onclick = () => saveNow(false);
   document.getElementById("bHelp").onclick = helpDialog;
   const bf = document.getElementById("bFile"), mf = document.getElementById("mFile");
@@ -3575,10 +3327,10 @@ function wire() {
 function start() {
   let draft = null;
   try { const d = lsGet(LS_DRAFT); if (d) { const p = JSON.parse(d); if (p && Array.isArray(p.staves) && p.staves.length) draft = p; } } catch (e) {}
-  // Enlace de una partitura: la página trae la partitura incrustada y la abre directamente (no necesita la base de datos)
+  // Partitura incrustada en la página: se abre directamente en vez del ejemplo
   let embedded = null;
   try { const el = document.getElementById("atril-embed"); if (el) { const e = JSON.parse(el.textContent); if (e && Array.isArray(e.staves)) embedded = e; } } catch (e) {}
-  if (embedded) { draft = null; share.autoOpened = true; }
+  if (embedded) draft = null;
   load(embedded || draft || sampleScore());
   solfeoOn = lsGet("atril.solfeo") === "1";
   chordMode = ["en", "es"].includes(lsGet("atril.acordes")) ? lsGet("atril.acordes") : "off";
@@ -3590,25 +3342,8 @@ function start() {
   document.addEventListener("pointerdown", warm, true); document.addEventListener("keydown", warm, true);
   setSaveState("draft");
   if (embedded) setTimeout(() => toast(`«${embedded.title || "Sin título"}» — pulsa ▶ para escucharla. Puedes transponerla y descargar PDF, audio o MusicXML.`), 600);
-  else if (!draft) setTimeout(() => !share.autoOpened && toast("Partitura de ejemplo. Pulsa ▶ para escucharla o “Nueva” para empezar la tuya."), 600);
+  else if (!draft) setTimeout(() => toast("Partitura de ejemplo. Pulsa ▶ para escucharla o “Nueva” para empezar la tuya."), 600);
   document.getElementById("desk").focus({ preventScroll: true });
-  const cl = window.claude;
-  if (cl && typeof cl.use === "function") {
-    cl.use("downloads").then((d) => { downloads = d; }).catch(() => {});
-    cl.use("sample").then(async (s) => {
-      if (!s) return;
-      const lim = await s.limits().catch(() => null);
-      if (lim && lim.images) { sampleFn = s; sampleImgMax = lim.images.maxCount || 6; }
-    }).catch(() => {});
-    Promise.all([cl.use("db"), cl.use("user")]).then(async ([db, user]) => {
-      if (db) { const owner = user ? await user.isOwner().catch(() => false) : false; try { initShare(db, owner, !!draft); } catch (e) {} }
-      else setTimeout(() => toast("Para ver partituras compartidas contigo y guardar en tu cuenta, abre Atril en Claude con tu sesión iniciada."), 4500);
-      if (!db || !user) return;
-      const id = await user.id(); if (!id) return;
-      lib = makeDbLib(db, id);
-      try { const items = await lib.list(); if (items.some((x) => x.id === score.id)) { savedOnce = true; setSaveState(dirty ? "dirty" : "saved"); } } catch (e) {}
-    }).catch(() => {});
-  }
 }
 start();
 </script>

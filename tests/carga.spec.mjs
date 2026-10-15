@@ -28,6 +28,9 @@ test("carga sin errores y sin pedir nada a internet", async ({ page }) => {
   });
   expect(libs).toEqual([true, true, true, true, true, true]);
 
+  // nada depende de la plataforma Claude
+  expect(await page.content()).not.toMatch(/window\.claude|Claude/);
+
   expect(external, "pedidos a internet").toEqual([]);
   expect(errors, "errores de consola").toEqual([]);
 });

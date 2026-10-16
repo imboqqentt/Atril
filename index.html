@@ -376,6 +376,7 @@ textarea.xml { width: 100%; height: 220px; font-family: var(--font-mono); font-s
       <button class="tool text" id="tSolfeo" aria-pressed="false" title="Mostrar nombres Do Re Mi bajo las notas">Do Re Mi</button>
       <button class="tool text" id="tSpeak" aria-pressed="false" title="Decir el nombre de cada nota al reproducir">Cantar nombres</button>
       <select id="chordMode" aria-label="Cifrado de acordes" title="Mostrar los acordes sobre la partitura"><option value="off">Sin acordes</option><option value="en">Acordes C Dm</option><option value="es">Acordes Do Rem</option></select>
+      <button class="tool text" id="tChord" title="Escribir un acorde en la nota elegida (Alt+K). Doble clic sobre el pentagrama de arriba lo pone en ese pulso; arrástralo para moverlo">Acorde +</button>
     </div>
   </div>
 
@@ -435,7 +436,18 @@ textarea.xml { width: 100%; height: 220px; font-family: var(--font-mono); font-s
           <div class="field"><label for="mSign">Signo al inicio</label><select id="mSign"><option value="">—</option><option value="segno">Segno 𝄋</option><option value="coda">Coda 𝄌</option></select></div>
         </div>
         <div class="field"><label for="mEnd">Al final del compás</label><select id="mEnd"><option value="">—</option><option value="toCoda">Al Coda (salta a 𝄌)</option><option value="fine">Fine</option><option value="DC">D.C.</option><option value="DCalFine">D.C. al Fine</option><option value="DCalCoda">D.C. al Coda</option><option value="DS">D.S.</option><option value="DSalFine">D.S. al Fine</option><option value="DSalCoda">D.S. al Coda</option></select></div>
+        <label class="check"><input type="checkbox" id="mRpt"><span>Repetir el compás anterior (%)<small>Copia el compás anterior aquí (debe estar vacío) y lo muestra con el signo %. Tecla %.</small></span></label>
+        <label class="check"><input type="checkbox" id="mSlash"><span>Barras de ritmo<small>Muestra una barra por pulso, para improvisar o acompañar.</small></span></label>
         <div class="chips" id="pMarks"></div>
+      </section>
+      <section class="sect" aria-labelledby="hChords">
+        <h2 id="hChords">Acordes</h2>
+        <p class="hint" id="pChordInfo"></p>
+        <div class="row">
+          <button class="btn" id="bChordFix" title="Convierte los acordes detectados en acordes escritos, que puedes cambiar y mover">Fijar los detectados</button>
+          <button class="btn" id="bChordClear" title="Borra los acordes escritos (vuelven los detectados)">Quitar los escritos</button>
+        </div>
+        <label class="check"><input type="checkbox" id="pChordAuto"><span>Completar con los detectados<small>Donde no escribiste acordes, Atril muestra los que detecta (en gris).</small></span></label>
       </section>
       <section class="sect" aria-labelledby="hLayout">
         <h2 id="hLayout">Tamaño</h2>
@@ -443,6 +455,7 @@ textarea.xml { width: 100%; height: 220px; font-family: var(--font-mono); font-s
           <div class="field"><label for="pSize">Pentagrama</label><select id="pSize"></select></div>
           <div class="field"><label for="pPer">Compases</label><select id="pPer"></select></div>
         </div>
+        <label class="check"><input type="checkbox" id="pMmRest"><span>Agrupar silencios de varios compases<small>Dos o más compases vacíos seguidos se muestran como uno solo con su número (como en las partes de instrumento).</small></span></label>
       </section>
       <section class="sect" aria-labelledby="hStaves">
         <h2 id="hStaves">Pentagramas</h2>
@@ -829,6 +842,9 @@ function measureMinW(model, m, L) {
       mx = Math.max(mx, w);
     });
   });
+  // los acordes escritos no deben encimarse, y las barras de ritmo necesitan un lugar por pulso
+  if (chordMode !== "off") mx = Math.max(mx, (score.chords || []).filter((c) => c.m === m).reduce((a, c) => a + chordText(c).length * 7.2 * L + 12, 0));
+  if (mk(m).slash) mx = Math.max(mx, +model.T.time(m).split("/")[0] * 26);
   return Math.max(64, mx + 20);
 }
 function systemPrefixW(T, m, first) { return 38 + Math.abs(T.key(m)) * 10 + 8 + (m === 0 || T.timeChange(m) ? 30 : 0); }
@@ -870,18 +886,21 @@ function render() {
   const fixedN = +score.layout.perSystem || 0;
   // 1) sistemas
   const systems = []; let sys = null;
-  for (let m = 0; m < model.M; m++) {
-    const w0 = measureMinW(model, m, L);
+  for (let m = 0; m < model.M; ) {
+    const span = restRun(model, m); // silencio de varios compases: ocupa un solo lugar
+    const w0 = span > 1 ? Math.max(110, measureMinW(model, m, L)) : measureMinW(model, m, L);
     const full = sys && (fixedN ? sys.ms.length >= fixedN : sys.ms.length && sys.used + w0 + midChangeW(T, m) > sys.avail);
     if (!sys || full) {
       const first = systems.length === 0;
-      sys = { ms: [], ws: [], pre: systemPrefixW(T, m, first), first, avail: avail - (first ? indent : 0), x0: MX + (first ? indent : 0) };
+      sys = { ms: [], ws: [], spans: {}, pre: systemPrefixW(T, m, first), first, avail: avail - (first ? indent : 0), x0: MX + (first ? indent : 0) };
       sys.used = sys.pre; systems.push(sys);
       sys.ms.push(m); sys.ws.push(w0); sys.used += w0;
     } else {
       const w = w0 + midChangeW(T, m);
       sys.ms.push(m); sys.ws.push(w); sys.used += w;
     }
+    if (span > 1) sys.spans[m] = span;
+    m += span;
   }
   systems.forEach((s, i) => {
     const isLast = i === systems.length - 1;
@@ -924,6 +943,7 @@ function render() {
       sysStaves[sysIndex] = [];
       s.ms.forEach((m, k) => {
         const w = s.ws[k];
+        const span = s.spans[m] || 1, mEnd = m + span - 1; // con silencios agrupados, este lugar va de m a mEnd
         const keyNow = T.key(m), keySpec = KEY_VF[String(keyNow)];
         const staves = score.staves.map((st, sIdx) => {
           const yy = s.y + yOff[sIdx];
@@ -937,8 +957,8 @@ function render() {
             if (T.keyChange(m)) stave.addKeySignature(keySpec, KEY_VF[String(T.key(m - 1))]);
             if (T.timeChange(m)) stave.addTimeSignature(T.time(m));
           }
-          if (m === model.M - 1) stave.setEndBarType(VF.Barline.type.END);
-          else if (T.keyChange(m + 1) || T.timeChange(m + 1)) stave.setEndBarType(VF.Barline.type.DOUBLE);
+          if (mEnd === model.M - 1) stave.setEndBarType(VF.Barline.type.END);
+          else if (T.keyChange(mEnd + 1) || T.timeChange(mEnd + 1)) stave.setEndBarType(VF.Barline.type.DOUBLE);
           if (sysIndex === 0 && k === 0 && sIdx === 0) stave.setTempo({ duration: "q", bpm: score.tempo }, chordMode !== "off" ? -24 : -6);
           const mm = mk(m);
           if (mm.repStart) stave.setBegBarType(VF.Barline.type.REPEAT_BEGIN);
@@ -958,10 +978,30 @@ function render() {
           drawConnectors(ctx, staves);
           if (sysIndex === 0) drawNames(svg, staves, x, labels, L);
         }
-        drawGroupBars(ctx, staves, m === model.M - 1);
+        drawGroupBars(ctx, staves, mEnd === model.M - 1);
+        if (span > 1) {
+          // silencio de varios compases: la barra gruesa con el número; los compases del grupo comparten este lugar
+          staves.forEach((st, sIdx) => {
+            try { new VF.MultiMeasureRest(span, { number_of_measures: span }).setStave(st).setContext(ctx).draw(); } catch (e) { /* omitido */ }
+            for (let mm2 = m + 1; mm2 <= mEnd; mm2++) rects.push({ page: pi, staff: sIdx, m: mm2, x, y: st.getYForLine(0) - 22, w, h: STAFF_H + 44, nx: startX, top: st.getYForLine(0) });
+          });
+          x += w;
+          return;
+        }
+        const rptHere = showRepeat(model, m), slashHere = !!mk(m).slash;
         const allVoices = [], beams = [], perStaffVoices = [], tuplets = [];
         score.staves.forEach((st, sIdx) => {
           const c = CLEFS[st.clef] || CLEFS.treble;
+          if (rptHere) { drawRepeatSign(svg, staves[sIdx], startX, x + w, L); return; }
+          if (slashHere) {
+            // barras de ritmo: una por pulso, del largo de la figura del compás (las notas, si hay, siguen sonando)
+            const [bn, bd] = T.time(m).split("/").map(Number), dd = { 1: "w", 2: "h", 4: "q", 8: "8", 16: "16" }[bd] || "q";
+            const sl = Array.from({ length: bn }, () => new VF.StaveNote({ clef: c.vf, keys: [c.rest[0]], duration: dd, type: "s", auto_stem: false, stem_direction: 1 }));
+            sl.forEach((n) => { n.setStave(staves[sIdx]); if (dd !== "w" && dd !== "h") n.setStemStyle({ fillStyle: "rgba(0,0,0,0)", strokeStyle: "rgba(0,0,0,0)" }); });
+            const voice = new VF.Voice({ num_beats: 4, beat_value: 4 }).setMode(VF.Voice.Mode.SOFT); voice.addTickables(sl);
+            perStaffVoices.push({ sIdx, vs: [{ voice, v: 0 }] }); allVoices.push({ voice, stave: staves[sIdx] });
+            return;
+          }
           const vlist = model.grid[sIdx][m];
           const two = vlist.filter(Boolean).length > 1;
           const staffHasLy = ly[sIdx].total > 0;
@@ -1022,7 +1062,7 @@ function render() {
         });
         const fmt = new VF.Formatter();
         perStaffVoices.forEach((ps) => { if (ps.vs.length) fmt.joinVoices(ps.vs.map((x) => x.voice)); });
-        fmt.format(allVoices.map((x) => x.voice), Math.max(20, staves[0].getNoteEndX() - startX - 12));
+        if (allVoices.length) fmt.format(allVoices.map((x) => x.voice), Math.max(20, staves[0].getNoteEndX() - startX - 12));
         allVoices.forEach((x) => x.voice.draw(ctx, x.stave));
         beams.forEach((b) => b.setContext(ctx).draw());
         tuplets.forEach((t) => { try { t.setContext(ctx).draw(); } catch (e) { /* corchete omitido */ } });
@@ -1035,7 +1075,7 @@ function render() {
   rendered.forEach((sv) => sv.forEach((seq) => {
     for (let i = 0; i < seq.length - 1; i++) {
       const a = seq[i], b = seq[i + 1];
-      if (!a.p.tieNext || b.p.rest) continue;
+      if (!a.p.tieNext || b.p.rest || b.p.start !== a.p.start + a.p.ticks) continue; // (un compás % no dibuja sus notas)
       const nk = Math.min(a.p.keys.length, b.p.keys.length);
       const idx = [...Array(nk).keys()];
       try {
@@ -1051,8 +1091,68 @@ function render() {
   drawLyrics(rendered, sysStaves, ly, L, LY_FS, LY_H);
   drawExpressions(rendered, sysStaves, ly, L);
   layout = { model, pages: pageEls, rendered, rects, systems, L };
-  pageEls.forEach(({ svg }, pi) => svg.addEventListener("pointerdown", (e) => onScoreClick(e, svg, pi)));
+  pageEls.forEach(({ svg }, pi) => { svg.addEventListener("pointerdown", (e) => onScoreClick(e, svg, pi)); svg.addEventListener("dblclick", (e) => onScoreDblClick(e, svg, pi)); });
   decorate();
+}
+/* ---------- compás de repetición (%), silencios agrupados y barras de ritmo (bloque C) ---------- */
+// Firma de lo que suena y se ve en un compás de una voz (sin la posición), para comparar con el anterior.
+function measureSig(model, s, v, m) {
+  const pcs = ((model.grid[s] || [])[m] || [])[v]; if (!pcs) return "-";
+  const notes = score.staves[s].voices[v].notes;
+  return pcs.map((p) => {
+    if (p.ghost) return "g" + p.ticks;
+    const n = notes[p.src] || {};
+    return [p.d, p.dots, p.rest ? 1 : 0, p.ticks, p.tieNext ? 1 : 0, (p.keys || []).map((k) => k.s + (k.a || 0) + k.o).join("+"),
+      p.part === 0 ? JSON.stringify([n.ly, n.art, n.orn, n.brk, n.gliss, n.sls, n.sle, n.hp, n.hpe, n.dyn, n.txt, n.grace, n.tup]) : ""].join(",");
+  }).join("|");
+}
+// ¿Se dibuja como % ? Marcado y de verdad igual al anterior en todas las voces (si se edita, vuelve a verse con sus notas).
+function showRepeat(model, m) {
+  if (m < 1 || !mk(m).rpt || model.T.len(m) !== model.T.len(m - 1)) return false;
+  return score.staves.every((st, s) => st.voices.every((_, v) => measureSig(model, s, v, m) === measureSig(model, s, v, m - 1)));
+}
+// Compás sin notas (solo silencios) y sin marcas, que se puede juntar en un silencio de varios compases.
+function restMeasure(model, m) {
+  if (Object.keys(mk(m)).length || (score.chords || []).some((c) => c.m === m)) return false;
+  return model.grid.every((rows) => (rows[m] || []).every((pcs) => !pcs || pcs.every((p) => p.rest)));
+}
+function restRun(model, m) {
+  if (!score.layout.mmRest) return 1;
+  const last = model.M - (model.trailing ? 1 : 0);
+  let n = 0;
+  while (m + n < last && restMeasure(model, m + n) && (n === 0 || (!model.T.keyChange(m + n) && !model.T.timeChange(m + n)))) n++;
+  return n >= 2 ? n : 1;
+}
+// Copia el compás anterior en el compás m (que debe estar vacío, al final de lo escrito) y lo marca con %.
+function repeatPrevMeasure(m) {
+  if (m < 1) { toast("El primer compás no puede repetir uno anterior."); return; }
+  const T = meterTable(), a = T.start(m - 1), b = T.start(m);
+  if (T.len(m) !== T.len(m - 1)) { toast("Para repetir, los dos compases tienen que ser del mismo largo."); return; }
+  const plan = [];
+  for (const st of score.staves) for (const [v, vc] of st.voices.entries()) {
+    let t = 0; const at = vc.notes.map((n) => { const x = t; t += noteTicks(n); return x; });
+    if (voiceEnd(vc) > b) { toast(`Para repetir, el compás ${barNum(m)} tiene que estar vacío, al final de lo escrito.`); return; }
+    const idx = vc.notes.map((_, i) => i).filter((i) => at[i] >= a && at[i] < b);
+    if (idx.some((i) => at[i] + noteTicks(vc.notes[i]) > b)) { toast("Una nota del compás anterior pasa la barra: no se puede repetir con %."); return; }
+    plan.push({ vc, v, src: idx.map((i) => vc.notes[i]) });
+  }
+  const padTo = (vc, to, hid) => { let t = voiceEnd(vc); while (t < to) { const mm = T.measureAt(t), me = T.start(mm) + T.len(mm); decomposeRest(t - T.start(mm), Math.min(me, to) - t).forEach((r) => vc.notes.push({ d: r[1], dots: 0, rest: true, tie: false, keys: [], hid: hid || undefined })); t = Math.min(me, to); } };
+  commit(() => {
+    plan.forEach(({ vc, v, src }) => {
+      if (!src.length) return;
+      padTo(vc, b, v > 0);
+      src.forEach((n) => { const c = clone(n); delete c.ly; vc.notes.push(c); }); // la letra es del compás original
+    });
+    score.marks = score.marks || {}; score.marks[m] = Object.assign({}, score.marks[m], { rpt: true });
+    cursor.index = curVoice().notes.length; cursor.tickHint = null;
+  });
+}
+// Signo de repetición de compás, centrado en el pentagrama
+function drawRepeatSign(svg, stave, x0, x1, L) {
+  const cx = (x0 + x1) / 2, cy = stave.getYForLine(2), d = 7 * L;
+  svgEl(svg, "path", { d: `M${cx - d} ${cy + d} L${cx + d} ${cy - d}`, stroke: "#111318", "stroke-width": 4 * L, "stroke-linecap": "round", class: "mrepeat" });
+  svgEl(svg, "circle", { cx: cx - d * 0.9, cy: cy - d * 0.55, r: 2.3 * L, fill: "#111318" });
+  svgEl(svg, "circle", { cx: cx + d * 0.9, cy: cy + d * 0.55, r: 2.3 * L, fill: "#111318" });
 }
 // Tramos (ligaduras de expresión, reguladores) en una voz: una nota con `sk` abre, la siguiente con `ek` cierra.
 // Una nota puede cerrar un tramo y abrir otro.
@@ -1186,16 +1286,35 @@ function measureOverlays(svg, staves, m, x, w, startX, rendered, model, L, ly, s
   if (sysStart) { lastChordInSystem.text = ""; lastChordInSystem.x = -1e9; }
   const xs = {};
   rendered.forEach((sv) => sv.forEach((seq) => seq.forEach((r) => { if (r.m === m && !r.p.rest && !(r.p.start in xs)) { try { xs[r.p.start] = r.vf.getNoteHeadBeginX(); } catch (e) {} } })));
-  measureChords(model, m, m === 0 ? null : lastChordInSystem.chord).forEach((c) => {
-    if (c.chord) lastChordInSystem.chord = c.chord;
+  const xAt = chordXFn(model.T, m, xs, startX, x + w);
+  const written = (score.chords || []).length > 0;
+  measureChordList(model, m, m === 0 ? null : lastChordInSystem.chord).forEach((c) => {
+    if (c.chord && c.chord.tones) lastChordInSystem.chord = c.chord;
     const t = chordText(c.chord);
-    if (!t || t === lastChordInSystem.text || xs[c.tick] == null) return;
-    if (xs[c.tick] < lastChordInSystem.x + 6 * L) return;
+    if (!t) return;
+    if (c.auto) {
+      // detectados: solo cuando cambian y donde hay una nota
+      if (t === lastChordInSystem.text || xs[c.tick] == null || xs[c.tick] < lastChordInSystem.x + 6 * L) return;
+    }
+    const cx = c.auto ? xs[c.tick] : xAt(c.tick);
     lastChordInSystem.text = t;
-    const el = svgEl(svg, "text", { x: xs[c.tick], y: top.getYForLine(0) - 10, "font-family": "IBM Plex Sans, Arial, sans-serif", "font-size": 12 * L, "font-weight": 600, fill: "#111318", class: "chordsym" }, t);
-    let w = t.length * 7 * L; try { w = el.getComputedTextLength() || w; } catch (e) {}
-    lastChordInSystem.x = xs[c.tick] + w;
+    const sel = c.ci != null && chordSel && chordSel.m === c.chord.m && chordSel.at === c.chord.at;
+    const el = svgEl(svg, "text", { x: cx, y: top.getYForLine(0) - 10, "font-family": "IBM Plex Sans, Arial, sans-serif", "font-size": 12 * L, "font-weight": 600,
+      fill: sel ? "#2446c4" : c.auto && written ? "#9aa0ad" : "#111318", class: "chordsym" + (c.auto ? " auto" : " own") + (sel ? " sel" : ""), ...(c.ci != null ? { "data-ci": c.ci } : {}) }, t);
+    let tw = t.length * 7 * L; try { tw = el.getComputedTextLength() || tw; } catch (e) {}
+    lastChordInSystem.x = cx + tw;
   });
+}
+// x de un instante del compás: en una nota si hay; si no, entre las notas vecinas (o los bordes del compás).
+function chordXFn(T, m, xs, x0, x1) {
+  const s0 = T.start(m), s1 = s0 + T.len(m);
+  const pts = [[s0, x0], ...Object.keys(xs).map(Number).sort((a, b) => a - b).map((t) => [t, xs[t]]), [s1, x1 - 14]];
+  return (tick) => {
+    if (xs[tick] != null) return xs[tick];
+    let a = pts[0], b = pts[pts.length - 1];
+    pts.forEach((p) => { if (p[0] <= tick && p[0] >= a[0]) a = p; if (p[0] >= tick && p[0] <= b[0]) b = p; });
+    return b[0] === a[0] ? a[1] : a[1] + ((tick - a[0]) / (b[0] - a[0])) * (b[1] - a[1]);
+  };
 }
 function drawLyrics(rendered, sysStaves, ly, L, LY_FS, LY_H) {
   const base = {}; // `${sys}_${s}` → y de la primera línea
@@ -1611,8 +1730,136 @@ function removeChange(m, what) {
   else setTimeAt(m, T.time(m - 1));
 }
 
+/* ---------- edición de acordes escritos ---------- */
+const chordAtSel = () => (chordSel ? (score.chords || []).find((c) => c.m === chordSel.m && c.at === chordSel.at) : null);
+function ensureChordsShown() {
+  if (chordMode !== "off") return;
+  chordMode = "en"; lsSet("atril.acordes", chordMode);
+  const s = document.getElementById("chordMode"); if (s) s.value = chordMode;
+}
+// Pinta el acorde elegido sin volver a dibujar la partitura
+function paintChordSel() {
+  if (!layout) return;
+  layout.pages.forEach(({ svg }) => svg.querySelectorAll(".chordsym.own").forEach((el) => {
+    const c = (score.chords || [])[+el.dataset.ci], on = !!(c && chordSel && c.m === chordSel.m && c.at === chordSel.at);
+    el.classList.toggle("sel", on); el.setAttribute("fill", on ? "#2446c4" : "#111318");
+  }));
+}
+const roundAt = (x) => Math.round(x * 10000) / 10000;
+function cursorChordPos() {
+  const T = meterTable(), vc = curVoice();
+  const tick = selNote() ? startTickOf(vc, cursor.index - 1) : cursorTick();
+  const m = T.measureAt(tick);
+  return { m, at: roundAt((tick - T.start(m)) / TQ) };
+}
+// Diálogo para escribir o cambiar un acorde en una posición. Vacío = borrar.
+function chordDialog(pos, prefill) {
+  const ex = (score.chords || []).find((c) => c.m === pos.m && c.at === pos.at);
+  let sugg = prefill != null ? prefill : ex ? chordText(ex) : "";
+  if (prefill == null && !ex) { try { sugg = chordText(chordAtTick(buildModel(), meterTable().start(pos.m) + Math.round(pos.at * TQ))) || ""; } catch (e) {} }
+  openModal(`<h3>${ex ? "Cambiar acorde" : "Escribir acorde"} · c. ${barNum(pos.m)}${pos.at ? `, tiempo ${roundAt(pos.at + 1)}` : ""}</h3>
+    <p>En inglés o latino: C, Cm7, F#m7♭5, Bb/D, G7(♭9), Do7, Sib/Re, Lam(add9). N.C. o un texto entre paréntesis también sirven. Vacío lo borra.</p>
+    <div class="field"><label for="chIn">Acorde</label><input id="chIn" maxlength="24" value="${esc(sugg)}" autocomplete="off" spellcheck="false"></div>
+    <p class="hint" id="chErr" hidden></p>
+    <div class="actions"><button class="btn" data-x="close">Cancelar</button><button class="btn" data-x="raw" hidden>Usar como texto</button><button class="btn primary" data-x="ok">Listo</button></div>`, (d) => {
+    const inp = d.querySelector("#chIn"), err = d.querySelector("#chErr"), raw = d.querySelector('[data-x="raw"]');
+    inp.focus(); inp.select();
+    const save = (val) => {
+      closeModal(); chordSel = val ? { m: pos.m, at: pos.at } : null; if (val) ensureChordsShown();
+      commit(() => {
+        score.chords = (score.chords || []).filter((c) => !(c.m === pos.m && c.at === pos.at));
+        if (val) score.chords.push({ m: pos.m, at: pos.at, ...val });
+        sortChords(); if (!score.chords.length) delete score.chords;
+      });
+      document.getElementById("desk").focus({ preventScroll: true });
+    };
+    const ok = () => {
+      const t = inp.value.trim();
+      if (!t) return save(null);
+      const c = parseChord(t);
+      if (c) return save(c);
+      err.hidden = false; raw.hidden = false;
+      err.textContent = `No entiendo «${t}» como acorde. Revisa la nota y el tipo (por ejemplo Cm7 o Rem7), o úsalo tal cual como texto.`;
+    };
+    d.querySelector('[data-x="ok"]').onclick = ok;
+    raw.onclick = () => save({ text: inp.value.trim().slice(0, 24) });
+    inp.onkeydown = (e) => { if (e.key === "Enter") { e.preventDefault(); ok(); } };
+    d.querySelector('[data-x="close"]').onclick = closeModal;
+  });
+}
+function addChordAtCursor() { const pos = cursorChordPos(); chordDialog(pos); }
+// Mueve el acorde elegido `dq` negras (puede cruzar la barra); no lo pone encima de otro.
+function moveChordBy(dq) {
+  const c = chordAtSel(); if (!c) return;
+  const T = meterTable(), end = T.start(Math.max(1, scoreLen(buildModel())));
+  const abs = Math.max(0, Math.min(end - 1, chordAbs(T, c) + Math.round(dq * TQ)));
+  const m = T.measureAt(abs), at = roundAt((abs - T.start(m)) / TQ);
+  moveChordTo(c, { m, at });
+}
+function moveChordTo(c, to) {
+  if (c.m === to.m && c.at === to.at) return;
+  if ((score.chords || []).some((x) => x !== c && x.m === to.m && x.at === to.at)) { toast("Ya hay un acorde en ese pulso."); return; }
+  chordSel = { m: to.m, at: to.at };
+  commit(() => { c.m = to.m; c.at = to.at; sortChords(); });
+}
+function deleteChord() { const c = chordAtSel(); if (!c) return; chordSel = null; commit(() => { score.chords = score.chords.filter((x) => x !== c); if (!score.chords.length) delete score.chords; }); }
+// Convierte los acordes detectados en escritos (en los compases que no tienen escritos), para corregirlos desde ahí.
+function fixDetectedChords() {
+  const model = buildModel(), T = model.T, M = scoreLen(model), add = [];
+  let prev = null, last = "";
+  for (let m = 0; m < M; m++) {
+    if ((score.chords || []).some((c) => c.m === m)) { last = ""; continue; }
+    measureChords(model, m, prev).forEach((x) => {
+      if (!x.chord) return; prev = x.chord;
+      const t = chordText(x.chord, "en"); if (t === last) return; last = t;
+      const c = { m, at: roundAt((x.tick - T.start(m)) / TQ), root: { s: x.chord.root.s, a: x.chord.root.a || 0 }, q: x.chord.q };
+      if (x.chord.bass) c.bass = { s: x.chord.bass.s, a: x.chord.bass.a || 0 };
+      add.push(c);
+    });
+  }
+  if (!add.length) { toast("No hay acordes detectados para fijar."); return; }
+  ensureChordsShown();
+  commit(() => { score.chords = (score.chords || []).concat(add); sortChords(); });
+  toast(`${add.length} acordes fijados: ahora puedes cambiarlos (doble clic) o moverlos (arrastrar o ← →).`);
+}
+function clearChords() { if (!(score.chords || []).length) return; chordSel = null; commit(() => { delete score.chords; }); }
+// Arrastrar un acorde escrito: se ajusta al pulso (con Alt, a medio pulso) y puede pasar a otro compás del sistema.
+function startChordDrag(e, svg, pi, el) {
+  const c = (score.chords || [])[+el.dataset.ci]; if (!c) return;
+  chordSel = { m: c.m, at: c.at }; paintChordSel();
+  document.getElementById("desk").focus({ preventScroll: true });
+  const T = layout.model.T;
+  const toSvg = (ev) => { const pt = svg.createSVGPoint(); pt.x = ev.clientX; pt.y = ev.clientY; return pt.matrixTransform(svg.getScreenCTM().inverse()); };
+  const x0 = toSvg(e).x; let target = null;
+  const move = (ev) => {
+    const p = toSvg(ev); if (!target && Math.abs(p.x - x0) < 4) return;
+    const r = layout.rects.find((r) => r.page === pi && r.staff === 0 && p.x >= r.x && p.x <= r.x + r.w); if (!r) return;
+    const span = Math.max(10, r.x + r.w - 14 - r.nx), len = T.len(r.m), step = beatOf(T.time(r.m)) / (ev.altKey ? 2 : 1);
+    let off = Math.round((Math.max(0, Math.min(1, (p.x - r.nx) / span)) * len) / step) * step; if (off >= len) off = len - step;
+    target = { m: r.m, at: roundAt(off / TQ) };
+    el.setAttribute("x", r.nx + (off / len) * span);
+  };
+  const up = () => { svg.removeEventListener("pointermove", move); window.removeEventListener("pointerup", up); if (target) moveChordTo(c, target); };
+  svg.addEventListener("pointermove", move); window.addEventListener("pointerup", up);
+}
+// Doble clic: sobre un acorde escrito lo cambia; sobre el pentagrama de arriba (encima de la línea superior) agrega uno en ese pulso.
+function onScoreDblClick(e, svg, pi) {
+  if (lyricMode) return;
+  const el = e.target.closest && e.target.closest(".chordsym.own");
+  if (el) { const c = score.chords[+el.dataset.ci]; if (c) { chordSel = { m: c.m, at: c.at }; chordDialog({ m: c.m, at: c.at }); } return; }
+  const pt = svg.createSVGPoint(); pt.x = e.clientX; pt.y = e.clientY;
+  const p = pt.matrixTransform(svg.getScreenCTM().inverse());
+  const r = layout.rects.find((r) => r.page === pi && r.staff === 0 && p.x >= r.x && p.x <= r.x + r.w && p.y >= r.y - 30 && p.y < r.top);
+  if (!r) return;
+  const T = layout.model.T, len = T.len(r.m), step = beatOf(T.time(r.m)), span = Math.max(10, r.x + r.w - 14 - r.nx);
+  let off = Math.round((Math.max(0, Math.min(1, (p.x - r.nx) / span)) * len) / step) * step; if (off >= len) off = len - step;
+  chordDialog({ m: r.m, at: roundAt(off / TQ) });
+}
 function onScoreClick(e, svg, pi) {
   if (lyricMode) return;
+  const chEl = e.target.closest && e.target.closest(".chordsym.own");
+  if (chEl) { startChordDrag(e, svg, pi, chEl); return; }
+  if (chordSel) { chordSel = null; paintChordSel(); }
   const g = e.target.closest && e.target.closest('[id^="vf-n"]');
   if (g) {
     const [s, v, i] = g.id.slice(4).split("_").map(Number);
@@ -1793,6 +2040,9 @@ function transposeScore(iv, df, staffSet) {
     }));
   });
   if (!staffSet) {
+    // los acordes escritos se transponen con la partitura (con la ortografía de la tonalidad nueva)
+    const tk = (k) => { const r = transposeKey({ s: k.s, a: k.a || 0, o: 4 }, iv, newKey); return { s: r.s, a: r.a || 0 }; };
+    (score.chords || []).forEach((c) => { if (c.root) c.root = tk(c.root); if (c.bass) c.bass = tk(c.bass); });
     score.key = newKey;
     (score.changes || []).forEach((c) => { if (c.key != null) c.key = wrapFifths(+c.key + df); });
   }
@@ -2416,6 +2666,67 @@ const CHORD_T = [
   ["7", [0, 4, 10]], ["maj7", [0, 4, 11]], ["m7", [0, 3, 10]], ["9", [0, 2, 4, 10]],
 ];
 let chordMode = "off"; // off | en | es
+let chordSel = null; // acorde escrito elegido: { m, at }
+/* ---------- acordes escritos (score.chords) ----------
+   score.chords = [{ m, at, root:{s,a}, q, bass?:{s,a} } | { m, at, text }]   at = negras desde el inicio del compás.
+   Los escritos mandan en su compás; donde no hay, se muestran los detectados (en gris si la partitura tiene escritos). */
+const Q_SYN = {
+  "": "", M: "", maj: "", Maj: "", ma: "", m: "m", min: "m", mi: "m", "-": "m",
+  dim: "°", "°": "°", o: "°", dim7: "°7", "°7": "°7", o7: "°7", aug: "+", "+": "+", "#5": "+", "(#5)": "+",
+  m7b5: "m7(♭5)", "m7(b5)": "m7(♭5)", "-7b5": "m7(♭5)", "ø": "m7(♭5)", "ø7": "m7(♭5)", "Ø": "m7(♭5)",
+  maj7: "maj7", M7: "maj7", "Δ": "maj7", "Δ7": "maj7", ma7: "maj7", j7: "maj7", Maj7: "maj7",
+  m7: "m7", "-7": "m7", min7: "m7", mi7: "m7", 7: "7", 9: "9", 11: "11", 13: "13",
+  maj9: "maj9", M9: "maj9", "Δ9": "maj9", m9: "m9", "-9": "m9", m11: "m11", "-11": "m11", m13: "m13", maj13: "maj13",
+  "m(maj7)": "m(maj7)", mM7: "m(maj7)", mmaj7: "m(maj7)", "m(Δ7)": "m(maj7)", "-Δ7": "m(maj7)", "mΔ7": "m(maj7)",
+  6: "6", m6: "m6", "-6": "m6", "6/9": "6/9", 69: "6/9", "m6/9": "m6/9", m69: "m6/9",
+  sus: "sus4", sus4: "sus4", sus2: "sus2", "7sus": "7sus4", "7sus4": "7sus4", "9sus": "9sus4", "9sus4": "9sus4",
+  add9: "add9", add2: "add9", madd9: "m(add9)", "m(add9)": "m(add9)", "7alt": "7alt", alt: "7alt", "+7": "7(♯5)", aug7: "7(♯5)", 5: "5",
+};
+// Calidad escrita por el usuario → forma de Atril (o null si no se entiende).
+function normQuality(raw) {
+  const s = String(raw).trim().replace(/♭/g, "b").replace(/♯/g, "#").replace(/\s+/g, "");
+  if (s in Q_SYN) return Q_SYN[s];
+  // dominantes y séptimas alteradas: 7(b9), 7#11, 13b9, maj7#11, 7(#5,b9)…
+  const m = s.match(/^(maj7|M7|Δ7?|m7|-7|7|9|13)\(?((?:[b#](?:5|9|11|13)[,]?){1,3})\)?$/);
+  if (m) {
+    const base = Q_SYN[m[1]] || m[1];
+    const alts = m[2].match(/[b#](?:5|9|11|13)/g).map((a) => (a[0] === "b" ? "♭" : "♯") + a.slice(1));
+    return `${base}(${alts.join(",")})`;
+  }
+  return null;
+}
+const ROOT_LATIN = { do: "C", re: "D", mi: "E", fa: "F", sol: "G", la: "A", si: "B" };
+// Lee una nota (raíz o bajo) al comienzo del texto: inglés (C, Bb, F#) o latino (Do, Sib, Fa#). Devuelve {k, rest}.
+function readRoot(t) {
+  const lat = t.match(/^(sol|do|re|mi|fa|la|si)([#b♯♭]?)/i);
+  const en = !lat && t.match(/^([A-Ga-g])([#b♯♭]?)/);
+  const m = lat || en; if (!m) return null;
+  const s = lat ? ROOT_LATIN[m[1].toLowerCase()] : m[1].toUpperCase();
+  const a = /[#♯]/.test(m[2]) ? 1 : /[b♭]/.test(m[2]) ? -1 : 0;
+  return { k: { s, a }, rest: t.slice(m[0].length) };
+}
+// Texto → acorde. {root, q, bass} · {text} (N.C. o entre paréntesis) · null si no se entiende.
+function parseChord(text) {
+  const t = String(text || "").trim();
+  if (!t) return null;
+  if (/^n\.?\s?c\.?$/i.test(t)) return { text: "N.C." };
+  if (/^\(.*\)$/.test(t) && t.length <= 24) return { text: t };
+  const r = readRoot(t); if (!r) return null;
+  let rest = r.rest, bass = null;
+  const sl = rest.lastIndexOf("/");
+  if (sl >= 0) { const b = readRoot(rest.slice(sl + 1)); if (b && !b.rest) { bass = b.k; rest = rest.slice(0, sl); } }
+  const q = normQuality(rest); if (q == null) return null;
+  return bass && !(bass.s === r.k.s && bass.a === r.k.a) ? { root: r.k, q, bass } : { root: r.k, q };
+}
+const chordAbs = (T, c) => T.start(c.m) + Math.round((+c.at || 0) * TQ);
+function sortChords() { (score.chords || []).sort((a, b) => a.m - b.m || a.at - b.at); }
+// Acordes que se muestran en un compás: los escritos (con su índice) o los detectados.
+function measureChordList(model, m, prev) {
+  const own = (score.chords || []).map((c, ci) => ({ c, ci })).filter((x) => x.c.m === m);
+  if (own.length) return own.map(({ c, ci }) => ({ tick: chordAbs(model.T, c), chord: c, ci }));
+  if (score.chordAuto === false) return [];
+  return measureChords(model, m, prev && prev.tones ? prev : null).map((x) => ({ ...x, auto: true }));
+}
 const PC_KEY = (k) => (SEMI[k.s] + (k.a || 0) + 12) % 12;
 const PASSING_Q = new Set(["sus4", "sus2", "7sus4", "add9", "m(add9)", "9", "maj9", "m9", "m(maj7)", "6", "m6"]);
 function nameChord(notes, prev) {
@@ -2446,6 +2757,7 @@ function nameChord(notes, prev) {
 }
 function chordText(c, style = chordMode) {
   if (!c) return "";
+  if (c.text) return c.text;
   const nm = (x) => (style === "es" ? SOLF[x.s] + (x.a === 1 ? "♯" : x.a === -1 ? "♭" : "") : x.s + (x.a === 1 ? "♯" : x.a === -1 ? "♭" : ""));
   const q = style === "es" && c.q.startsWith("m") && !c.q.startsWith("maj") ? c.q : c.q;
   return nm(c.root) + q + (c.bass ? "/" + nm(c.bass) : "");
@@ -2469,8 +2781,8 @@ function chordAtTick(model, tick) {
   if (tick < 0) return null;
   const m = model.T.measureAt(tick);
   let prev = null;
-  if (m > 0) { const pl = measureChords(model, m - 1).filter((x) => x.chord); if (pl.length) prev = pl[pl.length - 1].chord; }
-  const list = measureChords(model, m, prev).filter((x) => x.tick <= tick && x.chord);
+  if (m > 0) { const pl = measureChordList(model, m - 1).filter((x) => x.chord); if (pl.length) prev = pl[pl.length - 1].chord; }
+  const list = measureChordList(model, m, prev && prev.tones ? prev : null).filter((x) => x.tick <= tick && x.chord);
   return list.length ? list[list.length - 1].chord : prev;
 }
 
@@ -2905,6 +3217,7 @@ function exportSVG() {
 function toMusicXML() {
   const model = buildModel(), T = model.T;
   let ndId = 0;
+  const mmRuns = {}; for (let m = 0; m < model.M; ) { const n = restRun(model, m); if (n > 1) mmRuns[m] = n; m += n; }
   const M = Math.max(1, model.M - (model.trailing ? 1 : 0));
   let x = '<?xml version="1.0" encoding="UTF-8" standalone="no"?>\n<!DOCTYPE score-partwise PUBLIC "-//Recordare//DTD MusicXML 4.0 Partwise//EN" "http://www.musicxml.org/dtds/partwise.dtd">\n<score-partwise version="4.0">\n';
   x += `  <work><work-title>${esc(score.title || "Sin título")}</work-title></work>\n`;
@@ -2928,6 +3241,15 @@ function toMusicXML() {
       const mm = mk(m), vk = voltaKey(m);
       const vStart = vk && voltaKey(m - 1) !== vk, vStop = vk && voltaKey(m + 1) !== vk;
       if (mm.repStart || vStart) x += `      <barline location="left">${mm.repStart ? '<bar-style>heavy-light</bar-style>' : ""}${vStart ? `<ending number="${mm.volta.join(", ")}" type="start">${mm.volta.join(". ")}.</ending>` : ""}${mm.repStart ? '<repeat direction="forward"/>' : ""}</barline>\n`;
+      // estilos de compás: %, barras de ritmo, silencio de varios compases
+      let mst = "";
+      const rp = showRepeat(model, m), rpPrev = m > 0 && showRepeat(model, m - 1), sl = !!mk(m).slash, slPrev = m > 0 && !!mk(m - 1).slash;
+      if (rp && !rpPrev) mst += '<measure-repeat type="start">1</measure-repeat>';
+      if (!rp && rpPrev) mst += '<measure-repeat type="stop"/>';
+      if (sl && !slPrev) mst += '<slash type="start" use-stems="no"/>';
+      if (!sl && slPrev) mst += '<slash type="stop"/>';
+      if (mmRuns[m]) mst += `<multiple-rest>${mmRuns[m]}</multiple-rest>`;
+      if (mst) attrs += `<measure-style>${mst}</measure-style>`;
       if (attrs) x += `      <attributes>${attrs}</attributes>\n`;
       if (m === 0 && s === 0) x += `      <direction placement="above"><direction-type><metronome><beat-unit>quarter</beat-unit><per-minute>${score.tempo}</per-minute></metronome></direction-type><sound tempo="${score.tempo}"/></direction>\n`;
       if (m > 0 && s === 0 && +mm.tempo >= 20) x += `      <direction placement="above"><direction-type><metronome><beat-unit>quarter</beat-unit><per-minute>${mm.tempo}</per-minute></metronome></direction-type><sound tempo="${mm.tempo}"/></direction>\n`;
@@ -2938,6 +3260,7 @@ function toMusicXML() {
       if (s === 0 && swm === "no") x += `      <direction placement="above"><direction-type><words>Recto</words></direction-type><sound><swing><straight/></swing></sound></direction>\n`;
       else if (s === 0 && (swm === "8" || swm === "16")) x += `      <direction placement="above"><direction-type><words>Swing</words></direction-type><sound><swing><first>2</first><second>1</second><swing-type>${swm === "16" ? "16th" : "eighth"}</swing-type></swing></sound></direction>\n`;
       if (mm.dyn) x += `      <direction placement="${st.voices.length > 1 || s > 0 ? "above" : "below"}"><direction-type><dynamics><${mm.dyn}/></dynamics></direction-type><sound dynamics="${Math.round(DYN_GAIN[mm.dyn] * 100)}"/></direction>\n`;
+      if (s === 0) (score.chords || []).filter((c) => c.m === m).forEach((c) => { x += harmonyXML(c, Math.round((+c.at || 0) * TQ)); });
       const vlist = model.grid[s][m] || [];
       let wrote = false;
       vlist.forEach((pieces, v) => {
@@ -3248,6 +3571,27 @@ async function importFile(file, handle = null) {
     toast(e && e.message ? e.message : "No se pudo leer el archivo.");
   }
 }
+// Acordes ↔ <harmony>: el tipo va en <kind> (valor estándar) y, tal como se ve, en su atributo text.
+const XML_KIND = { "": "major", m: "minor", "°": "diminished", "+": "augmented", 7: "dominant", maj7: "major-seventh", m7: "minor-seventh", "°7": "diminished-seventh",
+  "m7(♭5)": "half-diminished", "m(maj7)": "major-minor", 6: "major-sixth", m6: "minor-sixth", 9: "dominant-ninth", maj9: "major-ninth", m9: "minor-ninth",
+  11: "dominant-11th", m11: "minor-11th", 13: "dominant-13th", maj13: "major-13th", m13: "minor-13th", sus2: "suspended-second", sus4: "suspended-fourth", 5: "power" };
+function harmonyXML(c, offset) {
+  const off = offset > 0 ? `<offset>${offset}</offset>` : "";
+  if (c.text) return `      <harmony print-frame="no"><root><root-step text="">C</root-step></root><kind text="${esc(c.text)}">none</kind>${off}</harmony>\n`;
+  const step = (tag, k) => `<${tag}-step>${k.s}</${tag}-step>${k.a ? `<${tag}-alter>${k.a}</${tag}-alter>` : ""}`;
+  return `      <harmony print-frame="no"><root>${step("root", c.root)}</root><kind text="${esc(c.q)}">${XML_KIND[c.q] || "other"}</kind>${c.bass ? `<bass>${step("bass", c.bass)}</bass>` : ""}${off}</harmony>\n`;
+}
+function harmonyFromXML(el) {
+  const kind = el.querySelector("kind"), kt = kind ? kind.getAttribute("text") : null, kv = kind ? kind.textContent.trim() : "major";
+  if (kv === "none") return { text: (kt || "N.C.").slice(0, 24) };
+  const rs = el.querySelector("root > root-step"); if (!rs) return null;
+  const k = (s, a) => ({ s: s.textContent.trim().toUpperCase(), a: Math.max(-1, Math.min(1, Math.round(+((a || {}).textContent || 0)))) });
+  let q = kt != null ? normQuality(kt) : null;
+  if (q == null) q = Object.keys(XML_KIND).find((x) => XML_KIND[x] === kv) ?? "";
+  const c = { root: k(rs, el.querySelector("root > root-alter")), q };
+  const bs = el.querySelector("bass > bass-step"); if (bs) c.bass = k(bs, el.querySelector("bass > bass-alter"));
+  return c;
+}
 // Marcas de expresión dentro de <notations> de una nota MusicXML.
 function readExpression(el, n) {
   const nt = el.querySelector("notations"); if (!nt) return;
@@ -3276,10 +3620,11 @@ function fromMusicXML(text) {
   const openTup = {}; // grupo irregular en curso por pentagrama y voz
   const pendGrace = {}; // adornos que esperan su nota principal
   const pendNote = {}; // texto, dinámica o regulador que espera su nota
+  const chordsIn = []; // acordes (<harmony>) de cualquier parte
   const chMap = new Map();
   const marks = {};
   const setM = (m, k, v) => { (marks[m] = marks[m] || {})[k] = v; };
-  let openVolta = null;
+  let openVolta = null, openRpt = false, openSlash = false;
   const addChange = (m, k, val) => { if (m === 0) { if (k === "key") sc.key = val; else sc.time = val; return; } const o = chMap.get(m) || { m }; o[k] = val; chMap.set(m, o); };
   doc.querySelectorAll("part").forEach((part) => {
     const pid = part.getAttribute("id");
@@ -3326,9 +3671,24 @@ function fromMusicXML(text) {
           else if (/^swing$/i.test(words)) setM(mIndex, "swing", "8");
         });
       }
+      let pos = 0; // posición en el compás (en divisiones), para ubicar los acordes
       for (const el of meas.children) {
+        if (el.tagName === "harmony") {
+          const c = harmonyFromXML(el);
+          const at = Math.round(((pos + +((el.querySelector("offset") || {}).textContent || 0)) / div) * 10000) / 10000;
+          if (c && !chordsIn.some((x) => x.m === mIndex && x.at === at)) chordsIn.push({ m: mIndex, at: Math.max(0, at), ...c });
+          continue;
+        }
+        const dEl = el.querySelector(":scope > duration"), dd = dEl ? +dEl.textContent || 0 : 0;
+        if (el.tagName === "backup") pos -= dd;
+        else if (el.tagName === "forward" || (el.tagName === "note" && !el.querySelector(":scope > chord") && !el.querySelector(":scope > grace"))) pos += dd;
         if (el.tagName === "attributes") {
           const dv = el.querySelector("divisions"); if (dv) div = +dv.textContent || 1;
+          if (firstPart) {
+            const mr = el.querySelector("measure-style > measure-repeat"); if (mr) openRpt = mr.getAttribute("type") === "start";
+            const sh = el.querySelector("measure-style > slash"); if (sh) openSlash = sh.getAttribute("type") === "start";
+            if (el.querySelector("measure-style > multiple-rest")) sc.layout.mmRest = true;
+          }
           const kf = el.querySelector("key > fifths");
           if (kf && firstPart) addChange(mIndex, "key", Math.max(-7, Math.min(7, +kf.textContent)));
           const tb = el.querySelector("time > beats"), tt = el.querySelector("time > beat-type");
@@ -3425,6 +3785,8 @@ function fromMusicXML(text) {
           }
         }
       }
+      if (firstPart && openRpt) setM(mIndex, "rpt", true);
+      if (firstPart && openSlash) setM(mIndex, "slash", true);
       // anacrusa: el primer compás de la primera parte dura menos que el compás indicado
       if (firstPart && mIndex === 0) {
         const len = voiceEnd(sc.staves[base].voices[0]);
@@ -3439,6 +3801,7 @@ function fromMusicXML(text) {
   if (!sc.staves.length) throw new Error("El MusicXML no tiene pentagramas.");
   sc.changes = [...chMap.values()];
   sc.marks = marks;
+  if (chordsIn.length) sc.chords = chordsIn.sort((a, b) => a.m - b.m || a.at - b.at);
   [sc.time, ...sc.changes.map((c) => c.time).filter(Boolean)].forEach((t) => { if (!TIMES.includes(t)) TIMES.push(t); });
   if (lossy) setTimeout(() => toast("Se importaron hasta dos voces por pentagrama; algunas voces o figuras muy cortas se simplificaron."), 1600);
   return sc;
@@ -3911,6 +4274,11 @@ function syncProps() {
   document.getElementById("docname").textContent = score.title || "Sin título";
   document.getElementById("pSize").value = String(score.layout.staff || 6);
   document.getElementById("pPer").value = String(score.layout.perSystem || 0);
+  const nCh = (score.chords || []).length;
+  document.getElementById("pChordInfo").textContent = nCh ? `${nCh === 1 ? "1 acorde escrito" : nCh + " acordes escritos"}. Doble clic en uno para cambiarlo; arrástralo o usa ← → para moverlo; Supr lo borra.` : "Sin acordes escritos: Atril muestra los que detecta en las notas. Escribe uno con «Acorde +» (Alt+K) o fija los detectados para corregirlos.";
+  document.getElementById("pChordAuto").checked = score.chordAuto !== false;
+  document.getElementById("pMmRest").checked = !!score.layout.mmRest;
+  document.getElementById("bChordClear").disabled = !nCh;
   syncMeterFields(); syncPalette();
 }
 function syncMeterFields() {
@@ -3924,6 +4292,8 @@ function syncMeterFields() {
   document.getElementById("pDyn").value = mm.dyn || "";
   document.getElementById("pSwing").value = mm.swing || "";
   const rh = document.getElementById("pReh"); if (document.activeElement !== rh) rh.value = mm.reh || "";
+  document.getElementById("mRpt").checked = !!mm.rpt;
+  document.getElementById("mSlash").checked = !!mm.slash;
   document.getElementById("mRepStart").checked = !!mm.repStart;
   document.getElementById("mRepEnd").checked = !!mm.repEnd;
   document.getElementById("mTimes").value = String(mm.repEnd || 2);
@@ -3934,7 +4304,7 @@ function syncMeterFields() {
     const x = score.marks[i], parts = [];
     if (x.repStart) parts.push("‖:"); if (x.repEnd) parts.push(":‖" + (+x.repEnd > 2 ? "×" + x.repEnd : ""));
     if (x.volta) parts.push(x.volta.join("ª ") + "ª casilla"); if (x.segno) parts.push("Segno"); if (x.coda) parts.push("Coda");
-    if (x.toCoda) parts.push("Al Coda"); if (x.fine) parts.push("Fine"); if (x.jump) parts.push(JUMPS[x.jump]); if (x.tempo && i > 0) parts.push("♩=" + x.tempo); if (x.dyn) parts.push(x.dyn); if (x.swing) parts.push(x.swing === "no" ? "Recto" : "Swing" + (x.swing === "16" ? " ♬" : "")); if (x.reh) parts.push("[" + x.reh + "]");
+    if (x.toCoda) parts.push("Al Coda"); if (x.fine) parts.push("Fine"); if (x.jump) parts.push(JUMPS[x.jump]); if (x.tempo && i > 0) parts.push("♩=" + x.tempo); if (x.dyn) parts.push(x.dyn); if (x.swing) parts.push(x.swing === "no" ? "Recto" : "Swing" + (x.swing === "16" ? " ♬" : "")); if (x.reh) parts.push("[" + x.reh + "]"); if (x.rpt) parts.push("%"); if (x.slash) parts.push("barras");
     return parts.length ? `<span class="mchip">c. ${barNum(i)} · ${esc(parts.join(" "))}<button class="mini" data-mm="${i}" aria-label="Quitar las marcas del compás ${barNum(i)}">✕</button></span>` : "";
   }).join("");
   document.getElementById("pMarks").innerHTML = mlist;
@@ -4016,6 +4386,9 @@ function helpDialog() {
       <kbd>Alt + S · T · A · M</kbd><span>Staccato, tenuto, acento, marcato en la nota seleccionada (otra vez lo quita)</span>
       <kbd>Alt + L</kbd><span>Ligadura de expresión: en la primera nota y luego en la última; sobre un extremo, la quita</span>
       <kbd>Alt + R · Alt + Mayús + R</kbd><span>Crescendo o decrescendo, igual que la ligadura: primera nota y última</span>
+      <kbd>Alt + K</kbd><span>Escribir un acorde en la nota seleccionada (en inglés o latino: Cm7, Sib/Re, G7(♭9)…)</span>
+      <kbd>← → · Alt + ← →</kbd><span>Con un acorde elegido: moverlo un pulso o medio pulso; Enter lo cambia, Supr lo borra</span>
+      <kbd>%</kbd><span>Repetir el compás anterior en el compás siguiente (se muestra con el signo %)</span>
       <kbd>Alt + G</kbd><span>Adornos: elige la nota y escribe con A–G las notas de adorno que van antes; Retroceso borra el último, Esc termina</span>
       <kbd>0 · R</kbd><span>Silencio</span>
       <kbd>+ · − · =</kbd><span>Sostenido, bemol, becuadro en la nota seleccionada</span>
@@ -4035,6 +4408,7 @@ function helpDialog() {
     <p><b>Letra:</b> con L se abre la barra de letra. Escribe la sílaba y pulsa Espacio para pasar a la nota siguiente, o guion para separar sílabas de una misma palabra. Con “Pegar estrofa” puedes poner una estrofa entera escrita así: Al-ce-mos hoy la voz.</p>
     <p><b>Cambios de compás o tonalidad:</b> pon el cursor en el compás donde empieza el cambio y elige el compás o la tonalidad en el panel Partitura.</p>
     <p><b>Expresión:</b> en «Más…» de la barra están el staccatissimo, la respiración y la cesura, los trinos, mordentes y grupetos, los efectos de jazz (caída, doit, scoop, bend y glissando), la dinámica de una sola nota (sfz, fp…) y los textos como «dolce». Todo se oye al reproducir. La marca de ensayo (A, B, C…) se pone en el panel Compás.</p>
+    <p><b>Acordes:</b> elige «Acordes C Dm» o «Do Rem» para verlos. Atril detecta los acordes de las notas; para corregirlos, usa «Fijar los detectados» en el panel Acordes, o escribe uno con «Acorde +» o con doble clic sobre el pentagrama de arriba. Un acorde escrito se elige con un clic, se mueve arrastrándolo o con las flechas, y se cambia con doble clic. Al transponer, los acordes cambian con la partitura.</p>
     <p><b>Swing y anacrusa:</b> en el panel Compás, “Swing desde aquí” hace que las corcheas (o semicorcheas) se toquen con swing a partir de ese compás, aunque estén escritas rectas; “Recto” lo quita. “Anacrusa” deja el primer compás incompleto, y la numeración empieza en el compás siguiente.</p>
     <p>Para ensayar una voz del coro, usa la S de esa voz para escucharla sola, o la M para silenciarla.</p>
     <p><b>Tus archivos:</b> cada partitura se guarda como un archivo .atril en la carpeta que elijas; “Abrir” muestra las recientes. Para compartirla, usa “Compartir”: el enlace lleva la partitura adentro, sin subirla a ningún servidor. También puedes enviar el archivo .atril, o el PDF, MusicXML o audio desde el menú Archivo.${canPick || desktop ? "" : " Este navegador no puede escribir directo en tus carpetas: al guardar se descarga el archivo .atril."}</p>
@@ -4061,6 +4435,17 @@ function onKey(e) {
   if (ctrl && (k === "y" || k === "Y")) { e.preventDefault(); redo(); return; }
   if (k === " ") { if (tag === "button") return; e.preventDefault(); player ? stopPlayback() : startPlayback(); return; }
   if (ctrl) return;
+  // con un acorde escrito elegido: ← → lo mueven un pulso (Alt: medio pulso), Enter lo cambia, Supr lo borra, una letra lo reescribe
+  const ch = chordAtSel();
+  if (ch) {
+    const beat = beatOf(meterTable().time(ch.m)) / TQ;
+    if (k === "ArrowLeft" || k === "ArrowRight") { e.preventDefault(); moveChordBy((k === "ArrowLeft" ? -1 : 1) * (e.altKey ? beat / 2 : beat)); return; }
+    if (k === "Enter" || k === "F2") { e.preventDefault(); chordDialog({ m: ch.m, at: ch.at }); return; }
+    if (k === "Delete" || k === "Backspace") { e.preventDefault(); deleteChord(); return; }
+    if (k === "Escape") { e.preventDefault(); chordSel = null; paintChordSel(); return; }
+    if (/^[a-gA-G]$/.test(k) && !e.altKey) { e.preventDefault(); chordDialog({ m: ch.m, at: ch.at }, k.toUpperCase()); return; }
+  }
+  if (e.altKey && e.code === "KeyK") { e.preventDefault(); addChordAtCursor(); return; }
   if (e.altKey && (e.code === "Digit1" || e.code === "Digit2")) { e.preventDefault(); switchVoice(e.code === "Digit1" ? 0 : 1); return; }
   if (e.altKey && e.code === "Digit3") { e.preventDefault(); setTuplet(inputTup === 3 ? "" : "3"); return; }
   if (e.altKey && e.code === "KeyC") { e.preventDefault(); toggleFermata(); return; }
@@ -4084,6 +4469,12 @@ function onKey(e) {
     case "-": e.preventDefault(); setAccidental(-1); break;
     case "=": e.preventDefault(); setAccidental(0); break;
     case "t": case "T": e.preventDefault(); toggleTie(); break;
+    case "%": { // repetir el compás anterior en el siguiente compás vacío
+      e.preventDefault();
+      const vc = curVoice(), T = meterTable();
+      repeatPrevMeasure(cursor.index === vc.notes.length ? T.measureAt(Math.max(voiceEnd(vc), cursor.tickHint || 0)) : cursorMeasure());
+      break;
+    }
     case "l": case "L": e.preventDefault(); startLyrics(); break;
     case "ArrowUp": e.preventDefault(); e.altKey ? switchTrack(-1) : moveStep(1, e.shiftKey); break;
     case "ArrowDown": e.preventDefault(); e.altKey ? switchTrack(1) : moveStep(-1, e.shiftKey); break;
@@ -4142,6 +4533,13 @@ function wire() {
   document.getElementById("pDyn").onchange = (e) => setMark(cmv(), { dyn: e.target.value || undefined });
   document.getElementById("pSwing").onchange = (e) => setMark(cmv(), { swing: e.target.value || undefined });
   document.getElementById("pReh").onchange = (e) => setMark(cmv(), { reh: e.target.value.trim().slice(0, 6) || undefined });
+  document.getElementById("tChord").onclick = addChordAtCursor;
+  document.getElementById("mRpt").onchange = (e) => { const m = cmv(); if (e.target.checked) repeatPrevMeasure(m); else setMark(m, { rpt: undefined }); syncMeterFields(); };
+  document.getElementById("mSlash").onchange = (e) => setMark(cmv(), { slash: e.target.checked || undefined });
+  document.getElementById("pMmRest").onchange = (e) => commit(() => { if (e.target.checked) score.layout.mmRest = true; else delete score.layout.mmRest; });
+  document.getElementById("bChordFix").onclick = fixDetectedChords;
+  document.getElementById("bChordClear").onclick = clearChords;
+  document.getElementById("pChordAuto").onchange = (e) => commit(() => { if (e.target.checked) delete score.chordAuto; else score.chordAuto = false; });
   document.getElementById("pPickup").onchange = (e) => {
     const v = +e.target.value;
     if (v && v * TQ >= timeTicks(score.time)) { toast("La anacrusa tiene que ser más corta que un compás completo."); syncMeterFields(); return; }

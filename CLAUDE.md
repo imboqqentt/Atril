@@ -62,7 +62,9 @@ note = { d:"w"|"h"|"q"|"8"|"16"|"32", dots:0|1|2, rest, tie, keys:[{s:"C".."B", 
          sls?, sle?,                                   // abre / cierra ligadura de expresión (spanPairs)
          hp?:"<"|">", hpe?,                            // abre crescendo/decrescendo · cierra regulador
          dyn?:"pp".."ff"|"sfz"|"sf"|"fz"|"fp", txt? }   // dinámica y texto de expresión de la nota
-// marks[m].reh = marca de ensayo ("A", "B", "1"…)
+// marks[m].reh = marca de ensayo ("A", "B", "1"…) · marks[m].rpt = compás % · marks[m].slash = barras de ritmo
+// score.chords = [{ m, at, root:{s,a}, q, bass?:{s,a} } | { m, at, text }]   at = negras desde el inicio del compás
+// score.chordAuto = false → no completar con los detectados · score.layout.mmRest = agrupar silencios de varios compases
 ```
 
 Tiempo interno: una negra = `TQ` = 3360 ticks (permite fusas, doble puntillo y grupos de 3, 5, 6 y 7 exactos). Los ticks no se guardan: el `.atril` lleva figuras. `noteTicks` aplica puntillos y `tup`; `tupletGroups` arma los grupos (dibujo, MusicXML, escritura); `swingWarp` y los calderones (`holds`) viven en `performance.timeOf`.
@@ -129,16 +131,17 @@ Meta: que el próximo release escriba, dibuje (VexFlow ya trae casi todo), toque
 - [x] B7. Texto de expresión de una nota (bajo el pentagrama, en la línea de las dinámicas) y marca de ensayo en caja (`marks[m].reh`, panel Compás); MusicXML `<words>` y `<rehearsal>`.
 - Nota: el calderón pasó de Alt+F a Alt+C (en Chrome para Windows, Alt+F abre el menú del navegador).
 
-**C. Armonía y música popular**
-- [ ] C1. Cifrado editable. Hoy `measureChords`/`nameChord` lo calculan al dibujar, uno por pulso, y no se guarda: no se puede mover ni corregir.
+**C. Armonía y música popular** — hecho en `notacion-completa` (2026-10-16), pruebas en `tests/acordes.spec.mjs` y `tests/compases.spec.mjs`.
+Resumen de lo hecho: acordes guardados en `score.chords` (posición en negras, no en ticks); `parseChord`/`normQuality` leen inglés y latino con sinónimos (Δ, ø, -7, sus, alteraciones 7(♭9,♯11)…); `measureChordList` da los escritos o los detectados; elegir/arrastrar/doble clic/flechas; «Fijar los detectados»; se transponen; `<harmony>` con `<offset>`. % (`repeatPrevMeasure` copia notas reales y `showRepeat` lo dibuja solo si sigue igual), silencios agrupados (`restRun`, `VF.MultiMeasureRest`) y barras de ritmo (notas `type:"s"`); `<measure-style>`.
+- [x] C1. Cifrado editable. Hoy `measureChords`/`nameChord` lo calculan al dibujar, uno por pulso, y no se guarda: no se puede mover ni corregir.
   - Guardado: `score.chords = [{ m, tick, root:{s,a}, q, bass?:{s,a}, text? }]` (`tick` relativo al compás, ya en la resolución de A1). Los acordes guardados mandan; la detección solo rellena donde no hay ninguno (dibujada en gris) o se apaga.
   - «Fijar acordes»: convierte lo detectado en acordes guardados, para editarlos a partir de ahí.
   - Cambiar como texto: doble clic (o Enter con el acorde elegido) abre un campo; se escribe en inglés o latino (`Cm7`, `Do7`, `Sib/Re`, `F#m7b5`, `Lam(add9)`), `parseChord` lo valida y avisa si no lo entiende. Texto libre opcional (`N.C.`, `(A7)`). Vacío = borrar.
   - Mover: arrastrar el acorde a lo largo del pentagrama, con ajuste al pulso (Alt = a la subdivisión), incluso a otro compás; con el acorde elegido, ←/→ mueve un pulso y Alt+←/→ una subdivisión.
   - Agregar en cualquier pulso: clic sobre el pentagrama de arriba en modo «Acordes», o atajo con la nota elegida.
   - Todo pasa por `commit` (deshacer); se transpone con `transposeScore`; respeta Inglés/Latino al mostrar; exporta e importa `<harmony>` con `<offset>`; PDF/SVG iguales a la pantalla.
-- [ ] C2. Repetición de compás (%) y silencios multicompás agrupados (como el «7» de los arreglos).
-- [ ] C3. Notación en barras (slash) para improvisar o acompañar.
+- [x] C2. Repetición de compás (%, tecla % o panel Compás) y silencios de varios compases agrupados (panel Tamaño).
+- [x] C3. Barras de ritmo por compás (panel Compás), para improvisar o acompañar.
 
 **D. Instrumentos**
 - [ ] D1. Instrumentos transpositores (sax alto/tenor, trompeta, clarinete en Sib/Mib, corno en Fa): `staff.transpose`; ver en sonido real o escrito; el audio siempre suena real.

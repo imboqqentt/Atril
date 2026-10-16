@@ -4095,7 +4095,7 @@ ${imgs}${known}
 Reply with ONLY one JSON object of this shape:
 {"title": string|null, "composer": string|null, "tempo": number|null, "key": number, "time": "4/4",
  "pickup": boolean,
- "staves": [{"name": string, "clef": "treble"|"treble8"|"bass"|"alto", "voices": [string]}],
+ "staves": [{"name": string, "clef": "treble"|"treble8"|"bass"|"alto"|"tenor"|"treble8va"|"bass8vb"|"perc", "voices": [string], "trans": optional "bb"|"ten"|"eb"|"bari"|"a"|"f"|"ebs"}],
  "systems": [{"staves": [ [ ["<voice 1, measure 1>", "<voice 1, measure 2>"] ], [ ["<voice 1, measure 1>", "<voice 1, measure 2>"], ["<voice 2, measure 1>", "<voice 2, measure 2>"] ] ]}],
  "warnings": [string]}
 
@@ -4108,33 +4108,59 @@ Field rules:
 
 Measure string: the events of that measure for that voice, space-separated, in time order.
 - If the key signature or time signature changes at the start of this measure, begin the string with "@key=<n>" and/or "@time=<beats>/<type>", for example "@key=-1 @time=3/4 F4:q G4:q A4:q". Put the same prefix on every voice of every staff for that measure.
-- Other marks of the measure also go at the start of the string, on the first voice of the top staff only: "@repStart" (start repeat barline ‖:), "@repEnd" or "@repEnd=3" (end repeat :‖, with the number of times if printed), "@volta=1" or "@volta=1,2" (first/second ending bracket over this measure), "@segno", "@coda" (the coda sign where the coda section starts), "@toCoda" (the "To Coda" jump point), "@fine", "@jump=DC" / "@jump=DCalFine" / "@jump=DCalCoda" / "@jump=DS" / "@jump=DSalFine" / "@jump=DSalCoda" (instruction at the end of the measure), "@tempo=<quarter notes per minute>" (tempo change), "@dyn=pp|p|mp|mf|f|ff" (dynamic at the start of the measure).
+- Other marks of the measure also go at the start of the string, on the first voice of the top staff only: "@repStart" (start repeat barline ‖:), "@repEnd" or "@repEnd=3" (end repeat :‖, with the number of times if printed), "@volta=1" or "@volta=1,2" (first/second ending bracket over this measure), "@segno", "@coda" (the coda sign where the coda section starts), "@toCoda" (the "To Coda" jump point), "@fine", "@jump=DC" / "@jump=DCalFine" / "@jump=DCalCoda" / "@jump=DS" / "@jump=DSalFine" / "@jump=DSalCoda" (instruction at the end of the measure), "@tempo=<quarter notes per minute>" (tempo change), "@dyn=pp|p|mp|mf|f|ff" (dynamic at the start of the measure), "@swing=8" (a "Swing" marking; "@swing=no" for "Straight"), "@reh=A" (boxed rehearsal letter or number), "@slash" (rhythm slashes instead of notes).
 - Note: PITCH:DUR, for example "C4:q", "F#5:8", "Bb3:h."
 - Chord (same stem): pitches joined with "+", for example "C4+E4:q"
 - Rest: "r:DUR", for example "r:q". A whole-measure rest is "r:w".
-- DUR is w (whole), h (half), q (quarter), 8 (eighth) or 16 (sixteenth). Add "." for a dotted value. Add "~" when the note is tied to the next note: "G4:h~".
+- DUR is w (whole), h (half), q (quarter), 8 (eighth), 16 (sixteenth) or 32 (thirty-second). Add "." for a dotted value, ".." for double-dotted. Add "~" when the note is tied to the next note: "G4:h~".
+- Tuplets: add "*3" to every note or rest of a triplet ("E5:8*3 D5:8*3 C5:8*3"); also "*2" (duplet), "*5", "*6", "*7".
+- Grace notes: "D5:g" (slashed acciaccatura) or "D5:ga" (appoggiatura), written just before the main note.
+- Marks go after the duration (and after "~"), each one starting with "^": "C5:q^st^(". Codes: st staccato, sm staccatissimo, te tenuto, ac accent, ma marcato, fe fermata, tr trill, pr upper mordent, mo lower mordent, tu turn, fa fall, do doit, sc scoop, be bend, br breath mark, cs caesura, gl glissando to the next note, ( slur starts, ) slur ends, < crescendo hairpin starts, > diminuendo hairpin starts, ! hairpin ends, 8va / 8vb / 15ma octave line starts (write the pitch as it SOUNDS), 8e octave line ends, ped pedal down, pe pedal up, pp…ff / sfz / sf / fz / fp dynamic under this note, t=dolce text under this note (use "_" for spaces).
+- Chord symbols printed above the staff: write "[Cm7]" just before the note where the chord starts, on the first voice of the top staff ("[G7] D5:q [C] C5:h").
 - PITCH is the letter, then "#" or "b" when the note actually sounds sharp or flat after applying the key signature and any accidental earlier in the same measure, then the octave (C4 is middle C). For example in G major every F is "F#" unless it has a natural sign.
 - Write pitches as written on the staff. A treble clef with a small 8 below it (tenor voice) is clef "treble8".
 - Lyrics: if lyrics are printed under a staff, attach each syllable to the note of the UPPER voice of that staff, after a slash: "G4:q/gran-". End the syllable with "-" when a hyphen follows it (the word continues). Several stanzas (verses) go in order separated by "|": "G4:q/Al-|To-". Use "_" between words joined by an elision tie: "y_a". Leave a note without lyrics when it continues a syllable (melisma).
 - The durations of each measure must add up to the time signature, except a pickup measure.
 ${voices}
-- Triplets, grace notes, notes shorter than a sixteenth, hairpins (crescendo) and articulations cannot be represented: approximate triplets with the nearest plain values, leave the rest out, and mention each kind once in "warnings".
+- For a transposing instrument (B♭ trumpet or clarinet, saxophones, F horn) write the pitches as printed and set "trans" on that staff ("bb" B♭, "ten" tenor sax, "eb" alto sax, "bari" baritone sax, "a" A clarinet, "f" F horn, "ebs" E♭ clarinet). "key" and "@key" are always the signature printed on the TOP staff.
 - Never skip a measure. If something is hard to read, write your best reading and add a warning.`;
 }
-const TOKEN_RE = /^(r|[A-Ga-g][#b]?-?\d(?:\+[A-Ga-g][#b]?-?\d)*):(w|h|q|8|16|32|64)(\.*)(~?)$/;
+// Ficha del formato compacto: PITCH:DUR[.|..][*n][~][^marca…][/letra]. DUR = w h q 8 16 32 (64 → 32), o g/ga para adornos.
+const TOKEN_RE = /^(r|[A-Ga-g][#b]?-?\d(?:\+[A-Ga-g][#b]?-?\d)*):(w|h|q|8|16|32|64|ga|g)(\.{0,2})(?:\*(\d))?(~?)((?:\^[^\^]+)*)$/;
+// Códigos de ^marca → cómo quedan en la nota
+const OMR_MARKS = {
+  st: (n) => artAdd(n, "stacc"), sm: (n) => artAdd(n, "stmo"), te: (n) => artAdd(n, "ten"), ac: (n) => artAdd(n, "acc"), ma: (n) => artAdd(n, "marc"),
+  fe: (n) => { n.ferm = true; }, tr: (n) => { n.orn = "tr"; }, pr: (n) => { n.orn = "prall"; }, mo: (n) => { n.orn = "mord"; }, tu: (n) => { n.orn = "turn"; },
+  fa: (n) => { n.orn = "fall"; }, do: (n) => { n.orn = "doit"; }, sc: (n) => { n.orn = "scoop"; }, be: (n) => { n.orn = "bend"; },
+  br: (n) => { n.brk = "breath"; }, cs: (n) => { n.brk = "caes"; }, gl: (n) => { n.gliss = true; },
+  "(": (n) => { n.sls = true; }, ")": (n) => { n.sle = true; }, "<": (n) => { n.hp = "<"; }, ">": (n) => { n.hp = ">"; }, "!": (n) => { n.hpe = true; },
+  "8va": (n) => { n.ova = "8va"; }, "8vb": (n) => { n.ova = "8vb"; }, "15ma": (n) => { n.ova = "15ma"; }, "8e": (n) => { n.ovae = true; },
+  ped: (n) => { n.ped = true; }, pe: (n) => { n.pede = true; },
+};
+function artAdd(n, a) { n.art = [...new Set([...(n.art || []), a])]; }
 function parseToken(raw) {
   let tok = raw.replace(/♯/g, "#").replace(/♭/g, "b").trim();
   let lyr = null;
   const sl = tok.indexOf("/");
   if (sl > 0) { lyr = tok.slice(sl + 1); tok = tok.slice(0, sl); }
   const m = tok.match(TOKEN_RE); if (!m) return null;
-  let d = m[2]; if (d === "32" || d === "64") d = "16";
-  const dots = m[3].length && d !== "16" ? 1 : 0;
-  if (m[1] === "r") return { d, dots, rest: true, tie: false, keys: [] };
+  let d = m[2]; if (d === "64") d = "32";
+  const grace = d === "g" || d === "ga";
+  const dots = grace ? 0 : Math.min(m[3].length, d === "w" || d === "32" ? 1 : 2);
+  const tupN = +(m[4] || 0);
+  const marks = (m[6] || "").split("^").filter(Boolean);
+  if (m[1] === "r") { const r = { d: grace ? "8" : d, dots, rest: true, tie: false, keys: [] }; if (TUPLETS[tupN]) r.tup = { n: TUPLETS[tupN].n, of: TUPLETS[tupN].of, u: r.d }; if (marks.includes("fe")) r.ferm = true; return r; }
   const keys = m[1].split("+").map((p) => { const q = p.match(/^([A-Ga-g])([#b]?)(-?\d)$/); return { s: q[1].toUpperCase(), a: q[2] === "#" ? 1 : q[2] === "b" ? -1 : 0, o: Math.max(0, Math.min(8, +q[3])) }; });
   keys.sort((a, b) => dia(a) - dia(b));
   const uniq = keys.filter((k, i) => !i || !(k.s === keys[i - 1].s && k.o === keys[i - 1].o && k.a === keys[i - 1].a));
-  const n = { d, dots, rest: false, tie: !!m[4], keys: uniq };
+  if (grace) return { grace: { keys: uniq, d: "8", slash: d === "g" } };
+  const n = { d, dots, rest: false, tie: !!m[5], keys: uniq };
+  if (TUPLETS[tupN]) n.tup = { n: TUPLETS[tupN].n, of: TUPLETS[tupN].of, u: d };
+  marks.forEach((c) => {
+    if (OMR_MARKS[c]) OMR_MARKS[c](n);
+    else if (NOTE_DYN.includes(c)) n.dyn = c;
+    else if (/^t=/.test(c)) n.txt = c.slice(2).replace(/_/g, " ").slice(0, 40);
+  });
   if (lyr) {
     const ly = lyr.split("|").map((x) => { x = x.trim(); if (!x) return null; const h = /-$/.test(x); const t = x.replace(/-+$/, ""); return t ? { t: t.slice(0, 30), h } : null; });
     while (ly.length && !ly[ly.length - 1]) ly.pop();
@@ -4142,14 +4168,14 @@ function parseToken(raw) {
   }
   return n;
 }
-const CLEF_OK = { treble: 1, treble8: 1, bass: 1, alto: 1 };
+const CLEF_OK = Object.fromEntries(Object.keys(CLEFS).map((c) => [c, 1]));
 function mergeOmr(ctx, res, header) {
   if (!res || typeof res !== "object" || !Array.isArray(res.systems)) throw new Error("La respuesta no tenía el formato esperado.");
   if (!ctx.staves) {
     const st = Array.isArray(res.staves) && res.staves.length ? res.staves : [{ name: "", clef: "treble", voices: [""] }];
     ctx.staves = st.slice(0, 12).map((s) => {
       const vv = Array.isArray(s && s.voices) && s.voices.length ? s.voices.slice(0, 2).map((x) => String(x || "").slice(0, 30)) : [""];
-      return { name: String((s && s.name) || "").slice(0, 40), clef: CLEF_OK[s && s.clef] ? s.clef : "treble", voices: vv };
+      return { name: String((s && s.name) || "").slice(0, 40), clef: CLEF_OK[s && s.clef] ? s.clef : "treble", voices: vv, ...(s && TRANS[s.trans] ? { trans: s.trans } : {}) };
     });
     ctx.key = Math.max(-7, Math.min(7, Math.round(+res.key) || 0));
     ctx.time = /^\d{1,2}\/(1|2|4|8|16)$/.test(String(res.time)) ? String(res.time) : "4/4";
@@ -4205,7 +4231,7 @@ function buildFromOmr(ctx) {
     id: uid(), title: ctx.title || "Partitura leída", composer: ctx.composer || "", tempo: ctx.tempo || 90, time: ctx.time, key: ctx.key,
     changes: [], marks: {}, layout: { staff: 6, perSystem: 0 },
     groups: S > 1 ? [{ type: "bracket", from: 0, to: S - 1 }] : [],
-    staves: ctx.staves.map((s) => ({ name: s.voices.length > 1 ? s.name : s.name || s.voices[0] || "", clef: s.clef, voices: s.voices.map((n) => ({ name: s.voices.length > 1 ? n : "", notes: [] })) })),
+    staves: ctx.staves.map((s) => ({ name: s.voices.length > 1 ? s.name : s.name || s.voices[0] || "", clef: s.clef, ...(s.trans ? { trans: s.trans } : {}), voices: s.voices.map((n) => ({ name: s.voices.length > 1 ? n : "", notes: [] })) })),
   };
   const report = { measures: 0, uneven: [], badTokens: 0, pickup: false, warnings: ctx.warnings.slice() };
   if (ctx.wholePages.length) report.warnings.push(`En ${ctx.wholePages.length === 1 ? "la página " + ctx.wholePages[0] : "las páginas " + ctx.wholePages.join(", ")} no se detectaron los pentagramas y se leyó la página completa: revisa esa parte con más cuidado.`);
@@ -4233,13 +4259,30 @@ function buildFromOmr(ctx) {
         const jp = ms.match(/@jump=(DC|DS)(alFine|alCoda)?/); if (jp) om.jump = jp[1] + (jp[2] || "");
         const tp = ms.match(/@tempo=(\d{2,3})/); if (tp && +tp[1] >= 20) { if (mIdx === 0) sc.tempo = +tp[1]; else om.tempo = +tp[1]; }
         const dy = ms.match(/@dyn=(pp|p|mp|mf|f|ff)\b/); if (dy) om.dyn = dy[1];
+        const sw = ms.match(/@swing=(8|16|no)\b/); if (sw) om.swing = sw[1];
+        const rh = ms.match(/@reh=(\S{1,6})/); if (rh) om.reh = rh[1];
+        if (/@slash\b/.test(ms)) om.slash = true;
       }));
       if (Object.keys(om).length) { sc.marks = sc.marks || {}; sc.marks[mIdx] = om; }
       const cells = [];
       for (let s = 0; s < S; s++) for (let v = 0; v < ctx.staves[s].voices.length; v++) {
         const str = ((sys[s] || [])[v] || [])[m] || "";
         const notes = [];
-        str.replace(/@\S+/g, " ").split(/\s+/).filter(Boolean).forEach((tok) => { const n = parseToken(tok); if (n) notes.push(n); else report.badTokens++; });
+        let pendG = [], tick = 0;
+        str.replace(/@\S+/g, " ").split(/\s+/).filter(Boolean).forEach((tok) => {
+          const ch = tok.match(/^\[(.+)\]$/);
+          if (ch) { // acorde escrito donde empieza la nota siguiente
+            const c = parseChord(ch[1]) || { text: ch[1].slice(0, 24) }, at = Math.round((tick / TQ) * 10000) / 10000;
+            sc.chords = sc.chords || [];
+            if (!sc.chords.some((x) => x.m === mIdx && x.at === at)) sc.chords.push({ m: mIdx, at, ...c });
+            return;
+          }
+          const n = parseToken(tok);
+          if (!n) { report.badTokens++; return; }
+          if (n.grace) { pendG.push(n.grace); return; } // el adorno espera su nota
+          if (pendG.length && !n.rest) { n.grace = pendG; pendG = []; }
+          notes.push(n); tick += noteTicks(n);
+        });
         cells.push({ s, v, notes, ticks: notes.reduce((a, n) => a + noteTicks(n), 0) });
       }
       const allShort = cells.filter((c) => c.ticks > 0).every((c) => c.ticks < MT) && cells.some((c) => c.ticks > 0);
@@ -4264,6 +4307,10 @@ function buildFromOmr(ctx) {
   report.measures = mIdx;
   sc.staves.forEach((st) => st.voices.forEach((vc) => vc.notes.forEach((n, i) => { if (n.tie && !sameKeys(n.keys, (vc.notes[i + 1] || {}).keys)) n.tie = false; })));
   [sc.time, ...sc.changes.map((c) => c.time).filter(Boolean)].forEach((t) => { if (!TIMES.includes(t)) TIMES.push(t); });
+  // la armadura leída es la del pentagrama de arriba; si es transpositor, Atril guarda la real
+  const t0 = transOf(sc.staves[0]);
+  if (t0) { sc.key = wrapFifths(sc.key - t0.kf); sc.changes.forEach((c) => { if (c.key != null) c.key = wrapFifths(c.key - t0.kf); }); }
+  if (sc.chords) sc.chords.sort((a, b) => a.m - b.m || a.at - b.at);
   return { score: sc, report };
 }
 /* ---------- lectura de PDF con Audiveris (app de escritorio) ---------- */

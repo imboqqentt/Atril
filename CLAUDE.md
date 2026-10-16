@@ -55,7 +55,14 @@ note = { d:"w"|"h"|"q"|"8"|"16"|"32", dots:0|1|2, rest, tie, keys:[{s:"C".."B", 
          ly:[{t, h}|null], hid?,        // a = alteración real (no relativa a la armadura)
          tup?:{n, of, u},               // grupo irregular: n figuras en el lugar de `of`; u = figura unidad (tresillo de corcheas: {3,2,"8"})
          ferm?:true,                    // calderón
-         grace?:[{keys, d:"8"|"16"|"32", slash}] }   // adornos antes de la nota (slash = acciaccatura)
+         grace?:[{keys, d:"8"|"16"|"32", slash}],    // adornos antes de la nota (slash = acciaccatura)
+         art?:["stacc"|"stmo"|"ten"|"acc"|"marc"],     // articulaciones (ARTS)
+         orn?:"tr"|"prall"|"mord"|"turn"|"fall"|"doit"|"scoop"|"bend",   // ornamentos y efectos de jazz (ORNS)
+         brk?:"breath"|"caes", gliss?:true,            // respiración/cesura después de la nota; glissando hasta la siguiente
+         sls?, sle?,                                   // abre / cierra ligadura de expresión (spanPairs)
+         hp?:"<"|">", hpe?,                            // abre crescendo/decrescendo · cierra regulador
+         dyn?:"pp".."ff"|"sfz"|"sf"|"fz"|"fp", txt? }   // dinámica y texto de expresión de la nota
+// marks[m].reh = marca de ensayo ("A", "B", "1"…)
 ```
 
 Tiempo interno: una negra = `TQ` = 3360 ticks (permite fusas, doble puntillo y grupos de 3, 5, 6 y 7 exactos). Los ticks no se guardan: el `.atril` lleva figuras. `noteTicks` aplica puntillos y `tup`; `tupletGroups` arma los grupos (dibujo, MusicXML, escritura); `swingWarp` y los calderones (`holds`) viven en `performance.timeOf`.
@@ -108,18 +115,19 @@ Meta: que el próximo release escriba, dibuje (VexFlow ya trae casi todo), toque
 - [x] A2. Grupos irregulares 3:2, 2:3, 5:4, 6:4, 7:4: `note.tup = { n, of, u }`, selector en la barra y Alt+3; `VF.Tuplet`; audio exacto; `<time-modification>`/`<tuplet>`.
 - [x] A3. Fusa (tecla 2) y doble puntillo (el punto da la vuelta: sin → puntillo → doble).
 - [x] A4. Swing 2:1 por compás (`marks[m].swing = "8"|"16"|"no"`, panel Compás), en `performance.timeOf`; texto «Swing»/«Recto»; `<sound><swing>`. Pendiente si se pide: proporción 3:1 (shuffle).
-- [x] A5. Calderón (Alt+F): se dibuja y detiene la música (el doble de la nota, entre 0,6 y 3 s).
+- [x] A5. Calderón (Alt+C): se dibuja y detiene la música (el doble de la nota, entre 0,6 y 3 s).
 - [x] A6. Adornos (Alt+G o selector): acciaccatura/apoyatura, `VF.GraceNoteGroup`, suenan en el tiempo (una fusa cada uno), se transponen; MusicXML `<grace>`.
 - [x] A7. Anacrusa (`score.pickup` en negras, panel Compás): primer compás corto, numeración desde el siguiente, MusicXML `implicit`, la skill la deja como anacrusa en vez de rellenar.
 
-**B. Articulación y expresión**
-- [ ] B1. Articulaciones: staccato, tenuto, acento, marcato, staccatissimo (`note.art: []`, `VF.Articulation`); en audio cambian duración y volumen.
-- [ ] B2. Ligaduras de expresión (slurs): `note.slur: "start"|"end"`, `VF.Curve`, `<slur>`.
-- [ ] B3. Reguladores (cresc./decresc.) por tramo: `score.spans = [{ type: "cresc", from:{m,tick}, to:{m,tick} }]`, `VF.StaveHairpin`, rampa de ganancia en `performance`.
-- [ ] B4. Dinámicas a mitad de compás y sfz, fp, fz (hoy una por compás, al inicio).
-- [ ] B5. Ornamentos: trino, mordente, grupeto (`VF.Ornament`) y jazz: caída, doit, scoop, bend (VexFlow los trae).
-- [ ] B6. Respiración y cesura; glissando entre dos notas.
-- [ ] B7. Textos: expresión («dolce», «rit.», «Swing») y marcas de ensayo en caja (A, B, C).
+**B. Articulación y expresión** — hecho en `notacion-completa` (2026-10-16), pruebas en `tests/expresion.spec.mjs`. Audio por nota: `expressionMap` (dinámica vigente y reguladores), `ornamentSegs` (trinos, mordentes, caídas, glissando), `velOut` (volumen propio de la nota).
+- [x] B1. Articulaciones (`note.art`, Alt+S/T/A/M): `VF.Articulation` del lado de la cabeza; staccato acorta, acento/marcato suben el volumen, tenuto sostiene.
+- [x] B2. Ligaduras de expresión (`sls`/`sle`, Alt+L en la primera y la última): `VF.Curve`, también entre sistemas; `<slur>`.
+- [x] B3. Reguladores (`hp`/`hpe`, Alt+R y Alt+Mayús+R): dibujados bajo el sistema; el volumen sube o baja de a poco y se mantiene hasta la siguiente dinámica; `<wedge>`.
+- [x] B4. Dinámica de una nota (`note.dyn`: pp…ff cambian el nivel desde ahí; sfz, sf, fz, fp acentúan): menú «Más…».
+- [x] B5. Trino, mordentes, grupeto y jazz (caída, doit, scoop, bend): `VF.Ornament` y suenan.
+- [x] B6. Respiración (acorta la nota) y cesura (detiene la música): dibujadas a mano; glissando a la nota siguiente (línea y escala cromática).
+- [x] B7. Texto de expresión de una nota (bajo el pentagrama, en la línea de las dinámicas) y marca de ensayo en caja (`marks[m].reh`, panel Compás); MusicXML `<words>` y `<rehearsal>`.
+- Nota: el calderón pasó de Alt+F a Alt+C (en Chrome para Windows, Alt+F abre el menú del navegador).
 
 **C. Armonía y música popular**
 - [ ] C1. Cifrado editable. Hoy `measureChords`/`nameChord` lo calculan al dibujar, uno por pulso, y no se guarda: no se puede mover ni corregir.

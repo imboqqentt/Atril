@@ -333,9 +333,25 @@ textarea.xml { width: 100%; height: 220px; font-family: var(--font-mono); font-s
       <button class="tool text" data-acc="1" title="Sostenido (+)">♯</button>
       <button class="tool text" id="tRest" title="Silencio (0 o R)">Silencio</button>
       <button class="tool text" id="tTie" title="Ligadura con la siguiente (T)" aria-pressed="false">Ligar</button>
-      <button class="tool text" id="tFerm" title="Calderón: la nota se sostiene más al reproducir (Alt+F)" aria-pressed="false">𝄐</button>
+      <button class="tool text" id="tFerm" title="Calderón: la nota se sostiene más al reproducir (Alt+C)" aria-pressed="false">𝄐</button>
       <select id="tGrace" aria-label="Notas de adorno" title="Adornos (Alt+G): elige una nota y escribe con A–G las notas de adorno que van antes; Retroceso borra el último, Esc termina">
         <option value="">Sin adorno</option><option value="acc">Acciaccatura</option><option value="app">Apoyatura</option>
+      </select>
+    </div>
+    <div class="group" aria-label="Expresión">
+      <button class="tool text" data-art="stacc" title="Staccato (Alt+S)" aria-pressed="false">·</button>
+      <button class="tool text" data-art="ten" title="Tenuto (Alt+T)" aria-pressed="false">–</button>
+      <button class="tool text" data-art="acc" title="Acento (Alt+A)" aria-pressed="false">&gt;</button>
+      <button class="tool text" data-art="marc" title="Marcato (Alt+M)" aria-pressed="false">^</button>
+      <button class="tool text" id="tSlur" title="Ligadura de expresión (Alt+L): pulsa en la primera nota y luego en la última" aria-pressed="false">⌒</button>
+      <button class="tool text" id="tCresc" title="Crescendo (Alt+R): pulsa en la primera nota y luego en la última" aria-pressed="false">cresc.</button>
+      <button class="tool text" id="tDim" title="Decrescendo (Alt+Mayús+R): pulsa en la primera nota y luego en la última" aria-pressed="false">dim.</button>
+      <select id="tMore" aria-label="Más marcas para la nota" title="Más marcas para la nota elegida">
+        <option value="">Más…</option>
+        <optgroup label="Articulación"><option value="stmo">Staccatissimo</option><option value="breath">Respiración</option><option value="caes">Cesura</option></optgroup>
+        <optgroup label="Ornamentos"><option value="tr">Trino</option><option value="prall">Mordente superior</option><option value="mord">Mordente inferior</option><option value="turn">Grupeto</option></optgroup>
+        <optgroup label="Jazz"><option value="fall">Caída (fall)</option><option value="doit">Doit</option><option value="scoop">Scoop</option><option value="bend">Bend</option><option value="gliss">Glissando a la siguiente</option></optgroup>
+        <optgroup label="Nota"><option value="dyn">Dinámica en esta nota (sfz, fp…)…</option><option value="txt">Texto de expresión…</option><option value="clear">Quitar las marcas de la nota</option></optgroup>
       </select>
     </div>
     <div class="group" aria-label="Voces y letra">
@@ -409,6 +425,7 @@ textarea.xml { width: 100%; height: 220px; font-family: var(--font-mono); font-s
           <div class="field"><label for="pTempoM">Tempo (♩=)</label><input id="pTempoM" type="number" min="20" max="260" placeholder="sin cambio"></div>
           <div class="field"><label for="pDyn">Dinámica</label><select id="pDyn"><option value="">—</option><option>pp</option><option>p</option><option>mp</option><option>mf</option><option>f</option><option>ff</option></select></div>
         </div>
+        <div class="field"><label for="pReh">Marca de ensayo</label><input id="pReh" maxlength="6" placeholder="A, B, 1…" autocomplete="off"></div>
         <div class="field"><label for="pSwing">Swing desde aquí</label><select id="pSwing"><option value="">Igual que antes</option><option value="8">Swing (corcheas)</option><option value="16">Swing (semicorcheas)</option><option value="no">Recto (sin swing)</option></select></div>
         <div class="field"><label>Repetición</label>
           <div class="mkrow"><label><input type="checkbox" id="mRepStart"> Inicio ‖:</label><label><input type="checkbox" id="mRepEnd"> Fin :‖</label><select id="mTimes" aria-label="Cuántas veces se toca"><option value="2">2 veces</option><option value="3">3 veces</option><option value="4">4 veces</option></select></div>
@@ -469,6 +486,27 @@ textarea.xml { width: 100%; height: 220px; font-family: var(--font-mono); font-s
 const VF = (window.Vex && (Vex.Flow || Vex)) || null;
 
 /* ================= constantes musicales ================= */
+// Marcas de expresión de una nota (bloque B). vf = código de VexFlow; xml = elemento MusicXML; vel/len = efecto al tocar.
+const ARTS = {
+  stacc: { label: "Staccato", key: "S", vf: "a.", xml: "staccato", len: 0.5 },
+  stmo: { label: "Staccatissimo", vf: "av", xml: "staccatissimo", len: 0.3 },
+  ten: { label: "Tenuto", key: "T", vf: "a-", xml: "tenuto", vel: 1.08, len: 1 },
+  acc: { label: "Acento", key: "A", vf: "a>", xml: "accent", vel: 1.3 },
+  marc: { label: "Marcato", key: "M", vf: "a^", xml: "strong-accent", vel: 1.45, len: 0.75 },
+};
+const ORNS = {
+  tr: { label: "Trino", vf: "tr", xml: "<ornaments><trill-mark/></ornaments>" },
+  prall: { label: "Mordente superior", vf: "mordent", xml: "<ornaments><inverted-mordent/></ornaments>" },
+  mord: { label: "Mordente inferior", vf: "mordent_inverted", xml: "<ornaments><mordent/></ornaments>" },
+  turn: { label: "Grupeto", vf: "turn", xml: "<ornaments><turn/></ornaments>" },
+  fall: { label: "Caída (fall)", vf: "fall", xml: "<articulations><falloff/></articulations>" },
+  doit: { label: "Doit", vf: "doit", xml: "<articulations><doit/></articulations>" },
+  scoop: { label: "Scoop", vf: "scoop", xml: "<articulations><scoop/></articulations>" },
+  bend: { label: "Bend", vf: "bend", xml: "<technical><bend><bend-alter>-1</bend-alter><release/></bend></technical>" },
+};
+const BREAKS = { breath: { label: "Respiración", vf: "breath", xml: "breath-mark" }, caes: { label: "Cesura", vf: "caesura_straight", xml: "caesura" } };
+const NOTE_DYN = ["pp", "p", "mp", "mf", "f", "ff", "sfz", "sf", "fz", "fp"];
+const ACCENT_DYN = { sfz: 1.55, sf: 1.5, fz: 1.5, fp: 1.35 };
 // Resolución interna: una negra = TQ ticks. 3360 = 2⁵·3·5·7 permite fusas, puntillos dobles y
 // grupos de 3, 5, 6 y 7 con duraciones enteras. Los ticks no se guardan en el .atril (solo figuras).
 const TQ = 3360;
@@ -715,7 +753,7 @@ function buildVoice(notes, T) {
         const nextNote = notes[i + 1];
         const userTie = n.tie && !n.rest && nextNote && !nextNote.rest && sameKeys(n.keys, nextNote.keys);
         cur.push({ src: i, part: part++, d: p[1], dots: p[2], rest: n.rest, hid: !!n.hid, keys: n.keys, ticks: p[0], start: abs, tieNext: !n.rest && (t > 0 || userTie),
-          tup: intact ? tupOf(n) : null, ferm: !!n.ferm && t <= 0 });
+          tup: intact ? tupOf(n) : null, ferm: !!n.ferm && t <= 0, last: t <= 0 });
         pos += p[0]; abs += p[0];
       }
       first = false;
@@ -781,6 +819,7 @@ function measureMinW(model, m, L) {
         if (p.full) { w += 56; return; }
         let nw = (p.ghost ? 18 : solfeoOn ? 30 : 24) + (p.dots || 0) * 6 + (p.keys || []).filter((k) => (k.a || 0) !== keyAlter(k.s, key)).length * 9;
         if (!p.ghost && p.part === 0 && notes[p.src] && notes[p.src].grace) nw += notes[p.src].grace.length * 13 + 6;
+        if (!p.ghost && p.last && notes[p.src] && notes[p.src].brk) nw += 16;
         if (!p.ghost && p.part === 0 && notes[p.src] && notes[p.src].ly) {
           const longest = Math.max(0, ...notes[p.src].ly.filter(Boolean).map((x) => x.t.length + (x.h ? 1 : 0)));
           nw = Math.max(nw, longest * 6.6 * L + 8 * L);
@@ -822,8 +861,9 @@ function render() {
   const sysH = yOff[nS - 1] + STAFF_H + lastLy;
   const sysGap = 30 + 22 * L;
   const hasTopMarks = !!score.swing || Object.entries(score.marks || {}).some(([m, x]) => x.volta || x.segno || x.coda || x.toCoda || x.fine || x.jump || x.swing || (+m > 0 && x.tempo) || +x.repEnd > 2);
-  const topPad = (hasTopMarks ? 24 : 0) + (chordMode !== "off" ? 26 : 0);
-  const hasDyn = Object.values(score.marks || {}).some((x) => x.dyn);
+  const hasReh = Object.values(score.marks || {}).some((x) => x.reh);
+  const topPad = (hasTopMarks ? 24 : 0) + (hasReh ? 22 : 0) + (chordMode !== "off" ? 26 : 0);
+  const hasDyn = Object.values(score.marks || {}).some((x) => x.dyn) || score.staves.some((st) => st.voices.some((vc) => vc.notes.some((n) => n.dyn || n.hp || n.txt)));
   const labels = score.staves.map(staffLabelLines);
   const indent = labels.some((l) => l.length) ? 66 * L : 0;
   const avail = PW - 2 * MX;
@@ -971,6 +1011,8 @@ function render() {
               if (two) bo.stem_direction = v === 0 ? 1 : -1;
               VF.Beam.generateBeams(vfNotes, bo).forEach((b) => beams.push(b));
             } catch (e) { /* sin barras */ }
+            // articulaciones y ornamentos: después de las barras, cuando ya se sabe hacia dónde va cada plica
+            pieces.forEach((p, j) => { if (!p.ghost) noteModifiers(vfNotes[j], p, notes[p.src], two, v); });
             vs.push({ voice, v });
             pieces.forEach((p, j) => { if (!p.ghost) rendered[sIdx][v].push({ p, vf: vfNotes[j], page: pi, ctx, sys: sysIndex, svg, s: sIdx, v, m, note: notes[p.src] }); });
           });
@@ -1007,9 +1049,96 @@ function render() {
   }));
   // 5) letra
   drawLyrics(rendered, sysStaves, ly, L, LY_FS, LY_H);
+  drawExpressions(rendered, sysStaves, ly, L);
   layout = { model, pages: pageEls, rendered, rects, systems, L };
   pageEls.forEach(({ svg }, pi) => svg.addEventListener("pointerdown", (e) => onScoreClick(e, svg, pi)));
   decorate();
+}
+// Tramos (ligaduras de expresión, reguladores) en una voz: una nota con `sk` abre, la siguiente con `ek` cierra.
+// Una nota puede cerrar un tramo y abrir otro.
+function spanPairs(notes, sk, ek) {
+  const out = []; let open = null;
+  notes.forEach((n, i) => { if (n[ek] && open != null && i > open) { out.push([open, i]); open = null; } if (n[sk]) open = i; });
+  return out;
+}
+// Ligaduras de expresión, glissandi, reguladores, dinámicas y textos de nota (después de dibujar notas y letra).
+function drawExpressions(rendered, sysStaves, ly, L) {
+  const nS = score.staves.length;
+  const dynY = (sys) => { const st = sysStaves[sys] && sysStaves[sys][nS - 1]; if (!st) return 0; const lyB = ly[nS - 1].total ? ly[nS - 1].total * 14.5 * L + 8 * L : 0; return st.getYForLine(4) + 46 + lyB; };
+  const headX = (r) => { try { return r.vf.getNoteHeadBeginX(); } catch (e) { return r.vf.getAbsoluteX(); } };
+  const endX = (r) => { try { return r.vf.getNoteHeadEndX(); } catch (e) { return r.vf.getAbsoluteX() + 10; } };
+  const headY = (r) => { const ys = r.vf.getYs ? r.vf.getYs() : []; return ys.length ? ys.reduce((a, b) => a + b, 0) / ys.length : r.vf.getStave().getYForLine(2); };
+  const DYN_FONT = { "font-family": "Times New Roman, Georgia, serif", "font-size": 14 * L, "font-style": "italic", "font-weight": 700, fill: "#111318" };
+  const dynW = (t) => t.length * 8 * L;
+  rendered.forEach((sv, s) => sv.forEach((seq, v) => {
+    if (!seq.length) return;
+    const notes = score.staves[s].voices[v].notes, two = score.staves[s].voices.length > 1;
+    const firstOf = (src) => seq.find((r) => r.p.src === src);
+    const lastOf = (src) => { let x = null; seq.forEach((r) => { if (r.p.src === src) x = r; }); return x; };
+    const sysEdge = (sys, first) => { const rs = seq.filter((r) => r.sys === sys); return first ? rs[0] : rs[rs.length - 1]; };
+    // ligaduras de expresión
+    spanPairs(notes, "sls", "sle").forEach(([a, b]) => {
+      const A = firstOf(a), B = lastOf(b); if (!A || !B) return;
+      const opts = { position: two ? VF.Curve.Position.NEAR_TOP : VF.Curve.Position.NEAR_HEAD };
+      if (two && v > 0) opts.invert = true;
+      try {
+        if (A.sys === B.sys) new VF.Curve(A.vf, B.vf, opts).setContext(A.ctx).draw();
+        else { new VF.Curve(A.vf, sysEdge(A.sys, false).vf, opts).setContext(A.ctx).draw(); new VF.Curve(sysEdge(B.sys, true).vf, B.vf, opts).setContext(B.ctx).draw(); }
+      } catch (e) { /* ligadura omitida */ }
+    });
+    // reguladores, bajo el sistema (donde van las dinámicas)
+    spanPairs(notes, "hp", "hpe").forEach(([a, b]) => {
+      const A = firstOf(a), B = lastOf(b); if (!A || !B) return;
+      const cresc = notes[a].hp !== ">", h = 5 * L;
+      // w1, w2: media apertura en cada extremo (crescendo se abre hacia la derecha, decrescendo se cierra)
+      const wedge = (svg, x1, x2, y, w1, w2) => svgEl(svg, "path", { d: `M${x1} ${y - w1} L${x2} ${y - w2} M${x1} ${y + w1} L${x2} ${y + w2}`, fill: "none", stroke: "#111318", "stroke-width": 1.1 * L, class: "hairpin" });
+      const [o0, o1] = cresc ? [0, h] : [h, 0], mid = cresc ? 0.55 * h : 0.45 * h;
+      // si la primera nota lleva dinámica, el regulador empieza después; si la última la lleva, termina antes
+      const x1 = headX(A) + (notes[a].dyn ? dynW(notes[a].dyn) + 4 * L : 0), x2 = notes[b].dyn ? headX(B) - 6 * L : endX(B) + 6 * L;
+      if (A.sys === B.sys) wedge(A.svg, x1, x2, dynY(A.sys) - 5 * L, o0, o1);
+      else {
+        wedge(A.svg, x1, endX(sysEdge(A.sys, false)) + 12 * L, dynY(A.sys) - 5 * L, o0, mid);
+        const F = sysEdge(B.sys, true); wedge(B.svg, headX(F) - 8 * L, x2, dynY(B.sys) - 5 * L, mid, o1);
+      }
+    });
+    seq.forEach((r) => {
+      const n = r.note; if (!n || r.p.ghost) return;
+      // dinámica en la nota (también sfz, fp…)
+      if (r.p.part === 0 && n.dyn && NOTE_DYN.includes(n.dyn)) svgEl(r.svg, "text", { ...DYN_FONT, x: headX(r) - 2 * L, y: dynY(r.sys), class: "notedyn" }, n.dyn);
+      // texto de expresión (dolce, rit.…): en la línea de las dinámicas, después de la dinámica de la nota y bajo un regulador que empiece ahí
+      if (r.p.part === 0 && n.txt) svgEl(r.svg, "text", { x: headX(r) + (n.dyn ? dynW(n.dyn) + 6 * L : 0), y: dynY(r.sys) + (n.hp ? 15 * L : 0), "font-family": ENGRAVE_FONT, "font-size": 12 * L, "font-style": "italic", fill: "#111318", class: "notetxt" }, n.txt);
+      // respiración (coma) y cesura (dos barras) después de la nota, sobre la línea de arriba
+      if (r.p.last && n.brk && BREAKS[n.brk]) {
+        const st = r.vf.getStave(), top = st.getYForLine(0), bx = endX(r) + 9 * L;
+        if (n.brk === "breath") svgEl(r.svg, "text", { x: bx, y: top - 2 * L, "font-family": ENGRAVE_FONT, "font-size": 22 * L, "font-weight": 700, fill: "#111318", class: "breath" }, ",");
+        else svgEl(r.svg, "path", { d: `M${bx} ${top + 9 * L} L${bx + 6 * L} ${top - 9 * L} M${bx + 5 * L} ${top + 9 * L} L${bx + 11 * L} ${top - 9 * L}`, stroke: "#111318", "stroke-width": 1.6 * L, fill: "none", class: "caesura" });
+      }
+      // glissando hasta la nota siguiente
+      if (r.p.last && n.gliss && !n.rest) {
+        const B = firstOf(r.p.src + 1);
+        if (B && !B.p.rest) {
+          const x2 = B.sys === r.sys ? headX(B) - 3 * L : endX(sysEdge(r.sys, false)) + 14 * L;
+          const y2 = B.sys === r.sys ? headY(B) : headY(r) + (headY(B) > headY(r) ? 6 : -6) * L;
+          svgEl(r.svg, "line", { x1: endX(r) + 3 * L, y1: headY(r), x2, y2, stroke: "#111318", "stroke-width": 1.2 * L, class: "gliss" });
+        }
+      }
+    });
+  }));
+}
+// Articulaciones, ornamentos y respiraciones de una pieza ya creada (y con su plica definitiva).
+function noteModifiers(vn, p, src, two, v) {
+  if (!src || p.rest) return;
+  const P = VF.Modifier.Position;
+  const stemUp = two ? v === 0 : vn.getStemDirection && vn.getStemDirection() === 1;
+  try {
+    if (p.part === 0) (src.art || []).forEach((a) => {
+      if (!ARTS[a]) return;
+      // del lado de la cabeza (contrario a la plica); el marcato va siempre arriba si hay una sola voz
+      const pos = a === "marc" && !two ? P.ABOVE : stemUp ? P.BELOW : P.ABOVE;
+      vn.addModifier(new VF.Articulation(ARTS[a].vf).setPosition(pos), 0);
+    });
+    if (p.part === 0 && src.orn && ORNS[src.orn]) vn.addModifier(new VF.Ornament(ORNS[src.orn].vf), 0);
+  } catch (e) { /* marca omitida */ }
 }
 const voltaKey = (m) => { const v = mk(m).volta; return v && v.length ? v.join(",") : ""; };
 const REP_TYPE = () => ({ DC: VF.Repetition.type.DC, DCalFine: VF.Repetition.type.DC_AL_FINE, DCalCoda: VF.Repetition.type.DC_AL_CODA, DS: VF.Repetition.type.DS, DSalFine: VF.Repetition.type.DS_AL_FINE, DSalCoda: VF.Repetition.type.DS_AL_CODA });
@@ -1038,6 +1167,12 @@ const lastChordInSystem = { text: "", x: -1e9, chord: null };
 function measureOverlays(svg, staves, m, x, w, startX, rendered, model, L, ly, sysStart) {
   const mm = mk(m), top = staves[0], bot = staves[staves.length - 1];
   if (+mm.repEnd > 2) svgEl(svg, "text", { x: x + w - 6, y: top.getYForLine(0) - 6, "text-anchor": "end", "font-family": "Georgia, serif", "font-size": 11 * L, "font-style": "italic", fill: "#111318" }, `×${mm.repEnd}`);
+  if (mm.reh) {
+    // marca de ensayo: letra o número en caja, sobre todo lo demás
+    const t = String(mm.reh).slice(0, 6), fs = 14 * L, bw = Math.max(fs * 1.25, t.length * fs * 0.68 + 8 * L), by = top.getYForLine(0) - (chordMode !== "off" ? 72 : 46) * L;
+    svgEl(svg, "rect", { x: x + 2, y: by - fs, width: bw, height: fs * 1.35, fill: "#fff", stroke: "#111318", "stroke-width": 1.4 * L, class: "rehearsal" });
+    svgEl(svg, "text", { x: x + 2 + bw / 2, y: by + fs * 0.12, "text-anchor": "middle", "font-family": ENGRAVE_FONT, "font-size": fs, "font-weight": 700, fill: "#111318" }, t);
+  }
   const sw = mm.swing || (m === 0 ? score.swing : "");
   if (sw === "8" || sw === "16" || sw === "no") {
     const label = sw === "no" ? "Recto" : sw === "16" ? "Swing (semicorcheas)" : "Swing";
@@ -1160,6 +1295,7 @@ function decorate() {
   renderStaffList();
   syncMeterFields();
   syncVoiceTools();
+  syncPalette();
 }
 function groupOf(r) { return r.svg.querySelector(`[id="vf-${r.vf.getAttribute("id")}"]`); }
 function updateNow(playingNote) {
@@ -1169,7 +1305,7 @@ function updateNow(playingNote) {
   const who = voiceLabel(cursor.staff, cursor.voice);
   if (!n) { syl.textContent = "—"; meta.textContent = `${who} · escribe con A–G`; return; }
   syl.textContent = n.rest ? "Silencio" : n.keys.slice().reverse().map(sylOf).join(" · ");
-  const dur = DUR_NAME[n.d] + (n.dots === 2 ? " con doble puntillo" : n.dots ? " con puntillo" : "") + (tupOf(n) ? ` (${(Object.values(TUPLETS).find((t) => t.n === n.tup.n && t.of === n.tup.of) || { label: n.tup.n + ":" + n.tup.of }).label.toLowerCase()})` : "") + (n.ferm ? " · calderón" : "") + (n.grace && n.grace.length ? ` · ${n.grace.length === 1 ? "1 adorno" : n.grace.length + " adornos"}` : "");
+  const dur = DUR_NAME[n.d] + (n.dots === 2 ? " con doble puntillo" : n.dots ? " con puntillo" : "") + (tupOf(n) ? ` (${(Object.values(TUPLETS).find((t) => t.n === n.tup.n && t.of === n.tup.of) || { label: n.tup.n + ":" + n.tup.of }).label.toLowerCase()})` : "") + (n.ferm ? " · calderón" : "") + (n.grace && n.grace.length ? ` · ${n.grace.length === 1 ? "1 adorno" : n.grace.length + " adornos"}` : "") + marksText(n);
   const oct = n.rest ? "" : " · octava " + n.keys.map((k) => k.o).join("/");
   const lyr = n.ly && n.ly.filter(Boolean).length ? ` · «${n.ly.filter(Boolean).map((x) => lyShow(x.t)).join(" / ")}»` : "";
   meta.textContent = `${who} · ${dur}${oct}${lyr}`;
@@ -1290,6 +1426,85 @@ function addGrace(step) {
 function removeGrace() {
   const n = selNote(); if (!n || !n.grace || !n.grace.length) return;
   commit(() => { n.grace.pop(); if (!n.grace.length) delete n.grace; });
+}
+/* expresión (bloque B): articulaciones, ornamentos, respiraciones, tramos, dinámica y texto de una nota */
+function pickedNote(allowRest) {
+  const n = selNote();
+  if (!n || (n.rest && !allowRest)) { toast(n ? "Elige una nota (no un silencio)." : "Elige primero una nota (clic o flechas)."); return null; }
+  return n;
+}
+function toggleArt(a) {
+  const n = pickedNote(); if (!n) return;
+  commit(() => { const s = new Set(n.art || []); if (s.has(a)) s.delete(a); else { s.add(a); if (a === "stacc") s.delete("stmo"); if (a === "stmo") s.delete("stacc"); if (a === "acc") s.delete("marc"); if (a === "marc") s.delete("acc"); } if (s.size) n.art = [...s]; else delete n.art; });
+}
+function setOrn(o) { const n = pickedNote(); if (!n) return; commit(() => { if (n.orn === o) delete n.orn; else n.orn = o; }); }
+function setBrk(b) { const n = pickedNote(); if (!n) return; commit(() => { if (n.brk === b) delete n.brk; else n.brk = b; }); }
+function toggleGliss() {
+  const n = pickedNote(); if (!n) return;
+  const nx = curVoice().notes[cursor.index];
+  if (!n.gliss && (!nx || nx.rest)) { toast("El glissando va hasta la nota siguiente: escríbela primero."); return; }
+  commit(() => { if (n.gliss) delete n.gliss; else n.gliss = true; });
+}
+// Tramos (ligadura de expresión: sk="sls", ek="sle", val=true · regulador: sk="hp", ek="hpe", val="<" o ">").
+// Primera pulsación en una nota: abre el tramo; en una nota posterior: lo cierra; sobre un extremo: lo quita.
+function spanAction(sk, ek, val, label) {
+  const n = pickedNote(); if (!n) return;
+  const notes = curVoice().notes, i = cursor.index - 1;
+  const pairs = spanPairs(notes, sk, ek);
+  const mine = pairs.find(([a, b]) => a === i || b === i);
+  if (mine && !(sk === "hp" && mine[0] === i && notes[i].hp !== val)) { commit(() => { delete notes[mine[0]][sk]; delete notes[mine[1]][ek]; }); return; }
+  if (n[sk] && sk === "hp" && n.hp !== val) { commit(() => { n.hp = val; }); return; }
+  if (n[sk]) { commit(() => { delete n[sk]; }); return; }
+  // ¿queda un tramo abierto antes de esta nota?
+  let open = null; notes.slice(0, i).forEach((x, j) => { if (x[ek] && open != null) open = null; if (x[sk]) open = j; });
+  if (open != null) { commit(() => { n[ek] = true; }); return; }
+  commit(() => { n[sk] = val; });
+  toast(`${label}: elige la última nota del tramo y vuelve a pulsar.`);
+}
+const toggleSlur = () => spanAction("sls", "sle", true, "Ligadura de expresión");
+const toggleHairpin = (dir) => spanAction("hp", "hpe", dir, dir === ">" ? "Decrescendo" : "Crescendo");
+function noteDynDialog() {
+  const n = pickedNote(true); if (!n) return;
+  openModal(`<h3>Dinámica en esta nota</h3>
+    <p>Cambia el volumen desde esta nota (pp a ff) o la acentúa sola (sfz, sf, fz, fp).</p>
+    <div class="chips">${NOTE_DYN.map((d) => `<button class="btn${n.dyn === d ? " primary" : ""}" data-dyn="${d}" style="font-style:italic;font-weight:700;font-family:Times New Roman,serif">${d}</button>`).join("")}</div>
+    <div class="actions"><button class="btn" data-x="none">Quitar</button><button class="btn" data-x="close">Cancelar</button></div>`, (d) => {
+    d.querySelectorAll("[data-dyn]").forEach((b) => (b.onclick = () => { closeModal(); commit(() => { n.dyn = b.dataset.dyn; }); }));
+    d.querySelector('[data-x="none"]').onclick = () => { closeModal(); commit(() => { delete n.dyn; }); };
+    d.querySelector('[data-x="close"]').onclick = closeModal;
+  });
+}
+function noteTextDialog() {
+  const n = pickedNote(true); if (!n) return;
+  openModal(`<h3>Texto de expresión</h3>
+    <p>Aparece sobre el pentagrama, en cursiva, en esta nota: dolce, rit., a tempo, con alegría…</p>
+    <div class="field"><label for="ntIn">Texto</label><input id="ntIn" maxlength="40" value="${esc(n.txt || "")}" autocomplete="off"></div>
+    <div class="actions"><button class="btn" data-x="close">Cancelar</button><button class="btn primary" data-x="ok">Listo</button></div>`, (d) => {
+    const inp = d.querySelector("#ntIn"); inp.focus(); inp.select();
+    const ok = () => { const t = inp.value.trim().slice(0, 40); closeModal(); commit(() => { if (t) n.txt = t; else delete n.txt; }); };
+    d.querySelector('[data-x="ok"]').onclick = ok;
+    inp.onkeydown = (e) => { if (e.key === "Enter") { e.preventDefault(); ok(); } };
+    d.querySelector('[data-x="close"]').onclick = closeModal;
+  });
+}
+const EXPR_FIELDS = ["art", "orn", "brk", "gliss", "sls", "sle", "hp", "hpe", "dyn", "txt", "ferm", "grace"];
+function clearNoteMarks() { const n = pickedNote(true); if (!n) return; commit(() => { EXPR_FIELDS.forEach((f) => delete n[f]); }); }
+// Acciones del menú «Más…» de la barra
+const MORE_ACTIONS = {
+  stmo: () => toggleArt("stmo"), ...Object.fromEntries(Object.keys(ORNS).map((o) => [o, () => setOrn(o)])),
+  breath: () => setBrk("breath"), caes: () => setBrk("caes"), gliss: toggleGliss, dyn: noteDynDialog, txt: noteTextDialog, clear: clearNoteMarks,
+};
+// Descripción corta de las marcas de una nota (panel de solfeo)
+function marksText(n) {
+  const out = [];
+  (n.art || []).forEach((a) => ARTS[a] && out.push(ARTS[a].label.toLowerCase()));
+  if (n.orn && ORNS[n.orn]) out.push(ORNS[n.orn].label.toLowerCase());
+  if (n.brk && BREAKS[n.brk]) out.push(BREAKS[n.brk].label.toLowerCase());
+  if (n.gliss) out.push("glissando");
+  if (n.sls) out.push("abre ligadura de expresión"); if (n.sle) out.push("cierra ligadura de expresión");
+  if (n.hp) out.push(n.hp === ">" ? "abre decrescendo" : "abre crescendo"); if (n.hpe) out.push("cierra regulador");
+  if (n.dyn) out.push(n.dyn); if (n.txt) out.push(`«${n.txt}»`);
+  return out.length ? " · " + out.join(", ") : "";
 }
 function setAccidental(a) {
   const n = selNote(); if (!n || n.rest) return;
@@ -2061,7 +2276,8 @@ function performance(model) {
   const T = model.T, M = scoreLen(model);
   const entries = []; let perf = 0, sec = 0;
   playOrder(M).forEach((m) => { const spt = 60 / T.tempo(m) / TQ, len = T.len(m); entries.push({ m, perf, sec, spt, len, swing: T.swing(m) }); perf += len; sec += len * spt; });
-  const events = [], holds = new Map(); // calderones: tick donde termina la nota → segundos que se detiene todo
+  const events = [], holds = new Map(); // calderones y cesuras: tick donde termina la nota → segundos que se detiene todo
+  const ex = expressionMap(T, M);
   score.staves.forEach((st, s) => st.voices.forEach((vc, v) => {
     let last = null;
     entries.forEach((e, ei) => {
@@ -2072,17 +2288,44 @@ function performance(model) {
         const start = e.perf + (p.start - T.start(e.m));
         if (last && last.tieNext && sameKeys(last.keys, p.keys) && last.start + last.dur === start) { last.dur += p.ticks; last.tieNext = p.tieNext; return; }
         const src = vc.notes[p.src];
+        // volumen y largo de la nota: dinámica vigente, reguladores, acentos, staccato…
+        let vel = ex.swell(p.start), len = 0.97;
+        if (p.part === 0 && src) {
+          // staccato, staccatissimo y marcato acortan; el tenuto, solo, sostiene la nota entera
+          const arts = (src.art || []).filter((a) => ARTS[a]), short = arts.filter((a) => ARTS[a].len < 1);
+          arts.forEach((a) => { vel *= ARTS[a].vel || 1; });
+          if (short.length) len = Math.min(...short.map((a) => ARTS[a].len)); else if (arts.includes("ten")) len = 1;
+          vel *= ACCENT_DYN[src.dyn] || 1;
+        }
+        if (p.last && src && src.brk === "breath") len = Math.min(len, 0.8);
+        const base = { s, v, m: e.m, ei, src: p.src, note: src, dyn: ex.level(p.start), vel, len };
         let st0 = start, dur0 = p.ticks;
         if (p.part === 0 && src && src.grace && src.grace.length) {
           // adornos en el tiempo: cada uno dura una fusa (o menos si la nota es muy corta) y la nota principal entra después
           const g = Math.min(TICKS["32"], p.ticks / (src.grace.length + 2));
-          src.grace.forEach((gr) => { events.push({ s, v, m: e.m, ei, start: st0, dur: g, keys: gr.keys, tieNext: false, src: p.src, note: src, dyn: T.dyn(e.m), grace: true }); st0 += g; dur0 -= g; });
+          src.grace.forEach((gr) => { events.push({ ...base, start: st0, dur: g, keys: gr.keys, tieNext: false, grace: true, len: 0.97 }); st0 += g; dur0 -= g; });
         }
-        last = { s, v, m: e.m, ei, start: st0, dur: dur0, keys: p.keys, tieNext: p.tieNext, src: p.src, note: src, dyn: T.dyn(e.m) };
-        events.push(last);
+        // trinos, mordentes, caídas, glissando…: la nota se reparte en varias alturas
+        const segs = src ? ornamentSegs(src, p, dur0, T.key(e.m), vc.notes[p.src + 1]) : null;
+        if (segs) {
+          segs.forEach((sg, i) => {
+            const ev = { ...base, start: st0 + sg.off, dur: sg.dur, keys: sg.keys, tieNext: false, vel: vel * (sg.vel || 1), len: i < segs.length - 1 ? 1 : len, orn: true };
+            events.push(ev);
+            if (i === segs.length - 1) { last = ev; if (sameKeys(sg.keys, p.keys)) ev.tieNext = p.tieNext; }
+          });
+        } else {
+          last = { ...base, start: st0, dur: dur0, keys: p.keys, tieNext: p.tieNext };
+          events.push(last);
+        }
       });
-      // el calderón cae al final de la última pieza de la nota (aunque esté ligada desde antes)
-      pieces.forEach((p) => { if (p.ferm && !p.ghost) { const end = e.perf + (p.start - T.start(e.m)) + p.ticks, extra = Math.min(3, Math.max(0.6, p.ticks * e.spt)); holds.set(end, Math.max(holds.get(end) || 0, extra)); } });
+      // el calderón (y la cesura) caen al final de la última pieza de la nota (aunque esté ligada desde antes)
+      pieces.forEach((p) => {
+        if (p.ghost) return;
+        const end = e.perf + (p.start - T.start(e.m)) + p.ticks;
+        if (p.ferm) holds.set(end, Math.max(holds.get(end) || 0, Math.min(3, Math.max(0.6, p.ticks * e.spt))));
+        const src = vc.notes[p.src];
+        if (p.last && !p.rest && src && src.brk === "caes") holds.set(end, Math.max(holds.get(end) || 0, 0.45));
+      });
     });
   }));
   events.sort((a, b) => a.start - b.start);
@@ -2093,6 +2336,58 @@ function performance(model) {
   const timeOf = (tick) => { const e = entryAt(tick); return e ? e.sec + swingWarp(tick - e.perf, e.swing) * e.spt + holdUpTo(tick, e.perf) : 0; };
   const entryAtSec = (s) => { let lo = 0, hi = entries.length - 1; while (lo < hi) { const mid = (lo + hi + 1) >> 1; if (entries[mid].sec <= s) lo = mid; else hi = mid - 1; } return entries[lo]; };
   return { T, M, model, entries, events, timeOf, entryAtSec, totalPerf: perf, totalSec: sec + holdUpTo(Infinity) };
+}
+// Dinámica en el tiempo de la partitura (no de la interpretación): marcas de compás, dinámicas de nota y reguladores.
+// level(tick) = pp…ff vigente; swell(tick) = multiplicador por crescendo/decrescendo (se mantiene hasta la siguiente dinámica).
+function expressionMap(T, M) {
+  const pts = [], spans = [];
+  for (let m = 0; m < M; m++) { const d = ((score.marks || {})[m] || {}).dyn; if (DYN_GAIN[d]) pts.push([T.start(m), d]); }
+  score.staves.forEach((st) => st.voices.forEach((vc) => {
+    let t = 0; const at = vc.notes.map((n) => { const x = t; t += noteTicks(n); return x; });
+    vc.notes.forEach((n, i) => { if (DYN_GAIN[n.dyn]) pts.push([at[i], n.dyn]); if (n.dyn === "fp") pts.push([at[i] + 1, "p"]); });
+    spanPairs(vc.notes, "hp", "hpe").forEach(([a, b]) => spans.push([at[a], at[b] + noteTicks(vc.notes[b]), vc.notes[a].hp !== ">"]));
+  }));
+  pts.sort((a, b) => a[0] - b[0]);
+  const level = (t) => { let d = "mf"; for (const [x, l] of pts) { if (x <= t) d = l; else break; } return d; };
+  const swell = (t) => spans.reduce((f, [a, b, up]) => {
+    const k = up ? 0.45 : -0.35;
+    if (t >= a && t < b) return f * (1 + (k * (t - a)) / (b - a));
+    const next = (pts.find(([x]) => x >= b) || [Infinity])[0];
+    return t >= b && t < next ? f * (1 + k) : f;
+  }, 1);
+  return { level, swell };
+}
+// Altura vecina en la escala (dir = ±1) o a n semitonos (para caídas y glissandi); todo en notas escritas.
+function stepKey(k, dir, fifths) { const d = dia(k) + dir, s = STEPS[((d % 7) + 7) % 7]; return { s, a: keyAlter(s, fifths), o: Math.floor(d / 7) }; }
+const writtenMidi = (k) => 12 * (k.o + 1) + SEMI[k.s] + (k.a || 0);
+function chromKey(k, n) {
+  const w = writtenMidi(k) + n, pc = ((w % 12) + 12) % 12;
+  return { s: ["C", "C", "D", "D", "E", "F", "F", "G", "G", "A", "A", "B"][pc], a: [0, 1, 0, 1, 0, 0, 1, 0, 1, 0, 1, 0][pc], o: Math.floor(w / 12) - 1 };
+}
+// Reparte una nota con ornamento o glissando en tramos {off, dur, keys, vel}; el último es la nota principal (salvo caídas).
+function ornamentSegs(src, p, dur, fifths, next) {
+  const top = p.keys[p.keys.length - 1], S = (off, d, keys, vel) => ({ off, dur: d, keys, vel });
+  const u = Math.max(1, Math.min(TICKS["32"], Math.floor(dur / 6)));
+  if (p.part === 0 && src.orn && ORNS[src.orn]) {
+    const up = stepKey(top, 1, fifths), dn = stepKey(top, -1, fifths);
+    switch (src.orn) {
+      case "tr": { const q = Math.max(1, Math.min(TQ / 12, Math.floor(dur / 4))), out = []; let t = 0, k = 0; while (dur - t > 2 * q) { out.push(S(t, q, [k++ % 2 ? up : top])); t += q; } out.push(S(t, dur - t, p.keys)); return out; }
+      case "prall": return [S(0, u, [top]), S(u, u, [up]), S(2 * u, dur - 2 * u, p.keys)];
+      case "mord": return [S(0, u, [top]), S(u, u, [dn]), S(2 * u, dur - 2 * u, p.keys)];
+      case "turn": return [S(0, u, [up]), S(u, u, [top]), S(2 * u, u, [dn]), S(3 * u, dur - 3 * u, p.keys)];
+      case "scoop": return [S(0, u, [chromKey(top, -1)], 0.8), S(u, dur - u, p.keys)];
+      case "bend": { const a = Math.floor(dur * 0.35), b = Math.floor(dur * 0.2); return [S(0, a, p.keys), S(a, b, [chromKey(top, -1)]), S(a + b, dur - a - b, p.keys)]; }
+      case "fall": case "doit": { const dir = src.orn === "fall" ? -1 : 1, main = dur - 3 * u; return [S(0, main, p.keys), ...[1, 2, 3].map((i) => S(main + (i - 1) * u, u, [chromKey(top, dir * i)], [0.7, 0.5, 0.35][i - 1]))]; }
+    }
+  }
+  if (p.last && src.gliss && next && !next.rest && next.keys && next.keys.length) {
+    const diff = writtenMidi(next.keys[next.keys.length - 1]) - writtenMidi(top), steps = Math.min(Math.abs(diff) - 1, 8);
+    if (steps < 1) return null;
+    const mainD = Math.floor(dur * 0.55), w = Math.floor((dur - mainD) / steps), out = [S(0, mainD, p.keys)];
+    for (let i = 1; i <= steps; i++) out.push(S(mainD + (i - 1) * w, i === steps ? dur - mainD - (steps - 1) * w : w, [chromKey(top, Math.round((diff * i) / (steps + 1)))], 0.75));
+    return out;
+  }
+  return null;
 }
 // Swing: dentro de cada par de corcheas (o semicorcheas) la primera dura 2/3 y la segunda 1/3, como un tresillo.
 // Las partes fuertes no se mueven, así que el pulso y el metrónomo quedan iguales.
@@ -2207,6 +2502,11 @@ async function startPlayback() {
     startPlaybackNow();
   } finally { starting = false; }
 }
+// Volumen propio de una nota (acentos, reguladores): una ganancia intermedia solo cuando hace falta.
+function velOut(ctx, bus, vel) {
+  if (!vel || Math.abs(vel - 1) < 0.01 || !bus) return bus;
+  const g = ctx.createGain(); g.gain.value = Math.max(0.05, Math.min(2.2, vel)); g.connect(bus); return g;
+}
 function dynBuses(ctx, out) { const b = {}; DYN_LIST.forEach((d) => { const g = ctx.createGain(); g.gain.value = DYN_GAIN[d]; g.connect(out); b[d] = g; }); return b; }
 function startPlaybackNow() {
   stopPlayback();
@@ -2233,7 +2533,7 @@ function startPlaybackNow() {
       const ev = evs[ei++];
       const st = score.staves[ev.s];
       const a = at(P.timeOf(ev.start)), b = at(P.timeOf(ev.start + ev.dur));
-      if (!isSilenced(ev.s, ev.v)) ev.keys.forEach((k) => playNote(sounds[ev.s + "_" + ev.v], midiOf(k, st.clef), a, (b - a) * 0.97, buses[ev.dyn] || out));
+      if (!isSilenced(ev.s, ev.v)) { const o = velOut(actx, buses[ev.dyn] || out, ev.vel); ev.keys.forEach((k) => playNote(sounds[ev.s + "_" + ev.v], midiOf(k, st.clef), a, (b - a) * (ev.len || 0.97), o)); }
       if (speakOn && ev.s === cursor.staff && ev.v === cursor.voice) {
         const ms = (a - actx.currentTime) * 1000;
         timers.push(setTimeout(() => speak(ev.keys[ev.keys.length - 1]), Math.max(0, ms - 40)));
@@ -2604,6 +2904,7 @@ function exportSVG() {
 }
 function toMusicXML() {
   const model = buildModel(), T = model.T;
+  let ndId = 0;
   const M = Math.max(1, model.M - (model.trailing ? 1 : 0));
   let x = '<?xml version="1.0" encoding="UTF-8" standalone="no"?>\n<!DOCTYPE score-partwise PUBLIC "-//Recordare//DTD MusicXML 4.0 Partwise//EN" "http://www.musicxml.org/dtds/partwise.dtd">\n<score-partwise version="4.0">\n';
   x += `  <work><work-title>${esc(score.title || "Sin título")}</work-title></work>\n`;
@@ -2632,6 +2933,7 @@ function toMusicXML() {
       if (m > 0 && s === 0 && +mm.tempo >= 20) x += `      <direction placement="above"><direction-type><metronome><beat-unit>quarter</beat-unit><per-minute>${mm.tempo}</per-minute></metronome></direction-type><sound tempo="${mm.tempo}"/></direction>\n`;
       if (s === 0 && mm.segno) x += `      <direction placement="above"><direction-type><segno/></direction-type><sound segno="segno"/></direction>\n`;
       if (s === 0 && mm.coda) x += `      <direction placement="above"><direction-type><coda/></direction-type><sound coda="coda"/></direction>\n`;
+      if (s === 0 && mm.reh) x += `      <direction placement="above"><direction-type><rehearsal enclosure="square">${esc(mm.reh)}</rehearsal></direction-type></direction>\n`;
       const swm = mm.swing || (m === 0 ? score.swing : "");
       if (s === 0 && swm === "no") x += `      <direction placement="above"><direction-type><words>Recto</words></direction-type><sound><swing><straight/></swing></sound></direction>\n`;
       else if (s === 0 && (swm === "8" || swm === "16")) x += `      <direction placement="above"><direction-type><words>Swing</words></direction-type><sound><swing><first>2</first><second>1</second><swing-type>${swm === "16" ? "16th" : "eighth"}</swing-type></swing></sound></direction>\n`;
@@ -2666,14 +2968,37 @@ function toMusicXML() {
             lyr += `<lyric number="${i + 1}"><syllabic>${syllabic}</syllabic><text>${esc(lyShow(sy.t))}</text></lyric>`;
             pv.hy[i] = !!sy.h;
           });
+          // textos, dinámicas y reguladores de la nota: van como <direction> justo antes (id "nd": son de la nota, no del compás)
+          const dirAt = (inner, place) => `      <direction placement="${place}" id="nd${++ndId}"><direction-type>${inner}</direction-type><voice>${v + 1}</voice></direction>\n`;
+          if (p.part === 0 && src) {
+            if (src.txt) x += dirAt(`<words font-style="italic">${esc(src.txt)}</words>`, "below");
+            if (src.dyn && NOTE_DYN.includes(src.dyn)) x += dirAt(`<dynamics><${src.dyn}/></dynamics>`, "below");
+            if (src.hp) x += dirAt(`<wedge type="${src.hp === ">" ? "diminuendo" : "crescendo"}"/>`, "below");
+          }
           if (p.part === 0 && src && src.grace) src.grace.forEach((g) => g.keys.forEach((k, ki) => {
             x += `      <note><grace${g.slash !== false ? ' slash="yes"' : ""}/>${ki ? "<chord/>" : ""}<pitch><step>${k.s}</step>${k.a ? `<alter>${k.a}</alter>` : ""}<octave>${k.o}</octave></pitch><voice>${v + 1}</voice><type>${XML_TYPE[g.d || "8"]}</type>${stem}</note>\n`;
           }));
+          // ligaduras de expresión, articulaciones, ornamentos y glissando
+          let expr = "";
+          if (src) {
+            if (p.part === 0 && src.sls) expr += `<slur type="start" number="1"${two ? ` placement="${v === 0 ? "above" : "below"}"` : ""}/>`;
+            if (p.last && src.sle) expr += '<slur type="stop" number="1"/>';
+            if (pv.gliss && p.part === 0) expr += '<glissando type="stop" number="1"/>';
+            if (p.last && src.gliss) expr += '<glissando type="start" number="1" line-type="solid"/>';
+            const arts = (p.part === 0 ? (src.art || []).filter((a) => ARTS[a]).map((a) => `<${ARTS[a].xml}/>`) : []).concat(p.last && src.brk && BREAKS[src.brk] ? [`<${BREAKS[src.brk].xml}/>`] : []);
+            const ornXml = p.part === 0 && src.orn && ORNS[src.orn] ? ORNS[src.orn].xml : "";
+            if (ornXml.startsWith("<articulations>")) arts.push(ornXml.replace(/<\/?articulations>/g, ""));
+            if (arts.length) expr += `<articulations>${arts.join("")}</articulations>`;
+            if (ornXml && !ornXml.startsWith("<articulations>")) expr += ornXml;
+          }
+          if (p.part === 0) pv.gliss = false;
+          if (p.last && src && src.gliss) pv.gliss = true;
           p.keys.forEach((k, ki) => {
             const ties = (tieStop ? '<tie type="stop"/>' : "") + (p.tieNext ? '<tie type="start"/>' : "");
-            const tied = (tieStop ? '<tied type="stop"/>' : "") + (p.tieNext ? '<tied type="start"/>' : "") + (ki === 0 ? tupN + (p.ferm ? `<fermata type="${two && v > 0 ? "inverted" : "upright"}"/>` : "") : "");
+            const tied = (tieStop ? '<tied type="stop"/>' : "") + (p.tieNext ? '<tied type="start"/>' : "") + (ki === 0 ? tupN + (p.ferm ? `<fermata type="${two && v > 0 ? "inverted" : "upright"}"/>` : "") + expr : "");
             x += `      <note>${ki ? "<chord/>" : ""}<pitch><step>${k.s}</step>${k.a ? `<alter>${k.a}</alter>` : ""}<octave>${k.o}</octave></pitch><duration>${dur}</duration>${ties}<voice>${v + 1}</voice><type>${XML_TYPE[p.d]}</type>${dots}${stem}${tied ? `<notations>${tied}</notations>` : ""}${ki === 0 ? lyr : ""}</note>\n`;
           });
+          if (p.last && src && src.hpe) x += dirAt('<wedge type="stop"/>', "below");
           pv.tie = p.tieNext; pv.keys = p.keys;
         });
       });
@@ -2734,7 +3059,8 @@ async function renderAudio({ focus = null, others = 0.3, countIn = false, metro 
       if (!focus && isSilenced(ev.s, ev.v)) return;
       const st = score.staves[ev.s];
       const a = t0 + P.timeOf(ev.start), b = t0 + P.timeOf(ev.start + ev.dur);
-      ev.keys.forEach((k) => playNote(sounds[ev.s + "_" + ev.v], midiOf(k, st.clef), a, (b - a) * 0.97, buses[ev.s + "_" + ev.v][ev.dyn]));
+      const o = velOut(off, buses[ev.s + "_" + ev.v][ev.dyn], ev.vel);
+      ev.keys.forEach((k) => playNote(sounds[ev.s + "_" + ev.v], midiOf(k, st.clef), a, (b - a) * (ev.len || 0.97), o));
     });
     if (clicks.length) { const cbus = off.createGain(); cbus.gain.value = 0.7; cbus.connect(master); clicks.forEach((c) => click(t0 + c.sec, c.accent, cbus)); }
   } finally { actx = saved.actx; master = saved.master; reverbIn = saved.reverbIn; }
@@ -2922,6 +3248,19 @@ async function importFile(file, handle = null) {
     toast(e && e.message ? e.message : "No se pudo leer el archivo.");
   }
 }
+// Marcas de expresión dentro de <notations> de una nota MusicXML.
+function readExpression(el, n) {
+  const nt = el.querySelector("notations"); if (!nt) return;
+  if (nt.querySelector('slur[type="start"]')) n.sls = true;
+  if (nt.querySelector('slur[type="stop"]')) n.sle = true;
+  if (nt.querySelector('glissando[type="start"], slide[type="start"]')) n.gliss = true;
+  const art = Object.keys(ARTS).filter((a) => nt.querySelector("articulations > " + ARTS[a].xml));
+  if (art.length) n.art = art;
+  if (nt.querySelector("articulations > breath-mark")) n.brk = "breath";
+  if (nt.querySelector("articulations > caesura")) n.brk = "caes";
+  const orn = Object.keys(ORNS).find((o) => { const m = ORNS[o].xml.match(/<(?:ornaments|articulations|technical)><([\w-]+)/); return m && nt.querySelector(m[1]); });
+  if (orn) n.orn = orn;
+}
 function fromMusicXML(text) {
   const doc = new DOMParser().parseFromString(text, "application/xml");
   if (doc.querySelector("parsererror")) throw new Error("El archivo no es un MusicXML válido.");
@@ -2936,6 +3275,7 @@ function fromMusicXML(text) {
   let lossy = false, firstPart = true;
   const openTup = {}; // grupo irregular en curso por pentagrama y voz
   const pendGrace = {}; // adornos que esperan su nota principal
+  const pendNote = {}; // texto, dinámica o regulador que espera su nota
   const chMap = new Map();
   const marks = {};
   const setM = (m, k, v) => { (marks[m] = marks[m] || {})[k] = v; };
@@ -2970,6 +3310,8 @@ function fromMusicXML(text) {
         if (openVolta && openVolta.length) setM(mIndex, "volta", openVolta.slice());
         meas.querySelectorAll(":scope > barline ending").forEach((en) => { if (/stop|discontinue/.test(en.getAttribute("type") || "")) openVolta = null; });
         meas.querySelectorAll(":scope > direction").forEach((dr) => {
+          if (/^nd/.test(dr.getAttribute("id") || "")) return; // de una nota (Atril): se lee junto a su nota
+          const reh = dr.querySelector("rehearsal"); if (reh && reh.textContent.trim()) setM(mIndex, "reh", reh.textContent.trim().slice(0, 6));
           const snd = dr.querySelector("sound"), words = ((dr.querySelector("words") || {}).textContent || "").trim();
           if (dr.querySelector("segno") || (snd && snd.getAttribute("segno"))) setM(mIndex, "segno", true);
           if (snd && snd.getAttribute("tocoda") || /to\s*coda|al\s*coda\b(?!.*D\.)/i.test(words) && !/^D\./.test(words)) setM(mIndex, "toCoda", true);
@@ -2997,6 +3339,23 @@ function fromMusicXML(text) {
             const st = sc.staves[base + sn]; if (!st || st.voices[0].notes.length) return;
             st.clef = sign === "F" ? "bass" : sign === "C" ? "alto" : oc === -1 ? "treble8" : "treble";
           });
+        } else if (el.tagName === "direction") {
+          // texto, dinámica y reguladores de una nota: esperan a la nota siguiente de esa voz (el fin del regulador va a la anterior)
+          const sn = +((el.querySelector("staff") || {}).textContent || 1) - 1;
+          if (!sc.staves[base + sn]) continue;
+          const v = voiceFor(sn, (el.querySelector("voice") || {}).textContent || "1"); if (v < 0) continue;
+          const key = base + sn + "_" + v, mine = /^nd/.test(el.getAttribute("id") || "");
+          const pend = (pendNote[key] = pendNote[key] || {});
+          const wedge = el.querySelector("wedge");
+          if (wedge) {
+            const ty = wedge.getAttribute("type");
+            if (ty === "stop") { const vn = sc.staves[base + sn].voices[v].notes; for (let i = vn.length - 1; i >= 0; i--) if (!vn[i].rest) { vn[i].hpe = true; break; } }
+            else if (ty === "crescendo" || ty === "diminuendo") pend.hp = ty === "diminuendo" ? ">" : "<";
+          }
+          if (mine) {
+            const w = el.querySelector("words"); if (w && w.textContent.trim()) pend.txt = w.textContent.trim().slice(0, 40);
+            const dz = el.querySelector("dynamics > *"); if (dz && NOTE_DYN.includes(dz.tagName)) pend.dyn = dz.tagName;
+          }
         } else if (el.tagName === "forward") {
           const xv = (el.querySelector("voice") || {}).textContent; if (!xv) continue;
           const sn = +((el.querySelector("staff") || {}).textContent || 1) - 1;
@@ -3044,6 +3403,8 @@ function fromMusicXML(text) {
             if (/64th|breve/.test(typeEl.textContent)) lossy = true;
             const n = { d: T[typeEl.textContent], dots: T[typeEl.textContent] === "w" || T[typeEl.textContent] === "32" ? Math.min(1, dots) : dots, rest: rest || !key, tie, keys: key && !rest ? [key] : [] };
             if (hid) n.hid = true; if (ly && !n.rest) n.ly = ly; if (ferm) n.ferm = true; if (graceHere && !n.rest) n.grace = graceHere;
+            if (!n.rest) readExpression(el, n);
+            const pn = pendNote[gKey]; if (pn) { Object.assign(n, pn); pendNote[gKey] = {}; }
             if (tupN > 1 && tupOfN > 0) {
               n.tup = { n: tupN, of: tupOfN, u: n.d };
               // la unidad del grupo se fija al cerrarlo: la figura que, repetida n veces, llena lo que ocupa el grupo
@@ -3531,6 +3892,10 @@ function syncPalette() {
   const n = selNote();
   document.getElementById("tTie").setAttribute("aria-pressed", String(!!(n && n.tie)));
   document.getElementById("tFerm").setAttribute("aria-pressed", String(!!(n && n.ferm)));
+  document.querySelectorAll("[data-art]").forEach((b) => b.setAttribute("aria-pressed", String(!!(n && (n.art || []).includes(b.dataset.art)))));
+  document.getElementById("tSlur").setAttribute("aria-pressed", String(!!(n && (n.sls || n.sle))));
+  document.getElementById("tCresc").setAttribute("aria-pressed", String(!!(n && n.hp === "<")));
+  document.getElementById("tDim").setAttribute("aria-pressed", String(!!(n && n.hp === ">")));
   const tp = document.getElementById("tTup");
   if (document.activeElement !== tp) tp.value = mode === "select" && n ? String(tupOf(n) ? tupOf(n).n : "") : String(inputTup || "");
 }
@@ -3558,6 +3923,7 @@ function syncMeterFields() {
   tf.placeholder = m === 0 ? "" : "igual (" + T.tempo(m) + ")";
   document.getElementById("pDyn").value = mm.dyn || "";
   document.getElementById("pSwing").value = mm.swing || "";
+  const rh = document.getElementById("pReh"); if (document.activeElement !== rh) rh.value = mm.reh || "";
   document.getElementById("mRepStart").checked = !!mm.repStart;
   document.getElementById("mRepEnd").checked = !!mm.repEnd;
   document.getElementById("mTimes").value = String(mm.repEnd || 2);
@@ -3568,7 +3934,7 @@ function syncMeterFields() {
     const x = score.marks[i], parts = [];
     if (x.repStart) parts.push("‖:"); if (x.repEnd) parts.push(":‖" + (+x.repEnd > 2 ? "×" + x.repEnd : ""));
     if (x.volta) parts.push(x.volta.join("ª ") + "ª casilla"); if (x.segno) parts.push("Segno"); if (x.coda) parts.push("Coda");
-    if (x.toCoda) parts.push("Al Coda"); if (x.fine) parts.push("Fine"); if (x.jump) parts.push(JUMPS[x.jump]); if (x.tempo && i > 0) parts.push("♩=" + x.tempo); if (x.dyn) parts.push(x.dyn); if (x.swing) parts.push(x.swing === "no" ? "Recto" : "Swing" + (x.swing === "16" ? " ♬" : ""));
+    if (x.toCoda) parts.push("Al Coda"); if (x.fine) parts.push("Fine"); if (x.jump) parts.push(JUMPS[x.jump]); if (x.tempo && i > 0) parts.push("♩=" + x.tempo); if (x.dyn) parts.push(x.dyn); if (x.swing) parts.push(x.swing === "no" ? "Recto" : "Swing" + (x.swing === "16" ? " ♬" : "")); if (x.reh) parts.push("[" + x.reh + "]");
     return parts.length ? `<span class="mchip">c. ${barNum(i)} · ${esc(parts.join(" "))}<button class="mini" data-mm="${i}" aria-label="Quitar las marcas del compás ${barNum(i)}">✕</button></span>` : "";
   }).join("");
   document.getElementById("pMarks").innerHTML = mlist;
@@ -3646,7 +4012,10 @@ function helpDialog() {
       <kbd>2 3 4 5 6 7</kbd><span>Fusa, semicorchea, corchea, negra, blanca, redonda</span>
       <kbd>.</kbd><span>Puntillo; otra vez, doble puntillo; otra vez, sin puntillo</span>
       <kbd>Alt + 3</kbd><span>Tresillo: las notas que escribas entran al grupo hasta completarlo; otra vez, vuelve a normal. Dosillo, cinquillo, seisillo y septillo en la barra</span>
-      <kbd>Alt + F</kbd><span>Calderón en la nota seleccionada (al reproducir, la música se detiene ahí)</span>
+      <kbd>Alt + C</kbd><span>Calderón en la nota seleccionada (al reproducir, la música se detiene ahí)</span>
+      <kbd>Alt + S · T · A · M</kbd><span>Staccato, tenuto, acento, marcato en la nota seleccionada (otra vez lo quita)</span>
+      <kbd>Alt + L</kbd><span>Ligadura de expresión: en la primera nota y luego en la última; sobre un extremo, la quita</span>
+      <kbd>Alt + R · Alt + Mayús + R</kbd><span>Crescendo o decrescendo, igual que la ligadura: primera nota y última</span>
       <kbd>Alt + G</kbd><span>Adornos: elige la nota y escribe con A–G las notas de adorno que van antes; Retroceso borra el último, Esc termina</span>
       <kbd>0 · R</kbd><span>Silencio</span>
       <kbd>+ · − · =</kbd><span>Sostenido, bemol, becuadro en la nota seleccionada</span>
@@ -3665,6 +4034,7 @@ function helpDialog() {
     </div>
     <p><b>Letra:</b> con L se abre la barra de letra. Escribe la sílaba y pulsa Espacio para pasar a la nota siguiente, o guion para separar sílabas de una misma palabra. Con “Pegar estrofa” puedes poner una estrofa entera escrita así: Al-ce-mos hoy la voz.</p>
     <p><b>Cambios de compás o tonalidad:</b> pon el cursor en el compás donde empieza el cambio y elige el compás o la tonalidad en el panel Partitura.</p>
+    <p><b>Expresión:</b> en «Más…» de la barra están el staccatissimo, la respiración y la cesura, los trinos, mordentes y grupetos, los efectos de jazz (caída, doit, scoop, bend y glissando), la dinámica de una sola nota (sfz, fp…) y los textos como «dolce». Todo se oye al reproducir. La marca de ensayo (A, B, C…) se pone en el panel Compás.</p>
     <p><b>Swing y anacrusa:</b> en el panel Compás, “Swing desde aquí” hace que las corcheas (o semicorcheas) se toquen con swing a partir de ese compás, aunque estén escritas rectas; “Recto” lo quita. “Anacrusa” deja el primer compás incompleto, y la numeración empieza en el compás siguiente.</p>
     <p>Para ensayar una voz del coro, usa la S de esa voz para escucharla sola, o la M para silenciarla.</p>
     <p><b>Tus archivos:</b> cada partitura se guarda como un archivo .atril en la carpeta que elijas; “Abrir” muestra las recientes. Para compartirla, usa “Compartir”: el enlace lleva la partitura adentro, sin subirla a ningún servidor. También puedes enviar el archivo .atril, o el PDF, MusicXML o audio desde el menú Archivo.${canPick || desktop ? "" : " Este navegador no puede escribir directo en tus carpetas: al guardar se descarga el archivo .atril."}</p>
@@ -3693,7 +4063,11 @@ function onKey(e) {
   if (ctrl) return;
   if (e.altKey && (e.code === "Digit1" || e.code === "Digit2")) { e.preventDefault(); switchVoice(e.code === "Digit1" ? 0 : 1); return; }
   if (e.altKey && e.code === "Digit3") { e.preventDefault(); setTuplet(inputTup === 3 ? "" : "3"); return; }
-  if (e.altKey && e.code === "KeyF") { e.preventDefault(); toggleFermata(); return; }
+  if (e.altKey && e.code === "KeyC") { e.preventDefault(); toggleFermata(); return; }
+  const altArt = { KeyS: "stacc", KeyT: "ten", KeyA: "acc", KeyM: "marc" };
+  if (e.altKey && altArt[e.code]) { e.preventDefault(); toggleArt(altArt[e.code]); return; }
+  if (e.altKey && e.code === "KeyL") { e.preventDefault(); toggleSlur(); return; }
+  if (e.altKey && e.code === "KeyR") { e.preventDefault(); toggleHairpin(e.shiftKey ? ">" : "<"); return; }
   if (e.altKey && e.code === "KeyG") { e.preventDefault(); setGraceMode(graceMode ? "" : "acc"); return; }
   if (graceMode) {
     if (/^[a-gA-G]$/.test(k)) { e.preventDefault(); addGrace(k.toUpperCase()); return; }
@@ -3734,6 +4108,11 @@ function wire() {
   document.getElementById("tRest").onclick = insertRest;
   document.getElementById("tTie").onclick = toggleTie;
   document.getElementById("tFerm").onclick = toggleFermata;
+  document.querySelectorAll("[data-art]").forEach((b) => (b.onclick = () => toggleArt(b.dataset.art)));
+  document.getElementById("tSlur").onclick = toggleSlur;
+  document.getElementById("tCresc").onclick = () => toggleHairpin("<");
+  document.getElementById("tDim").onclick = () => toggleHairpin(">");
+  document.getElementById("tMore").onchange = (e) => { const a = MORE_ACTIONS[e.target.value]; e.target.value = ""; document.getElementById("desk").focus({ preventScroll: true }); if (a) a(); };
   document.getElementById("tGrace").onchange = (e) => { setGraceMode(e.target.value); document.getElementById("desk").focus({ preventScroll: true }); };
   document.getElementById("tTup").onchange = (e) => { setTuplet(e.target.value); document.getElementById("desk").focus({ preventScroll: true }); };
   document.getElementById("tUndo").onclick = undo;
@@ -3762,6 +4141,7 @@ function wire() {
   document.getElementById("pTempoM").onchange = (e) => { const m = cmv(), v = Math.round(+e.target.value); if (m === 0) { if (v >= 20) commit(() => { score.tempo = Math.min(260, v); }); } else setMark(m, { tempo: v >= 20 ? Math.min(260, v) : undefined }); };
   document.getElementById("pDyn").onchange = (e) => setMark(cmv(), { dyn: e.target.value || undefined });
   document.getElementById("pSwing").onchange = (e) => setMark(cmv(), { swing: e.target.value || undefined });
+  document.getElementById("pReh").onchange = (e) => setMark(cmv(), { reh: e.target.value.trim().slice(0, 6) || undefined });
   document.getElementById("pPickup").onchange = (e) => {
     const v = +e.target.value;
     if (v && v * TQ >= timeTicks(score.time)) { toast("La anacrusa tiene que ser más corta que un compás completo."); syncMeterFields(); return; }

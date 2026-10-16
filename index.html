@@ -351,6 +351,8 @@ textarea.xml { width: 100%; height: 220px; font-family: var(--font-mono); font-s
         <optgroup label="Articulación"><option value="stmo">Staccatissimo</option><option value="breath">Respiración</option><option value="caes">Cesura</option></optgroup>
         <optgroup label="Ornamentos"><option value="tr">Trino</option><option value="prall">Mordente superior</option><option value="mord">Mordente inferior</option><option value="turn">Grupeto</option></optgroup>
         <optgroup label="Jazz"><option value="fall">Caída (fall)</option><option value="doit">Doit</option><option value="scoop">Scoop</option><option value="bend">Bend</option><option value="gliss">Glissando a la siguiente</option></optgroup>
+        <optgroup label="Octava y pedal (primera nota y luego la última)"><option value="ova8va">8va</option><option value="ova8vb">8vb</option><option value="ova15ma">15ma</option><option value="ped">Pedal</option></optgroup>
+        <optgroup label="Barras y plicas"><option value="bmBreak">Cortar la barra antes de esta nota</option><option value="bmJoin">Unir la barra con la nota anterior</option><option value="bmAuto">Barra automática</option><option value="stemUp">Plica arriba</option><option value="stemDown">Plica abajo</option><option value="stemAuto">Plica automática</option></optgroup>
         <optgroup label="Nota"><option value="dyn">Dinámica en esta nota (sfz, fp…)…</option><option value="txt">Texto de expresión…</option><option value="clear">Quitar las marcas de la nota</option></optgroup>
       </select>
     </div>
@@ -455,6 +457,7 @@ textarea.xml { width: 100%; height: 220px; font-family: var(--font-mono); font-s
           <div class="field"><label for="pSize">Pentagrama</label><select id="pSize"></select></div>
           <div class="field"><label for="pPer">Compases</label><select id="pPer"></select></div>
         </div>
+        <label class="check"><input type="checkbox" id="pConcert"><span>Ver en tono real<small>Los instrumentos transpositores (sax, trompeta, clarinete, corno) se muestran como suenan, para el director.</small></span></label>
         <label class="check"><input type="checkbox" id="pMmRest"><span>Agrupar silencios de varios compases<small>Dos o más compases vacíos seguidos se muestran como uno solo con su número (como en las partes de instrumento).</small></span></label>
       </section>
       <section class="sect" aria-labelledby="hStaves">
@@ -464,6 +467,7 @@ textarea.xml { width: 100%; height: 220px; font-family: var(--font-mono); font-s
           <select id="addClef" aria-label="Clave del pentagrama nuevo">
             <option value="treble">Clave de sol</option><option value="treble8">Sol 8va baja (tenor)</option>
             <option value="bass">Clave de fa</option><option value="alto">Clave de do (3ª)</option>
+            <option value="tenor">Clave de do (4ª, tenor)</option><option value="treble8va">Sol 8va alta (flautín)</option><option value="bass8vb">Fa 8va baja (contrabajo)</option><option value="perc">Percusión</option>
           </select>
           <button class="btn" id="bAddStaff">Agregar</button>
         </div>
@@ -541,6 +545,10 @@ const CLEFS = {
   treble8: { label: "Sol 8vb", vf: "treble", ann: "8vb", center: 4 * 7 + 4, xml: ["G", 2, -1], transpose: -12, rest: ["b/4", "f/5", "e/4"] },
   bass: { label: "Fa", vf: "bass", ann: undefined, center: 3 * 7 + 1, xml: ["F", 4, 0], transpose: 0, rest: ["d/3", "a/3", "g/2"] },
   alto: { label: "Do", vf: "alto", ann: undefined, center: 4 * 7 + 0, xml: ["C", 3, 0], transpose: 0, rest: ["c/4", "g/4", "f/3"] },
+  tenor: { label: "Do 4ª (tenor)", vf: "tenor", ann: undefined, center: 3 * 7 + 5, xml: ["C", 4, 0], transpose: 0, rest: ["a/3", "e/4", "d/3"] },
+  treble8va: { label: "Sol 8va alta", vf: "treble", ann: "8va", center: 4 * 7 + 4, xml: ["G", 2, 1], transpose: 12, rest: ["b/4", "f/5", "e/4"] },
+  bass8vb: { label: "Fa 8va baja", vf: "bass", ann: "8vb", center: 3 * 7 + 1, xml: ["F", 4, -1], transpose: -12, rest: ["d/3", "a/3", "g/2"] },
+  perc: { label: "Percusión", vf: "percussion", ann: undefined, center: 4 * 7 + 4, xml: ["percussion", 0, 0], transpose: 0, rest: ["b/4", "f/5", "e/4"] },
 };
 const DUR_NAME = { w: "Redonda", h: "Blanca", q: "Negra", "8": "Corchea", "16": "Semicorchea", "32": "Fusa" };
 const XML_TYPE = { w: "whole", h: "half", q: "quarter", "8": "eighth", "16": "16th", "32": "32nd" };
@@ -553,6 +561,28 @@ const tupOf = (n) => (n && n.tup && n.tup.n > 1 && n.tup.of > 0 ? n.tup : null);
 const noteTicks = (n) => { const t = tupOf(n); return t ? (nominalTicks(n) * t.of) / t.n : nominalTicks(n); };
 const dia = (k) => k.o * 7 + STEPS.indexOf(k.s);
 const midiOf = (k, clef) => 12 * (k.o + 1) + SEMI[k.s] + (k.a || 0) + (CLEFS[clef] ? CLEFS[clef].transpose : 0);
+/* Instrumentos transpositores (bloque D). Las notas se guardan ESCRITAS (lo que lee el músico, como en MusicXML).
+   steps/semis: de lo escrito a lo que suena · kf: quintas que se suman a la tonalidad real para la armadura escrita. */
+const TRANS = {
+  bb: { label: "Si♭: trompeta, clarinete, sax soprano", steps: -1, semis: -2, kf: 2 },
+  ten: { label: "Sax tenor (Si♭, una 9ª abajo)", steps: -8, semis: -14, kf: 2 },
+  eb: { label: "Sax alto (Mi♭)", steps: -5, semis: -9, kf: 3 },
+  bari: { label: "Sax barítono (Mi♭, 8va + 6ª abajo)", steps: -12, semis: -21, kf: 3 },
+  a: { label: "Clarinete en La", steps: -2, semis: -3, kf: -3 },
+  f: { label: "Corno en Fa", steps: -4, semis: -7, kf: 1 },
+  ebs: { label: "Clarinete en Mi♭ (requinto)", steps: 2, semis: 3, kf: 3 },
+};
+let concertView = false; // ver los instrumentos transpositores en tono real
+const transOf = (st) => (st && TRANS[st.trans]) || null;
+const writtenKey = (st, key) => { const t = transOf(st); return t ? wrapFifths(+key + t.kf) : +key; };
+// armadura con la que se ve y se escribe en ese pentagrama (la real si se mira en tono real)
+const staffKey = (st, key) => (concertView ? +key : writtenKey(st, key));
+const staffMidi = (k, st) => midiOf(k, st.clef) + ((transOf(st) || {}).semis || 0);
+// intervalo para mostrar en tono real: el de la tabla sin las octavas (el tenor se ve una 2ª abajo, no una 9ª)
+const viewIv = (t) => ({ steps: t.steps % 7, semis: t.semis - 12 * Math.trunc(t.steps / 7) });
+// escrito → como se ve; y al revés, para guardar lo que se escribe mirando en tono real
+function viewKey(k, st, key) { const t = transOf(st); return t && concertView ? transposeKey(k, viewIv(t), +key) : k; }
+function storeKey(k, st, key) { const t = transOf(st); if (!t || !concertView) return k; const iv = viewIv(t); return transposeKey(k, { steps: -iv.steps, semis: -iv.semis }, writtenKey(st, key)); }
 function keyAlter(step, fifths) {
   if (fifths > 0 && SHARP_ORDER.indexOf(step) < fifths) return 1;
   if (fifths < 0 && FLAT_ORDER.indexOf(step) < -fifths) return -1;
@@ -861,24 +891,30 @@ function render() {
   if (!VF) { pagesEl.innerHTML = '<div class="page" style="padding:40px">No se pudo cargar el motor de grabado (VexFlow). Revisa tu conexión y recarga la página.</div>'; return; }
   normChanges();
   const model = buildModel(), T = model.T;
+  const ovaCache = new Map(); // voz → desplazamiento de octava (8va/8vb) de cada nota
   const L = BASE_STAFF_MM / (score.layout.staff || 6);
   const PW = PAGE_W * L, PH = PAGE_H * L, MX = 56 * L, MTOP = 52 * L, MBOT = 52 * L, HEAD = 112 * L;
   const LY_FS = 11.5 * L, LY_H = 14.5 * L;
   const ly = score.staves.map(lyricInfo);
   // espacio bajo cada pentagrama: letra, solfeo y plicas de las dos voces (abajo en este, arriba en el siguiente)
+  // lugar para el pedal y la 8vb (bajo el pentagrama) y para la 8va/15ma (sobre él)
+  const hasN = (st, f) => st.voices.some((vc) => vc.notes.some(f));
+  const roomBelow = score.staves.map((st) => hasN(st, (n) => n.ped || (OTTAVA[n.ova] && OTTAVA[n.ova].shift > 0)) ? 26 * L : 0);
+  const roomAbove = score.staves.map((st) => hasN(st, (n) => OTTAVA[n.ova] && OTTAVA[n.ova].shift < 0) ? 22 * L : 0);
   const gaps = score.staves.map((st, s) => {
     const next = score.staves[s + 1];
     return 46 + (solfeoOn ? 14 * L + 6 : 0) + (ly[s].total ? ly[s].total * LY_H + 8 * L : 0)
-      + (st.voices.length > 1 ? 10 : 0) + (next && next.voices.length > 1 && ly[s].total ? 26 : 0);
+      + (st.voices.length > 1 ? 10 : 0) + (next && next.voices.length > 1 && ly[s].total ? 26 : 0)
+      + roomBelow[s] + (next ? roomAbove[s + 1] : 0);
   });
   const yOff = []; score.staves.forEach((_, s) => { yOff[s] = s ? yOff[s - 1] + STAFF_H + gaps[s - 1] : 0; });
   const nS = score.staves.length;
   const lastLy = ly[nS - 1].total ? ly[nS - 1].total * LY_H + 8 * L : 0;
-  const sysH = yOff[nS - 1] + STAFF_H + lastLy;
+  const sysH = yOff[nS - 1] + STAFF_H + lastLy + roomBelow[nS - 1];
   const sysGap = 30 + 22 * L;
   const hasTopMarks = !!score.swing || Object.entries(score.marks || {}).some(([m, x]) => x.volta || x.segno || x.coda || x.toCoda || x.fine || x.jump || x.swing || (+m > 0 && x.tempo) || +x.repEnd > 2);
   const hasReh = Object.values(score.marks || {}).some((x) => x.reh);
-  const topPad = (hasTopMarks ? 24 : 0) + (hasReh ? 22 : 0) + (chordMode !== "off" ? 26 : 0);
+  const topPad = (hasTopMarks ? 24 : 0) + (hasReh ? 22 : 0) + (chordMode !== "off" ? 26 : 0) + roomAbove[0];
   const hasDyn = Object.values(score.marks || {}).some((x) => x.dyn) || score.staves.some((st) => st.voices.some((vc) => vc.notes.some((n) => n.dyn || n.hp || n.txt)));
   const labels = score.staves.map(staffLabelLines);
   const indent = labels.some((l) => l.length) ? 66 * L : 0;
@@ -944,17 +980,18 @@ function render() {
       s.ms.forEach((m, k) => {
         const w = s.ws[k];
         const span = s.spans[m] || 1, mEnd = m + span - 1; // con silencios agrupados, este lugar va de m a mEnd
-        const keyNow = T.key(m), keySpec = KEY_VF[String(keyNow)];
+        const keyNow = T.key(m);
         const staves = score.staves.map((st, sIdx) => {
           const yy = s.y + yOff[sIdx];
           const stave = new VF.Stave(x, yy, w, { space_above_staff_ln: 0, space_below_staff_ln: 0, fill_style: "#4a4d55" });
           const c = CLEFS[st.clef] || CLEFS.treble;
+          const sk = staffKey(st, keyNow); // armadura de este pentagrama (la escrita en un instrumento transpositor)
           if (k === 0) {
             stave.addClef(c.vf, "default", c.ann);
-            if (keyNow !== 0) stave.addKeySignature(keySpec);
+            if (sk !== 0) stave.addKeySignature(KEY_VF[String(sk)]);
             if (m === 0 || T.timeChange(m)) stave.addTimeSignature(T.time(m));
           } else {
-            if (T.keyChange(m)) stave.addKeySignature(keySpec, KEY_VF[String(T.key(m - 1))]);
+            if (T.keyChange(m)) stave.addKeySignature(KEY_VF[String(sk)], KEY_VF[String(staffKey(st, T.key(m - 1)))]);
             if (T.timeChange(m)) stave.addTimeSignature(T.time(m));
           }
           if (mEnd === model.M - 1) stave.setEndBarType(VF.Barline.type.END);
@@ -1009,20 +1046,25 @@ function render() {
           vlist.forEach((pieces, v) => {
             if (!pieces) return;
             const notes = st.voices[v].notes;
+            if (!ovaCache.has(notes)) ovaCache.set(notes, ottavaShifts(notes));
+            const shifts = ovaCache.get(notes);
             const vfNotes = pieces.map((p) => {
-              const keys = p.rest ? [c.rest[two ? (v === 0 ? 1 : 2) : 0]] : p.keys.map((kk) => `${kk.s.toLowerCase()}${kk.a === 1 ? "#" : kk.a === -1 ? "b" : ""}/${kk.o}`);
+              const osh = p.ghost ? 0 : shifts[p.src] || 0; // dentro de una 8va/8vb se dibuja una octava corrida
+              const keys = p.rest ? [c.rest[two ? (v === 0 ? 1 : 2) : 0]] : p.keys.map((k0) => { const kv = viewKey(k0, st, keyNow); return osh ? { ...kv, o: kv.o + osh } : kv; }).map((kk) => `${kk.s.toLowerCase()}${kk.a === 1 ? "#" : kk.a === -1 ? "b" : ""}/${kk.o}`);
               const opts = { clef: c.vf, keys, duration: p.d + "d".repeat(p.dots || 0) + (p.rest ? "r" : ""), align_center: !!p.full && !two };
-              if (two) { opts.auto_stem = false; opts.stem_direction = v === 0 ? 1 : -1; } else opts.auto_stem = true;
+              const fst = !p.ghost && !p.rest && notes[p.src] && notes[p.src].stem;
+              if (two) { opts.auto_stem = false; opts.stem_direction = v === 0 ? 1 : -1; } else if (fst) { opts.auto_stem = false; opts.stem_direction = fst === "down" ? -1 : 1; } else opts.auto_stem = true;
               const vn = new VF.StaveNote(opts);
               for (let d = 0; d < (p.dots || 0); d++) VF.Dot.buildAndAttach([vn], { all: true });
               if (p.ferm) vn.addModifier(new VF.Articulation(two && v > 0 ? "a@u" : "a@a").setPosition(two && v > 0 ? VF.Modifier.Position.BELOW : VF.Modifier.Position.ABOVE), 0);
               const src = notes[p.src];
               if (!p.ghost && !p.rest && p.part === 0 && src && src.grace && src.grace.length) {
                 try {
-                  const key = T.key(m);
+                  const key = staffKey(st, T.key(m));
                   const gn = src.grace.map((g) => {
-                    const n = new VF.GraceNote({ clef: c.vf, keys: g.keys.map((kk) => `${kk.s.toLowerCase()}${kk.a === 1 ? "#" : kk.a === -1 ? "b" : ""}/${kk.o}`), duration: g.d || "8", slash: g.slash !== false });
-                    g.keys.forEach((kk, ki) => { if ((kk.a || 0) !== keyAlter(kk.s, key)) n.addModifier(new VF.Accidental(kk.a === 1 ? "#" : kk.a === -1 ? "b" : "n"), ki); });
+                    const gk = g.keys.map((k0) => viewKey(k0, st, T.key(m)));
+                    const n = new VF.GraceNote({ clef: c.vf, keys: gk.map((kk) => `${kk.s.toLowerCase()}${kk.a === 1 ? "#" : kk.a === -1 ? "b" : ""}/${kk.o}`), duration: g.d || "8", slash: g.slash !== false });
+                    gk.forEach((kk, ki) => { if ((kk.a || 0) !== keyAlter(kk.s, key)) n.addModifier(new VF.Accidental(kk.a === 1 ? "#" : kk.a === -1 ? "b" : "n"), ki); });
                     return n;
                   });
                   vn.addModifier(new VF.GraceNoteGroup(gn, true).beamNotes(), 0);
@@ -1032,7 +1074,8 @@ function render() {
               if (p.ghost || p.hid) vn.setStyle({ fillStyle: p.hid ? "rgba(0,0,0,0)" : "#b8bcc6", strokeStyle: p.hid ? "rgba(0,0,0,0)" : "#b8bcc6" });
               if (solfeoOn && !p.rest && p.part === 0) {
                 const top = two ? v === 0 : staffHasLy;
-                (top ? p.keys.slice() : p.keys.slice().reverse()).forEach((kk) => {
+                const shownKeys = p.keys.map((k0) => viewKey(k0, st, keyNow));
+                (top ? shownKeys : shownKeys.slice().reverse()).forEach((kk) => {
                   const a = new VF.Annotation(sylOf(kk));
                   a.setFont("Arial", 9 * L);
                   a.setVerticalJustification(top ? VF.Annotation.VerticalJustify.TOP : VF.Annotation.VerticalJustify.BOTTOM);
@@ -1047,16 +1090,19 @@ function render() {
             const voice = new VF.Voice({ num_beats: 4, beat_value: 4 }).setMode(VF.Voice.Mode.SOFT);
             voice.addTickables(vfNotes);
             try {
-              const bo = { groups: VF.Beam.getDefaultBeamGroups(T.time(m)) };
-              if (two) bo.stem_direction = v === 0 ? 1 : -1;
-              VF.Beam.generateBeams(vfNotes, bo).forEach((b) => beams.push(b));
+              if (pieces.some((p) => !p.ghost && notes[p.src] && (notes[p.src].bm || notes[p.src].stem))) manualBeams(pieces, vfNotes, notes, T, m, two).forEach((b) => beams.push(b));
+              else {
+                const bo = { groups: VF.Beam.getDefaultBeamGroups(T.time(m)) };
+                if (two) bo.stem_direction = v === 0 ? 1 : -1;
+                VF.Beam.generateBeams(vfNotes, bo).forEach((b) => beams.push(b));
+              }
             } catch (e) { /* sin barras */ }
             // articulaciones y ornamentos: después de las barras, cuando ya se sabe hacia dónde va cada plica
             pieces.forEach((p, j) => { if (!p.ghost) noteModifiers(vfNotes[j], p, notes[p.src], two, v); });
             vs.push({ voice, v });
             pieces.forEach((p, j) => { if (!p.ghost) rendered[sIdx][v].push({ p, vf: vfNotes[j], page: pi, ctx, sys: sysIndex, svg, s: sIdx, v, m, note: notes[p.src] }); });
           });
-          if (vs.length) VF.Accidental.applyAccidentals(vs.map((x) => x.voice), keySpec);
+          if (vs.length) VF.Accidental.applyAccidentals(vs.map((x) => x.voice), KEY_VF[String(staffKey(st, keyNow))]);
           perStaffVoices.push({ sIdx, vs });
           vs.forEach((x) => allVoices.push({ voice: x.voice, stave: staves[sIdx] }));
         });
@@ -1201,6 +1247,30 @@ function drawExpressions(rendered, sysStaves, ly, L) {
         const F = sysEdge(B.sys, true); wedge(B.svg, headX(F) - 8 * L, x2, dynY(B.sys) - 5 * L, mid, o1);
       }
     });
+    // 8va / 8vb / 15ma: texto y línea de puntos sobre (o bajo) las notas, con gancho al final
+    spanPairs(notes, "ova", "ovae").forEach(([a, b]) => {
+      const o = OTTAVA[notes[a].ova], A = firstOf(a), B = lastOf(b); if (!o || !A || !B) return;
+      const below = o.shift > 0;
+      const seg = (r1, r2, label, hook) => {
+        const st = r1.vf.getStave(), inSeg = seq.filter((r) => r.sys === r1.sys && r.p.src >= r1.p.src && r.p.src <= r2.p.src);
+        let y = below ? st.getYForLine(4) + 30 * L : st.getYForLine(0) - 14 * L;
+        inSeg.forEach((r) => { try { const bb = r.vf.getBoundingBox(); y = below ? Math.max(y, bb.getY() + bb.getH() + 14 * L) : Math.min(y, bb.getY() - 8 * L); } catch (e) {} });
+        const x1 = headX(r1), x2 = endX(r2) + 6 * L, tw = label.length * 6.5 * L;
+        svgEl(r1.svg, "text", { x: x1, y, "font-family": ENGRAVE_FONT, "font-size": 11 * L, "font-style": "italic", "font-weight": 700, fill: "#111318", class: "ottava" }, label);
+        if (x2 > x1 + tw + 4 * L) svgEl(r1.svg, "line", { x1: x1 + tw + 3 * L, y1: y - 4 * L, x2, y2: y - 4 * L, stroke: "#111318", "stroke-width": 1 * L, "stroke-dasharray": `${3 * L} ${3 * L}` });
+        if (hook) svgEl(r1.svg, "line", { x1: x2, y1: y - 4 * L, x2, y2: y + (below ? -12 : 4) * L, stroke: "#111318", "stroke-width": 1 * L });
+      };
+      if (A.sys === B.sys) seg(A, B, o.label, true);
+      else { seg(A, sysEdge(A.sys, false), o.label, false); seg(sysEdge(B.sys, true), B, `(${o.label})`, true); }
+    });
+    // pedal: «Ped.» al apretar y ✱ al soltar, bajo el pentagrama (y bajo su letra)
+    spanPairs(notes, "ped", "pede").forEach(([a, b]) => {
+      const A = firstOf(a), B = lastOf(b); if (!A || !B) return;
+      const yOf = (r) => { let y = r.vf.getStave().getYForLine(4) + 34 * L + (ly[s].total ? ly[s].total * 14.5 * L : 0); try { const bb = r.vf.getBoundingBox(); y = Math.max(y, bb.getY() + bb.getH() + 16 * L); } catch (e) {} return y; };
+      const pf = { "font-family": ENGRAVE_FONT, "font-size": 13 * L, "font-style": "italic", "font-weight": 700, fill: "#111318" };
+      svgEl(A.svg, "text", { ...pf, x: headX(A) - 6 * L, y: yOf(A), class: "pedal" }, "Ped.");
+      svgEl(B.svg, "text", { ...pf, x: endX(B) + 2 * L, y: yOf(B), class: "pedal-up" }, "✱");
+    });
     seq.forEach((r) => {
       const n = r.note; if (!n || r.p.ghost) return;
       // dinámica en la nota (también sfz, fp…)
@@ -1224,6 +1294,24 @@ function drawExpressions(rendered, sysStaves, ly, L) {
       }
     });
   }));
+}
+// Barras a mano: se agrupan las corcheas (o menores) por pulso, salvo donde la nota pide cortar ("break") o unir ("join").
+function manualBeams(pieces, vfNotes, notes, T, m, two) {
+  const beat = beatOf(T.time(m)), m0 = T.start(m), out = [];
+  let g = [], gBeat = null;
+  const flush = () => {
+    if (g.length > 1) { const forced = g.some((j) => notes[pieces[j].src] && notes[pieces[j].src].stem); out.push(new VF.Beam(g.map((j) => vfNotes[j]), !two && !forced)); }
+    g = [];
+  };
+  pieces.forEach((p, j) => {
+    const n = notes[p.src] || {};
+    if (p.ghost || p.rest || TICKS[p.d] > TICKS["8"]) { flush(); gBeat = null; return; }
+    const b = Math.floor((p.start - m0) / beat);
+    if (g.length && ((p.part === 0 && n.bm === "break") || (b !== gBeat && !(p.part === 0 && n.bm === "join")))) flush();
+    g.push(j); gBeat = b;
+  });
+  flush();
+  return out;
 }
 // Articulaciones, ornamentos y respiraciones de una pieza ya creada (y con su plica definitiva).
 function noteModifiers(vn, p, src, two, v) {
@@ -1423,7 +1511,8 @@ function updateNow(playingNote) {
   const n = playingNote || vc.notes[cursor.index - 1];
   const who = voiceLabel(cursor.staff, cursor.voice);
   if (!n) { syl.textContent = "—"; meta.textContent = `${who} · escribe con A–G`; return; }
-  syl.textContent = n.rest ? "Silencio" : n.keys.slice().reverse().map(sylOf).join(" · ");
+  const kNow = playingNote ? meterTable().key(0) : keyAtIndex(vc, Math.max(0, cursor.index - 1)), stNow = curStaff();
+  syl.textContent = n.rest ? "Silencio" : n.keys.map((k) => viewKey(k, stNow, kNow)).reverse().map(sylOf).join(" · ");
   const dur = DUR_NAME[n.d] + (n.dots === 2 ? " con doble puntillo" : n.dots ? " con puntillo" : "") + (tupOf(n) ? ` (${(Object.values(TUPLETS).find((t) => t.n === n.tup.n && t.of === n.tup.of) || { label: n.tup.n + ":" + n.tup.of }).label.toLowerCase()})` : "") + (n.ferm ? " · calderón" : "") + (n.grace && n.grace.length ? ` · ${n.grace.length === 1 ? "1 adorno" : n.grace.length + " adornos"}` : "") + marksText(n);
   const oct = n.rest ? "" : " · octava " + n.keys.map((k) => k.o).join("/");
   const lyr = n.ly && n.ly.filter(Boolean).length ? ` · «${n.ly.filter(Boolean).map((x) => lyShow(x.t)).join(" / ")}»` : "";
@@ -1475,10 +1564,12 @@ function insertNote(step) {
   const vc = curVoice(), st = curStaff();
   commit(() => {
     fillToHint(vc);
+    const key = keyAtIndex(vc, cursor.index);
     const ref = prevPitched(vc, cursor.index) || (cursor.voice > 0 ? prevPitched(st.voices[0], Math.min(st.voices[0].notes.length, cursor.index)) : null);
-    let refDia = ref ? dia(ref) : (CLEFS[st.clef] || CLEFS.treble).center;
+    let refDia = ref ? dia(viewKey(ref, st, key)) : (CLEFS[st.clef] || CLEFS.treble).center;
     if (!ref && st.voices.length > 1) refDia += cursor.voice === 0 ? 2 : -3;
-    const k = { s: step, a: keyAlter(step, keyAtIndex(vc, cursor.index)), o: nearestOctave(step, refDia) };
+    // la nota se piensa como se ve (escrita o en tono real) y se guarda escrita
+    const k = storeKey({ s: step, a: keyAlter(step, staffKey(st, key)), o: nearestOctave(step, refDia) }, st, key);
     vc.notes.splice(cursor.index, 0, withTup(vc, { d: inputDur, dots: inputDots, rest: false, tie: false, keys: [k] }));
     cursor.index++; mode = "input";
   });
@@ -1487,10 +1578,11 @@ function insertNote(step) {
 function addToChord(step) {
   const n = selNote();
   if (!n || n.rest) return insertNote(step);
-  const top = n.keys[n.keys.length - 1];
+  const st = curStaff(), key = keyAtIndex(curVoice(), cursor.index - 1);
+  const top = viewKey(n.keys[n.keys.length - 1], st, key);
   const si = STEPS.indexOf(step);
   let o = top.o; if (o * 7 + si <= dia(top)) o++;
-  const k = { s: step, a: keyAlter(step, keyAtIndex(curVoice(), cursor.index - 1)), o };
+  const k = storeKey({ s: step, a: keyAlter(step, staffKey(st, key)), o }, st, key);
   commit(() => { n.keys.push(k); n.keys.sort((a, b) => dia(a) - dia(b) || (a.a || 0) - (b.a || 0)); });
   audition(n.keys, curStaff().clef);
 }
@@ -1537,8 +1629,9 @@ function setGraceMode(m) {
 function addGrace(step) {
   const n = selNote();
   if (!n || n.rest) { toast("Elige la nota que lleva el adorno."); return; }
-  const ref = (n.grace && n.grace.length ? n.grace[n.grace.length - 1].keys[0] : n.keys[n.keys.length - 1]);
-  const k = { s: step, a: keyAlter(step, keyAtIndex(curVoice(), cursor.index - 1)), o: nearestOctave(step, dia(ref)) };
+  const st = curStaff(), key = keyAtIndex(curVoice(), cursor.index - 1);
+  const ref = viewKey(n.grace && n.grace.length ? n.grace[n.grace.length - 1].keys[0] : n.keys[n.keys.length - 1], st, key);
+  const k = storeKey({ s: step, a: keyAlter(step, staffKey(st, key)), o: nearestOctave(step, dia(ref)) }, st, key);
   commit(() => { n.grace = n.grace || []; n.grace.push({ keys: [k], d: inputDur === "16" || inputDur === "32" ? inputDur : "8", slash: graceMode === "acc" }); });
   audition([k], curStaff().clef);
 }
@@ -1571,8 +1664,9 @@ function spanAction(sk, ek, val, label) {
   const notes = curVoice().notes, i = cursor.index - 1;
   const pairs = spanPairs(notes, sk, ek);
   const mine = pairs.find(([a, b]) => a === i || b === i);
-  if (mine && !(sk === "hp" && mine[0] === i && notes[i].hp !== val)) { commit(() => { delete notes[mine[0]][sk]; delete notes[mine[1]][ek]; }); return; }
-  if (n[sk] && sk === "hp" && n.hp !== val) { commit(() => { n.hp = val; }); return; }
+  const variant = typeof val === "string"; // regulador < >, octava 8va/8vb/15ma: pulsar otra variante sobre el inicio la cambia
+  if (mine && !(variant && mine[0] === i && notes[i][sk] !== val)) { commit(() => { delete notes[mine[0]][sk]; delete notes[mine[1]][ek]; }); return; }
+  if (n[sk] && variant && n[sk] !== val) { commit(() => { n[sk] = val; }); return; }
   if (n[sk]) { commit(() => { delete n[sk]; }); return; }
   // ¿queda un tramo abierto antes de esta nota?
   let open = null; notes.slice(0, i).forEach((x, j) => { if (x[ek] && open != null) open = null; if (x[sk]) open = j; });
@@ -1582,6 +1676,18 @@ function spanAction(sk, ek, val, label) {
 }
 const toggleSlur = () => spanAction("sls", "sle", true, "Ligadura de expresión");
 const toggleHairpin = (dir) => spanAction("hp", "hpe", dir, dir === ">" ? "Decrescendo" : "Crescendo");
+const OTTAVA = { "8va": { shift: -1, label: "8va", xml: ["down", 8] }, "8vb": { shift: 1, label: "8vb", xml: ["up", 8] }, "15ma": { shift: -2, label: "15ma", xml: ["down", 15] } };
+const toggleOttava = (o) => spanAction("ova", "ovae", o, `${o} (se lee una octava ${OTTAVA[o].shift > 0 ? "más arriba" : "más abajo"} de lo que suena)`);
+const togglePedal = () => spanAction("ped", "pede", true, "Pedal");
+// Barras y plicas a mano: bm = "break" (corta la barra antes de esta nota) | "join" (la une con la anterior); stem = "up" | "down"
+function setBeamMode(v) { const n = pickedNote(); if (!n) return; commit(() => { if (v) n.bm = v; else delete n.bm; }); }
+function setStem(v) { const n = pickedNote(); if (!n) return; commit(() => { if (v) n.stem = v; else delete n.stem; }); }
+// Desplazamiento de octava con que se dibuja cada nota de una voz (las notas se guardan como suenan)
+function ottavaShifts(notes) {
+  const sh = new Array(notes.length).fill(0);
+  spanPairs(notes, "ova", "ovae").forEach(([a, b]) => { const o = OTTAVA[notes[a].ova]; if (o) for (let i = a; i <= b; i++) sh[i] = o.shift; });
+  return sh;
+}
 function noteDynDialog() {
   const n = pickedNote(true); if (!n) return;
   openModal(`<h3>Dinámica en esta nota</h3>
@@ -1606,11 +1712,14 @@ function noteTextDialog() {
     d.querySelector('[data-x="close"]').onclick = closeModal;
   });
 }
-const EXPR_FIELDS = ["art", "orn", "brk", "gliss", "sls", "sle", "hp", "hpe", "dyn", "txt", "ferm", "grace"];
+const EXPR_FIELDS = ["art", "orn", "brk", "gliss", "sls", "sle", "hp", "hpe", "dyn", "txt", "ferm", "grace", "ova", "ovae", "ped", "pede", "bm", "stem"];
 function clearNoteMarks() { const n = pickedNote(true); if (!n) return; commit(() => { EXPR_FIELDS.forEach((f) => delete n[f]); }); }
 // Acciones del menú «Más…» de la barra
 const MORE_ACTIONS = {
   stmo: () => toggleArt("stmo"), ...Object.fromEntries(Object.keys(ORNS).map((o) => [o, () => setOrn(o)])),
+  ...Object.fromEntries(Object.keys(OTTAVA).map((o) => ["ova" + o, () => toggleOttava(o)])), ped: togglePedal,
+  bmBreak: () => setBeamMode("break"), bmJoin: () => setBeamMode("join"), bmAuto: () => setBeamMode(""),
+  stemUp: () => setStem("up"), stemDown: () => setStem("down"), stemAuto: () => setStem(""),
   breath: () => setBrk("breath"), caes: () => setBrk("caes"), gliss: toggleGliss, dyn: noteDynDialog, txt: noteTextDialog, clear: clearNoteMarks,
 };
 // Descripción corta de las marcas de una nota (panel de solfeo)
@@ -1623,21 +1732,26 @@ function marksText(n) {
   if (n.sls) out.push("abre ligadura de expresión"); if (n.sle) out.push("cierra ligadura de expresión");
   if (n.hp) out.push(n.hp === ">" ? "abre decrescendo" : "abre crescendo"); if (n.hpe) out.push("cierra regulador");
   if (n.dyn) out.push(n.dyn); if (n.txt) out.push(`«${n.txt}»`);
+  if (n.ova) out.push("abre " + n.ova); if (n.ovae) out.push("cierra octava");
+  if (n.ped) out.push("pedal"); if (n.pede) out.push("suelta el pedal");
+  if (n.bm) out.push(n.bm === "break" ? "barra cortada" : "barra unida"); if (n.stem) out.push(n.stem === "up" ? "plica arriba" : "plica abajo");
   return out.length ? " · " + out.join(", ") : "";
 }
 function setAccidental(a) {
   const n = selNote(); if (!n || n.rest) return;
-  commit(() => { const k = n.keys[n.keys.length - 1]; k.a = a; });
+  const st = curStaff(), key = keyAtIndex(curVoice(), cursor.index - 1);
+  commit(() => { const i = n.keys.length - 1, kv = viewKey(n.keys[i], st, key); kv.a = a; n.keys[i] = storeKey(kv, st, key); });
   audition(n.keys, curStaff().clef);
 }
 function moveStep(dir, octave) {
   const n = selNote(); if (!n || n.rest) return;
-  const key = keyAtIndex(curVoice(), cursor.index - 1);
+  const st = curStaff(), key = keyAtIndex(curVoice(), cursor.index - 1), sk = staffKey(st, key);
   commit(() => {
-    n.keys.forEach((k) => {
-      if (octave) { k.o = Math.max(0, Math.min(8, k.o + dir)); return; }
-      let d = dia(k) + dir; d = Math.max(0, Math.min(8 * 7 + 6, d));
-      k.o = Math.floor(d / 7); k.s = STEPS[d % 7]; k.a = keyAlter(k.s, key);
+    n.keys = n.keys.map((k0) => {
+      const k = { ...viewKey(k0, st, key) };
+      if (octave) k.o = Math.max(0, Math.min(8, k.o + dir));
+      else { let d = dia(k) + dir; d = Math.max(0, Math.min(8 * 7 + 6, d)); k.o = Math.floor(d / 7); k.s = STEPS[d % 7]; k.a = keyAlter(k.s, sk); }
+      return storeKey(k, st, key);
     });
     n.keys.sort((a, b) => dia(a) - dia(b));
   });
@@ -1705,7 +1819,8 @@ function setKeyAt(m, key) {
     const t0 = T.start(m), t1 = mEnd === Infinity ? Infinity : T.start(mEnd);
     score.staves.forEach((st) => st.voices.forEach((vc) => {
       let t = 0;
-      vc.notes.forEach((n) => { if (t >= t0 && t < t1 && !n.rest) n.keys.forEach((k) => { if ((k.a || 0) === keyAlter(k.s, oldKey)) k.a = keyAlter(k.s, key); }); t += noteTicks(n); });
+      const ow = writtenKey(st, oldKey), nw = writtenKey(st, key); // armaduras escritas de este pentagrama
+      vc.notes.forEach((n) => { if (t >= t0 && t < t1 && !n.rest) n.keys.forEach((k) => { if ((k.a || 0) === keyAlter(k.s, ow)) k.a = keyAlter(k.s, nw); }); t += noteTicks(n); });
     }));
     if (m === 0) score.key = key;
     else {
@@ -1730,6 +1845,27 @@ function removeChange(m, what) {
   else setTimeAt(m, T.time(m - 1));
 }
 
+/* ---------- instrumento transpositor de un pentagrama ---------- */
+// Cambia la transposición y reescribe las notas para que suenen igual que antes.
+function setStaffTrans(s, key) {
+  const st = score.staves[s], t0 = transOf(st) || { steps: 0, semis: 0 }, t1 = TRANS[key] || { steps: 0, semis: 0 };
+  const iv = { steps: t0.steps - t1.steps, semis: t0.semis - t1.semis };
+  const had = st.voices.some((vc) => vc.notes.some((n) => !n.rest));
+  commit(() => {
+    if (TRANS[key]) st.trans = key; else delete st.trans;
+    const wk = writtenKey(st, score.key);
+    if (iv.steps || iv.semis) st.voices.forEach((vc) => vc.notes.forEach((n) => {
+      if (!n.rest && n.keys) n.keys = n.keys.map((k) => transposeKey(k, iv, wk));
+      (n.grace || []).forEach((g) => { g.keys = g.keys.map((k) => transposeKey(k, iv, wk)); });
+    }));
+  });
+  if (had && (iv.steps || iv.semis)) toast(TRANS[key] ? `Notas reescritas para ${TRANS[key].label.split(":")[0].toLowerCase()}: suenan igual que antes.` : "Notas reescritas en tono real: suenan igual que antes.");
+}
+function setConcertView(on) {
+  concertView = !!on; lsSet("atril.tonoReal", concertView ? "1" : "");
+  const c = document.getElementById("pConcert"); if (c) c.checked = concertView;
+  render();
+}
 /* ---------- edición de acordes escritos ---------- */
 const chordAtSel = () => (chordSel ? (score.chords || []).find((c) => c.m === chordSel.m && c.at === chordSel.at) : null);
 function ensureChordsShown() {
@@ -2034,9 +2170,10 @@ function transposeScore(iv, df, staffSet) {
   const newKey = wrapFifths(+score.key + df);
   score.staves.forEach((st, s) => {
     if (staffSet && !staffSet.has(s)) return;
+    const wk = writtenKey(st, newKey); // ortografía de la armadura escrita del pentagrama
     st.voices.forEach((vc) => vc.notes.forEach((n) => {
-      if (!n.rest && n.keys) n.keys = n.keys.map((k) => transposeKey(k, iv, newKey));
-      (n.grace || []).forEach((g) => { g.keys = g.keys.map((k) => transposeKey(k, iv, newKey)); });
+      if (!n.rest && n.keys) n.keys = n.keys.map((k) => transposeKey(k, iv, wk));
+      (n.grace || []).forEach((g) => { g.keys = g.keys.map((k) => transposeKey(k, iv, wk)); });
     }));
   });
   if (!staffSet) {
@@ -2485,7 +2622,8 @@ function audition(keys, clef, s = cursor.staff, v = cursor.voice) {
   if (!ensureAudio()) return;
   const out = actx.createGain(); out.connect(master);
   const snd = soundFor(s, v);
-  const go = () => keys.forEach((k) => playNote(snd, midiOf(k, clef), actx.currentTime + 0.01, 0.5, out));
+  const tr = ((transOf(score.staves[s]) || {}).semis) || 0; // un instrumento transpositor suena distinto de lo escrito
+  const go = () => keys.forEach((k) => playNote(snd, midiOf(k, clef) + tr, actx.currentTime + 0.01, 0.5, out));
   const inst = snd.startsWith("u:") ? instruments.get(snd.slice(2)) : null;
   if (inst && !inst.ready) decodeInst(inst).then(go, () => {}); else go();
 }
@@ -2567,6 +2705,9 @@ function performance(model) {
           last = { ...base, start: st0, dur: dur0, keys: p.keys, tieNext: p.tieNext };
           events.push(last);
         }
+        // con pedal la nota sigue sonando hasta que se suelta (sus = tick de la interpretación donde termina el sonido)
+        const pe = ex.pedalEnd(s, p.start);
+        if (pe != null && last && pe > p.start + p.ticks) last.sus = start + (pe - p.start);
       });
       // el calderón (y la cesura) caen al final de la última pieza de la nota (aunque esté ligada desde antes)
       pieces.forEach((p) => {
@@ -2597,6 +2738,16 @@ function expressionMap(T, M) {
     vc.notes.forEach((n, i) => { if (DYN_GAIN[n.dyn]) pts.push([at[i], n.dyn]); if (n.dyn === "fp") pts.push([at[i] + 1, "p"]); });
     spanPairs(vc.notes, "hp", "hpe").forEach(([a, b]) => spans.push([at[a], at[b] + noteTicks(vc.notes[b]), vc.notes[a].hp !== ">"]));
   }));
+  // pedal: tramos [desde, hasta) por pentagrama; vale también para los pentagramas unidos por llave (el piano)
+  const peds = score.staves.map(() => []);
+  score.staves.forEach((st, s) => st.voices.forEach((vc) => {
+    let t = 0; const at = vc.notes.map((n) => { const x = t; t += noteTicks(n); return x; });
+    spanPairs(vc.notes, "ped", "pede").forEach(([a, b]) => {
+      const g = (score.groups || []).find((g) => g.type === "brace" && s >= g.from && s <= g.to);
+      for (let x = g ? g.from : s; x <= (g ? g.to : s); x++) if (peds[x]) peds[x].push([at[a], at[b] + noteTicks(vc.notes[b])]);
+    });
+  }));
+  const pedalEnd = (s, t) => { const p = (peds[s] || []).find(([a, b]) => t >= a && t < b); return p ? p[1] : null; };
   pts.sort((a, b) => a[0] - b[0]);
   const level = (t) => { let d = "mf"; for (const [x, l] of pts) { if (x <= t) d = l; else break; } return d; };
   const swell = (t) => spans.reduce((f, [a, b, up]) => {
@@ -2605,7 +2756,7 @@ function expressionMap(T, M) {
     const next = (pts.find(([x]) => x >= b) || [Infinity])[0];
     return t >= b && t < next ? f * (1 + k) : f;
   }, 1);
-  return { level, swell };
+  return { level, swell, pedalEnd };
 }
 // Altura vecina en la escala (dir = ±1) o a n semitonos (para caídas y glissandi); todo en notas escritas.
 function stepKey(k, dir, fifths) { const d = dia(k) + dir, s = STEPS[((d % 7) + 7) % 7]; return { s, a: keyAlter(s, fifths), o: Math.floor(d / 7) }; }
@@ -2769,7 +2920,7 @@ function measureChords(model, m, prev = null) {
   model.grid.forEach((rows, s) => (rows[m] || []).forEach((pieces, v) => {
     if (!pieces) return;
     const clef = score.staves[s].clef;
-    pieces.forEach((p) => { if (!p.ghost && !p.rest) p.keys.forEach((k) => items.push({ a: p.start, b: p.start + p.ticks, k, midi: midiOf(k, clef) })); });
+    pieces.forEach((p) => { if (!p.ghost && !p.rest) p.keys.forEach((k) => items.push({ a: p.start, b: p.start + p.ticks, k, midi: staffMidi(k, score.staves[s]) })); });
   }));
   // un análisis por pulso (las notas que caen entre pulsos se consideran de paso)
   const onsets = [...new Set(items.map((x) => x.a))].filter((t) => t >= s0 && t < s1 && (t - s0) % beat === 0).sort((a, b) => a - b);
@@ -2845,7 +2996,8 @@ function startPlaybackNow() {
       const ev = evs[ei++];
       const st = score.staves[ev.s];
       const a = at(P.timeOf(ev.start)), b = at(P.timeOf(ev.start + ev.dur));
-      if (!isSilenced(ev.s, ev.v)) { const o = velOut(actx, buses[ev.dyn] || out, ev.vel); ev.keys.forEach((k) => playNote(sounds[ev.s + "_" + ev.v], midiOf(k, st.clef), a, (b - a) * (ev.len || 0.97), o)); }
+      const bs = ev.sus ? at(P.timeOf(ev.sus)) : b; // pedal: suena hasta soltarlo
+      if (!isSilenced(ev.s, ev.v)) { const o = velOut(actx, buses[ev.dyn] || out, ev.vel); ev.keys.forEach((k) => playNote(sounds[ev.s + "_" + ev.v], staffMidi(k, st), a, ev.sus ? bs - a : (b - a) * (ev.len || 0.97), o)); }
       if (speakOn && ev.s === cursor.staff && ev.v === cursor.voice) {
         const ms = (a - actx.currentTime) * 1000;
         timers.push(setTimeout(() => speak(ev.keys[ev.keys.length - 1]), Math.max(0, ms - 40)));
@@ -3233,9 +3385,9 @@ function toMusicXML() {
       x += `    <measure number="${barNum(m)}"${m === 0 && hasPickup() ? ' implicit="yes"' : ""}>\n`;
       const [tn, td] = T.time(m).split("/");
       let attrs = "";
-      if (m === 0) attrs = `<divisions>${TQ}</divisions><key><fifths>${T.key(0)}</fifths></key><time><beats>${tn}</beats><beat-type>${td}</beat-type></time><clef><sign>${c.xml[0]}</sign><line>${c.xml[1]}</line>${c.xml[2] ? `<clef-octave-change>${c.xml[2]}</clef-octave-change>` : ""}</clef>`;
+      if (m === 0) attrs = `<divisions>${TQ}</divisions><key><fifths>${writtenKey(st, T.key(0))}</fifths></key><time><beats>${tn}</beats><beat-type>${td}</beat-type></time><clef><sign>${c.xml[0]}</sign>${c.xml[1] ? `<line>${c.xml[1]}</line>` : ""}${c.xml[2] ? `<clef-octave-change>${c.xml[2]}</clef-octave-change>` : ""}</clef>${transXML(st)}`;
       else {
-        if (T.keyChange(m)) attrs += `<key><fifths>${T.key(m)}</fifths></key>`;
+        if (T.keyChange(m)) attrs += `<key><fifths>${writtenKey(st, T.key(m))}</fifths></key>`;
         if (T.timeChange(m)) attrs += `<time><beats>${tn}</beats><beat-type>${td}</beat-type></time>`;
       }
       const mm = mk(m), vk = voltaKey(m);
@@ -3297,6 +3449,8 @@ function toMusicXML() {
             if (src.txt) x += dirAt(`<words font-style="italic">${esc(src.txt)}</words>`, "below");
             if (src.dyn && NOTE_DYN.includes(src.dyn)) x += dirAt(`<dynamics><${src.dyn}/></dynamics>`, "below");
             if (src.hp) x += dirAt(`<wedge type="${src.hp === ">" ? "diminuendo" : "crescendo"}"/>`, "below");
+            if (src.ova && OTTAVA[src.ova]) x += dirAt(`<octave-shift type="${OTTAVA[src.ova].xml[0]}" size="${OTTAVA[src.ova].xml[1]}"/>`, OTTAVA[src.ova].shift > 0 ? "below" : "above");
+            if (src.ped) x += dirAt('<pedal type="start" line="no"/>', "below");
           }
           if (p.part === 0 && src && src.grace) src.grace.forEach((g) => g.keys.forEach((k, ki) => {
             x += `      <note><grace${g.slash !== false ? ' slash="yes"' : ""}/>${ki ? "<chord/>" : ""}<pitch><step>${k.s}</step>${k.a ? `<alter>${k.a}</alter>` : ""}<octave>${k.o}</octave></pitch><voice>${v + 1}</voice><type>${XML_TYPE[g.d || "8"]}</type>${stem}</note>\n`;
@@ -3319,9 +3473,12 @@ function toMusicXML() {
           p.keys.forEach((k, ki) => {
             const ties = (tieStop ? '<tie type="stop"/>' : "") + (p.tieNext ? '<tie type="start"/>' : "");
             const tied = (tieStop ? '<tied type="stop"/>' : "") + (p.tieNext ? '<tied type="start"/>' : "") + (ki === 0 ? tupN + (p.ferm ? `<fermata type="${two && v > 0 ? "inverted" : "upright"}"/>` : "") + expr : "");
-            x += `      <note>${ki ? "<chord/>" : ""}<pitch><step>${k.s}</step>${k.a ? `<alter>${k.a}</alter>` : ""}<octave>${k.o}</octave></pitch><duration>${dur}</duration>${ties}<voice>${v + 1}</voice><type>${XML_TYPE[p.d]}</type>${dots}${stem}${tied ? `<notations>${tied}</notations>` : ""}${ki === 0 ? lyr : ""}</note>\n`;
+            const stemN = !two && src && src.stem ? `<stem>${src.stem}</stem>` : stem;
+            x += `      <note>${ki ? "<chord/>" : ""}<pitch><step>${k.s}</step>${k.a ? `<alter>${k.a}</alter>` : ""}<octave>${k.o}</octave></pitch><duration>${dur}</duration>${ties}<voice>${v + 1}</voice><type>${XML_TYPE[p.d]}</type>${dots}${stemN}${tied ? `<notations>${tied}</notations>` : ""}${ki === 0 ? lyr : ""}</note>\n`;
           });
           if (p.last && src && src.hpe) x += dirAt('<wedge type="stop"/>', "below");
+          if (p.last && src && src.ovae) x += dirAt('<octave-shift type="stop" size="8"/>', "above");
+          if (p.last && src && src.pede) x += dirAt('<pedal type="stop" line="no"/>', "below");
           pv.tie = p.tieNext; pv.keys = p.keys;
         });
       });
@@ -3383,7 +3540,8 @@ async function renderAudio({ focus = null, others = 0.3, countIn = false, metro 
       const st = score.staves[ev.s];
       const a = t0 + P.timeOf(ev.start), b = t0 + P.timeOf(ev.start + ev.dur);
       const o = velOut(off, buses[ev.s + "_" + ev.v][ev.dyn], ev.vel);
-      ev.keys.forEach((k) => playNote(sounds[ev.s + "_" + ev.v], midiOf(k, st.clef), a, (b - a) * (ev.len || 0.97), o));
+      const bs = ev.sus ? t0 + P.timeOf(ev.sus) : b; // pedal: suena hasta soltarlo
+      ev.keys.forEach((k) => playNote(sounds[ev.s + "_" + ev.v], staffMidi(k, st), a, ev.sus ? bs - a : (b - a) * (ev.len || 0.97), o));
     });
     if (clicks.length) { const cbus = off.createGain(); cbus.gain.value = 0.7; cbus.connect(master); clicks.forEach((c) => click(t0 + c.sec, c.accent, cbus)); }
   } finally { actx = saved.actx; master = saved.master; reverbIn = saved.reverbIn; }
@@ -3571,6 +3729,17 @@ async function importFile(file, handle = null) {
     toast(e && e.message ? e.message : "No se pudo leer el archivo.");
   }
 }
+// Instrumento transpositor ↔ <transpose> (de lo escrito a lo que suena, con las octavas aparte)
+function transXML(st) {
+  const t = transOf(st); if (!t) return "";
+  const oct = Math.trunc(t.steps / 7);
+  return `<transpose><diatonic>${t.steps - 7 * oct}</diatonic><chromatic>${t.semis - 12 * oct}</chromatic>${oct ? `<octave-change>${oct}</octave-change>` : ""}</transpose>`;
+}
+function transFromXML(el) {
+  const g = (q) => +((el.querySelector(q) || {}).textContent || 0), oct = g("octave-change");
+  const steps = g("diatonic") + 7 * oct, semis = g("chromatic") + 12 * oct;
+  return Object.keys(TRANS).find((k) => TRANS[k].steps === steps && TRANS[k].semis === semis) || null;
+}
 // Acordes ↔ <harmony>: el tipo va en <kind> (valor estándar) y, tal como se ve, en su atributo text.
 const XML_KIND = { "": "major", m: "minor", "°": "diminished", "+": "augmented", 7: "dominant", maj7: "major-seventh", m7: "minor-seventh", "°7": "diminished-seventh",
   "m7(♭5)": "half-diminished", "m(maj7)": "major-minor", 6: "major-sixth", m6: "minor-sixth", 9: "dominant-ninth", maj9: "major-ninth", m9: "minor-ninth",
@@ -3643,7 +3812,7 @@ function fromMusicXML(text) {
       if (n === 1 && st.voices.length < 2) st.voices.push({ name: "", notes: [] });
       return n;
     };
-    let div = 1, mticks = TICKS.w, mIndex = 0;
+    let div = 1, mticks = TICKS.w, mIndex = 0, partTrans = null;
     part.querySelectorAll("measure").forEach((meas) => {
       if (firstPart) {
         meas.querySelectorAll(":scope > barline").forEach((bl) => {
@@ -3689,15 +3858,22 @@ function fromMusicXML(text) {
             const sh = el.querySelector("measure-style > slash"); if (sh) openSlash = sh.getAttribute("type") === "start";
             if (el.querySelector("measure-style > multiple-rest")) sc.layout.mmRest = true;
           }
+          const trEl = el.querySelector("transpose");
+          if (trEl) {
+            const tk = transFromXML(trEl);
+            if (tk) { partTrans = tk; for (let i = 0; i < nStaves; i++) sc.staves[base + i].trans = tk; } else lossy = true;
+          }
           const kf = el.querySelector("key > fifths");
-          if (kf && firstPart) addChange(mIndex, "key", Math.max(-7, Math.min(7, +kf.textContent)));
+          // la armadura de una parte transpositora es la escrita: Atril guarda la real
+          if (kf && firstPart) addChange(mIndex, "key", wrapFifths(Math.max(-7, Math.min(7, +kf.textContent)) - (partTrans ? TRANS[partTrans].kf : 0)));
           const tb = el.querySelector("time > beats"), tt = el.querySelector("time > beat-type");
           if (tb && tt) { const ts = `${tb.textContent}/${tt.textContent}`; mticks = timeTicks(ts); if (firstPart) addChange(mIndex, "time", ts); }
           el.querySelectorAll("clef").forEach((cl) => {
             const sn = +(cl.getAttribute("number") || 1) - 1;
             const sign = (cl.querySelector("sign") || {}).textContent, oc = +((cl.querySelector("clef-octave-change") || {}).textContent || 0);
             const st = sc.staves[base + sn]; if (!st || st.voices[0].notes.length) return;
-            st.clef = sign === "F" ? "bass" : sign === "C" ? "alto" : oc === -1 ? "treble8" : "treble";
+            const line = +((cl.querySelector("line") || {}).textContent || 0);
+            st.clef = sign === "percussion" ? "perc" : sign === "F" ? (oc === -1 ? "bass8vb" : "bass") : sign === "C" ? (line === 4 ? "tenor" : "alto") : oc === -1 ? "treble8" : oc === 1 ? "treble8va" : "treble";
           });
         } else if (el.tagName === "direction") {
           // texto, dinámica y reguladores de una nota: esperan a la nota siguiente de esa voz (el fin del regulador va a la anterior)
@@ -3712,6 +3888,16 @@ function fromMusicXML(text) {
             if (ty === "stop") { const vn = sc.staves[base + sn].voices[v].notes; for (let i = vn.length - 1; i >= 0; i--) if (!vn[i].rest) { vn[i].hpe = true; break; } }
             else if (ty === "crescendo" || ty === "diminuendo") pend.hp = ty === "diminuendo" ? ">" : "<";
           }
+          // octava y pedal: el inicio espera la nota siguiente; el fin va a la nota anterior
+          const lastNote = () => { const vn = sc.staves[base + sn].voices[v].notes; for (let i = vn.length - 1; i >= 0; i--) if (!vn[i].rest) return vn[i]; return null; };
+          const os = el.querySelector("octave-shift");
+          if (os) {
+            const ty = os.getAttribute("type"), size = +(os.getAttribute("size") || 8);
+            if (ty === "stop") { const ln = lastNote(); if (ln) ln.ovae = true; }
+            else if (ty === "down" || ty === "up") pend.ova = size === 15 ? "15ma" : ty === "down" ? "8va" : "8vb";
+          }
+          const pd = el.querySelector("pedal");
+          if (pd) { const ty = pd.getAttribute("type"); if (ty === "start") pend.ped = true; else if (ty === "stop") { const ln = lastNote(); if (ln) ln.pede = true; } }
           if (mine) {
             const w = el.querySelector("words"); if (w && w.textContent.trim()) pend.txt = w.textContent.trim().slice(0, 40);
             const dz = el.querySelector("dynamics > *"); if (dz && NOTE_DYN.includes(dz.tagName)) pend.dyn = dz.tagName;
@@ -4339,6 +4525,10 @@ function renderStaffList() {
         <select aria-label="Clave" data-f="clef">${Object.keys(CLEFS).map((c) => `<option value="${c}" ${c === st.clef ? "selected" : ""}>${CLEFS[c].label}</option>`).join("")}</select>
         <button class="mini" data-f="del" title="Eliminar pentagrama" ${score.staves.length < 2 ? "disabled" : ""}>✕</button>
       </div>
+      <div class="srow" style="grid-template-columns:auto 1fr"><span class="vlabel">Instrumento</span>
+        <select aria-label="Instrumento transpositor del pentagrama ${s + 1}" data-f="trans" title="Para trompeta, clarinete, saxofones o corno: la parte se escribe transportada y suena en tono real">
+          <option value="">Tono real (no transpositor)</option>${Object.entries(TRANS).map(([k, t]) => `<option value="${k}" ${st.trans === k ? "selected" : ""}>${t.label}</option>`).join("")}
+        </select></div>
       ${vrows}
       ${multi ? "" : `<button class="linkbtn" data-f="addv">+ Segunda voz en este pentagrama</button>`}
     </div>`;
@@ -4408,6 +4598,7 @@ function helpDialog() {
     <p><b>Letra:</b> con L se abre la barra de letra. Escribe la sílaba y pulsa Espacio para pasar a la nota siguiente, o guion para separar sílabas de una misma palabra. Con “Pegar estrofa” puedes poner una estrofa entera escrita así: Al-ce-mos hoy la voz.</p>
     <p><b>Cambios de compás o tonalidad:</b> pon el cursor en el compás donde empieza el cambio y elige el compás o la tonalidad en el panel Partitura.</p>
     <p><b>Expresión:</b> en «Más…» de la barra están el staccatissimo, la respiración y la cesura, los trinos, mordentes y grupetos, los efectos de jazz (caída, doit, scoop, bend y glissando), la dinámica de una sola nota (sfz, fp…) y los textos como «dolce». Todo se oye al reproducir. La marca de ensayo (A, B, C…) se pone en el panel Compás.</p>
+    <p><b>Instrumentos transpositores:</b> en Pentagramas, elige el instrumento (trompeta o clarinete en Si♭, saxofones, corno…). La parte se escribe transportada, con su armadura, y suena en tono real; si ya tenía notas, se reescriben para que suenen igual. «Ver en tono real» (panel Tamaño) muestra todo como suena, para el director. En «Más…» están la 8va, la 8vb, la 15ma y el pedal (primera nota y última), y las barras y plicas a mano.</p>
     <p><b>Acordes:</b> elige «Acordes C Dm» o «Do Rem» para verlos. Atril detecta los acordes de las notas; para corregirlos, usa «Fijar los detectados» en el panel Acordes, o escribe uno con «Acorde +» o con doble clic sobre el pentagrama de arriba. Un acorde escrito se elige con un clic, se mueve arrastrándolo o con las flechas, y se cambia con doble clic. Al transponer, los acordes cambian con la partitura.</p>
     <p><b>Swing y anacrusa:</b> en el panel Compás, “Swing desde aquí” hace que las corcheas (o semicorcheas) se toquen con swing a partir de ese compás, aunque estén escritas rectas; “Recto” lo quita. “Anacrusa” deja el primer compás incompleto, y la numeración empieza en el compás siguiente.</p>
     <p>Para ensayar una voz del coro, usa la S de esa voz para escucharla sola, o la M para silenciarla.</p>
@@ -4536,6 +4727,7 @@ function wire() {
   document.getElementById("tChord").onclick = addChordAtCursor;
   document.getElementById("mRpt").onchange = (e) => { const m = cmv(); if (e.target.checked) repeatPrevMeasure(m); else setMark(m, { rpt: undefined }); syncMeterFields(); };
   document.getElementById("mSlash").onchange = (e) => setMark(cmv(), { slash: e.target.checked || undefined });
+  document.getElementById("pConcert").onchange = (e) => setConcertView(e.target.checked);
   document.getElementById("pMmRest").onchange = (e) => commit(() => { if (e.target.checked) score.layout.mmRest = true; else delete score.layout.mmRest; });
   document.getElementById("bChordFix").onclick = fixDetectedChords;
   document.getElementById("bChordClear").onclick = clearChords;
@@ -4594,6 +4786,7 @@ function wire() {
     if (f === "name") commit(() => { score.staves[s].name = val.trim(); });
     if (f === "vname") commit(() => { score.staves[s].voices[v].name = val.trim(); });
     if (f === "clef") commit(() => { score.staves[s].clef = val; });
+    if (f === "trans") setStaffTrans(s, val);
     if (f === "sound") { commit(() => { const vc = score.staves[s].voices[v]; if (val) vc.sound = val; else delete vc.sound; }); if (isBank(val)) loadSound(val).catch(() => {}); }
   });
   sb.addEventListener("focusout", () => setTimeout(renderStaffList, 0));
@@ -4652,6 +4845,8 @@ function start() {
   load(embedded || draft || sampleScore());
   solfeoOn = lsGet("atril.solfeo") === "1";
   chordMode = ["en", "es"].includes(lsGet("atril.acordes")) ? lsGet("atril.acordes") : "off";
+  concertView = lsGet("atril.tonoReal") === "1";
+  { const c = document.getElementById("pConcert"); if (c) c.checked = concertView; }
   document.getElementById("tSolfeo").setAttribute("aria-pressed", String(solfeoOn));
   refreshSoundSelects();
   wire(); syncProps(); render();

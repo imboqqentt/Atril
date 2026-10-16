@@ -61,7 +61,10 @@ note = { d:"w"|"h"|"q"|"8"|"16"|"32", dots:0|1|2, rest, tie, keys:[{s:"C".."B", 
          brk?:"breath"|"caes", gliss?:true,            // respiración/cesura después de la nota; glissando hasta la siguiente
          sls?, sle?,                                   // abre / cierra ligadura de expresión (spanPairs)
          hp?:"<"|">", hpe?,                            // abre crescendo/decrescendo · cierra regulador
-         dyn?:"pp".."ff"|"sfz"|"sf"|"fz"|"fp", txt? }   // dinámica y texto de expresión de la nota
+         dyn?:"pp".."ff"|"sfz"|"sf"|"fz"|"fp", txt?,    // dinámica y texto de expresión de la nota
+         ova?:"8va"|"8vb"|"15ma", ovae?, ped?, pede?,   // octava y pedal por tramo
+         bm?:"break"|"join", stem?:"up"|"down" }       // barras y plicas a mano
+// staff.trans = "bb"|"ten"|"eb"|"bari"|"a"|"f"|"ebs" (instrumento transpositor; notas escritas) · clef también "tenor"|"treble8va"|"bass8vb"|"perc"
 // marks[m].reh = marca de ensayo ("A", "B", "1"…) · marks[m].rpt = compás % · marks[m].slash = barras de ritmo
 // score.chords = [{ m, at, root:{s,a}, q, bass?:{s,a} } | { m, at, text }]   at = negras desde el inicio del compás
 // score.chordAuto = false → no completar con los detectados · score.layout.mmRest = agrupar silencios de varios compases
@@ -143,11 +146,11 @@ Resumen de lo hecho: acordes guardados en `score.chords` (posición en negras, n
 - [x] C2. Repetición de compás (%, tecla % o panel Compás) y silencios de varios compases agrupados (panel Tamaño).
 - [x] C3. Barras de ritmo por compás (panel Compás), para improvisar o acompañar.
 
-**D. Instrumentos**
-- [ ] D1. Instrumentos transpositores (sax alto/tenor, trompeta, clarinete en Sib/Mib, corno en Fa): `staff.transpose`; ver en sonido real o escrito; el audio siempre suena real.
-- [ ] D2. Más claves: tenor, sol 8va, fa 8vb, percusión.
-- [ ] D3. 8va/8vb por tramo y pedal de piano.
-- [ ] D4. Barras a mano (unir/romper) y plicas forzadas.
+**D. Instrumentos** — hecho en `notacion-completa` (2026-10-16), pruebas en `tests/instrumentos.spec.mjs`.
+- [x] D1. Transpositores: `staff.trans` = clave de `TRANS` (bb, ten, eb, bari, a, f, ebs). Las notas se guardan ESCRITAS; `staffMidi` suena real, `writtenKey`/`staffKey` dan la armadura del pentagrama; `concertView` (panel Tamaño, localStorage `atril.tonoReal`) dibuja en tono real con `viewKey` y lo que se escribe pasa por `storeKey`; `setStaffTrans` reescribe las notas para que suenen igual. MusicXML `<transpose>` y armadura escrita. Los acordes escritos quedan en tono real.
+- [x] D2. Claves tenor, sol 8va alta, fa 8va baja y percusión (`CLEFS`).
+- [x] D3. 8va/8vb/15ma (`note.ova`/`ovae`, se guarda lo que suena y se dibuja corrido; `ottavaShifts`) y pedal (`ped`/`pede`: «Ped.» y ✱; en audio sostiene hasta soltar, también en los pentagramas unidos por llave). Se reserva espacio entre pentagramas. MusicXML `<octave-shift>` y `<pedal>`.
+- [x] D4. Barras a mano (`note.bm` = "break"/"join", `manualBeams`) y plicas forzadas (`note.stem`), en «Más…». MusicXML exporta `<stem>`; las barras a mano no viajan (cada programa vuelve a agrupar).
 
 **E. Lectura e intercambio**
 - [ ] E1. `fromMusicXML` deja de saltarse `grace`/`cue` y lee todo lo de A–D.

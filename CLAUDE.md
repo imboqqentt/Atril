@@ -152,9 +152,9 @@ Resumen de lo hecho: acordes guardados en `score.chords` (posición en negras, n
 - [x] D3. 8va/8vb/15ma (`note.ova`/`ovae`, se guarda lo que suena y se dibuja corrido; `ottavaShifts`) y pedal (`ped`/`pede`: «Ped.» y ✱; en audio sostiene hasta soltar, también en los pentagramas unidos por llave). Se reserva espacio entre pentagramas. MusicXML `<octave-shift>` y `<pedal>`.
 - [x] D4. Barras a mano (`note.bm` = "break"/"join", `manualBeams`) y plicas forzadas (`note.stem`), en «Más…». MusicXML exporta `<stem>`; las barras a mano no viajan (cada programa vuelve a agrupar).
 
-**E. Lectura e intercambio**
-- [ ] E1. `fromMusicXML` deja de saltarse `grace`/`cue` y lee todo lo de A–D.
-- [ ] E2. Ampliar el formato compacto de la skill (`armar.py`, `buildFromOmr`): tresillos, articulaciones, ligaduras de expresión, cifrado.
+**E. Lectura e intercambio** — hecho (2026-10-16), pruebas en `tests/lectura-extendida.spec.mjs`.
+- [x] E1. `fromMusicXML`/`toMusicXML` leen y escriben todo lo de A–D (hecho dentro de cada bloque).
+- [x] E2. Formato compacto ampliado, igual en Atril (`parseToken`, `OMR_MARKS`, `buildFromOmr`, `omrPrompt`) y en la skill (`skills/leer-partitura/scripts/armar.py`, `SKILL.md`): `32`, `..`, `*3`, adornos `:g`/`:ga`, marcas `^código`, cifrado `[Cm7]`, `@swing`/`@reh`/`@slash`, claves nuevas y `"trans"` (la armadura leída es la escrita del pentagrama de arriba). El `.musicxml` de `armar.py` lleva todo; comprobado importándolo en Atril.
 
 Riesgos: A1 toca `render`, `playOrder` y `performance` (correr `npm test` antes y después); un `.atril` v2 no abre bien en un Atril anterior → avisar al abrir si `score.v` es mayor que el que entiende la app.
 

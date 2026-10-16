@@ -1,6 +1,6 @@
 {
   "name": "atril",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "private": true,
   "description": "Herramientas de desarrollo: la app no usa build (index.html se abre tal cual). Aquí solo hay pruebas y la app de escritorio.",
   "scripts": {

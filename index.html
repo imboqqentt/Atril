@@ -316,12 +316,16 @@ textarea.xml { width: 100%; height: 220px; font-family: var(--font-mono); font-s
 
   <div class="palette" role="toolbar" aria-label="Herramientas de escritura y reproducción">
     <div class="group" id="gDur" aria-label="Duración">
+      <button class="tool" data-dur="32" title="Fusa (2)"></button>
       <button class="tool" data-dur="16" title="Semicorchea (3)"></button>
       <button class="tool" data-dur="8" title="Corchea (4)"></button>
       <button class="tool" data-dur="q" title="Negra (5)"></button>
       <button class="tool" data-dur="h" title="Blanca (6)"></button>
       <button class="tool" data-dur="w" title="Redonda (7)"></button>
-      <button class="tool text" id="tDot" title="Puntillo (.)" aria-pressed="false">•</button>
+      <button class="tool text" id="tDot" title="Puntillo (.): una vez puntillo, dos veces doble puntillo" aria-pressed="false">•</button>
+      <select id="tTup" aria-label="Grupo irregular" title="Grupo irregular (Alt+3 tresillo): las notas que escribas entran al grupo hasta llenarlo">
+        <option value="">Normal</option><option value="3">Tresillo 3</option><option value="2">Dosillo 2</option><option value="5">Cinquillo 5</option><option value="6">Seisillo 6</option><option value="7">Septillo 7</option>
+      </select>
     </div>
     <div class="group" aria-label="Alteraciones y otros">
       <button class="tool text" data-acc="-1" title="Bemol (-)">♭</button>
@@ -329,6 +333,10 @@ textarea.xml { width: 100%; height: 220px; font-family: var(--font-mono); font-s
       <button class="tool text" data-acc="1" title="Sostenido (+)">♯</button>
       <button class="tool text" id="tRest" title="Silencio (0 o R)">Silencio</button>
       <button class="tool text" id="tTie" title="Ligadura con la siguiente (T)" aria-pressed="false">Ligar</button>
+      <button class="tool text" id="tFerm" title="Calderón: la nota se sostiene más al reproducir (Alt+F)" aria-pressed="false">𝄐</button>
+      <select id="tGrace" aria-label="Notas de adorno" title="Adornos (Alt+G): elige una nota y escribe con A–G las notas de adorno que van antes; Retroceso borra el último, Esc termina">
+        <option value="">Sin adorno</option><option value="acc">Acciaccatura</option><option value="app">Apoyatura</option>
+      </select>
     </div>
     <div class="group" aria-label="Voces y letra">
       <button class="tool text" id="tV1" aria-pressed="true" title="Escribir en la voz de arriba (Alt+1)">Voz 1</button>
@@ -395,11 +403,13 @@ textarea.xml { width: 100%; height: 220px; font-family: var(--font-mono); font-s
           <div class="field"><label for="pTime">Compás desde aquí</label><select id="pTime"></select></div>
           <div class="field"><label for="pKey">Tonalidad desde aquí</label><select id="pKey"></select></div>
         </div>
+        <div class="field"><label for="pPickup">Anacrusa (primer compás incompleto)</label><select id="pPickup"><option value="">Sin anacrusa</option><option value="0.25">Una semicorchea</option><option value="0.5">Una corchea</option><option value="1">Una negra</option><option value="1.5">Negra con puntillo</option><option value="2">Dos negras</option><option value="3">Tres negras</option></select></div>
         <div class="chips" id="pChanges"></div>
         <div class="row">
           <div class="field"><label for="pTempoM">Tempo (♩=)</label><input id="pTempoM" type="number" min="20" max="260" placeholder="sin cambio"></div>
           <div class="field"><label for="pDyn">Dinámica</label><select id="pDyn"><option value="">—</option><option>pp</option><option>p</option><option>mp</option><option>mf</option><option>f</option><option>ff</option></select></div>
         </div>
+        <div class="field"><label for="pSwing">Swing desde aquí</label><select id="pSwing"><option value="">Igual que antes</option><option value="8">Swing (corcheas)</option><option value="16">Swing (semicorcheas)</option><option value="no">Recto (sin swing)</option></select></div>
         <div class="field"><label>Repetición</label>
           <div class="mkrow"><label><input type="checkbox" id="mRepStart"> Inicio ‖:</label><label><input type="checkbox" id="mRepEnd"> Fin :‖</label><select id="mTimes" aria-label="Cuántas veces se toca"><option value="2">2 veces</option><option value="3">3 veces</option><option value="4">4 veces</option></select></div>
         </div>
@@ -459,7 +469,13 @@ textarea.xml { width: 100%; height: 220px; font-family: var(--font-mono); font-s
 const VF = (window.Vex && (Vex.Flow || Vex)) || null;
 
 /* ================= constantes musicales ================= */
-const TICKS = { w: 64, h: 32, q: 16, "8": 8, "16": 4 };
+// Resolución interna: una negra = TQ ticks. 3360 = 2⁵·3·5·7 permite fusas, puntillos dobles y
+// grupos de 3, 5, 6 y 7 con duraciones enteras. Los ticks no se guardan en el .atril (solo figuras).
+const TQ = 3360;
+const TICKS = { w: TQ * 4, h: TQ * 2, q: TQ, "8": TQ / 2, "16": TQ / 4, "32": TQ / 8 };
+const MIN_T = TICKS["32"];
+// Grupos irregulares que se pueden escribir: n figuras en el lugar de `of`.
+const TUPLETS = { 3: { n: 3, of: 2, label: "Tresillo" }, 2: { n: 2, of: 3, label: "Dosillo" }, 5: { n: 5, of: 4, label: "Cinquillo" }, 6: { n: 6, of: 4, label: "Seisillo" }, 7: { n: 7, of: 4, label: "Septillo" } };
 const STEPS = ["C", "D", "E", "F", "G", "A", "B"];
 const SEMI = { C: 0, D: 2, E: 4, F: 5, G: 7, A: 9, B: 11 };
 const SOLF = { C: "Do", D: "Re", E: "Mi", F: "Fa", G: "Sol", A: "La", B: "Si" };
@@ -475,12 +491,15 @@ const CLEFS = {
   bass: { label: "Fa", vf: "bass", ann: undefined, center: 3 * 7 + 1, xml: ["F", 4, 0], transpose: 0, rest: ["d/3", "a/3", "g/2"] },
   alto: { label: "Do", vf: "alto", ann: undefined, center: 4 * 7 + 0, xml: ["C", 3, 0], transpose: 0, rest: ["c/4", "g/4", "f/3"] },
 };
-const DUR_NAME = { w: "Redonda", h: "Blanca", q: "Negra", "8": "Corchea", "16": "Semicorchea" };
-const XML_TYPE = { w: "whole", h: "half", q: "quarter", "8": "eighth", "16": "16th" };
+const DUR_NAME = { w: "Redonda", h: "Blanca", q: "Negra", "8": "Corchea", "16": "Semicorchea", "32": "Fusa" };
+const XML_TYPE = { w: "whole", h: "half", q: "quarter", "8": "eighth", "16": "16th", "32": "32nd" };
 const STAFF_SIZES = [4.5, 5, 5.5, 6, 6.5, 7, 7.5, 8, 9, 10.6];
 const BASE_STAFF_MM = 10.58; // tamaño "natural" de VexFlow en una página A4 de 794 px
 
-const noteTicks = (n) => TICKS[n.d] * (n.dots ? 1.5 : 1);
+const DOT_MUL = [1, 1.5, 1.75];
+const nominalTicks = (n) => TICKS[n.d] * DOT_MUL[n.dots || 0];
+const tupOf = (n) => (n && n.tup && n.tup.n > 1 && n.tup.of > 0 ? n.tup : null);
+const noteTicks = (n) => { const t = tupOf(n); return t ? (nominalTicks(n) * t.of) / t.n : nominalTicks(n); };
 const dia = (k) => k.o * 7 + STEPS.indexOf(k.s);
 const midiOf = (k, clef) => 12 * (k.o + 1) + SEMI[k.s] + (k.a || 0) + (CLEFS[clef] ? CLEFS[clef].transpose : 0);
 function keyAlter(step, fifths) {
@@ -493,8 +512,8 @@ const sylOf = (k) => SOLF[k.s] + accSym(k.a || 0);
 const uid = () => "s" + Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
 const clone = (o) => JSON.parse(JSON.stringify(o));
 const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&apos;" }[c]));
-const timeTicks = (time) => { const [n, d] = time.split("/").map(Number); return n * (64 / d); };
-const beatOf = (time) => { const [n, d] = time.split("/").map(Number); return d === 8 && n % 3 === 0 && n > 3 ? 24 : 64 / d; };
+const timeTicks = (time) => { const [n, d] = time.split("/").map(Number); return n * (TICKS.w / d); };
+const beatOf = (time) => { const [n, d] = time.split("/").map(Number); return d === 8 && n % 3 === 0 && n > 3 ? TQ * 1.5 : TICKS.w / d; };
 const lyShow = (t) => String(t).replace(/_/g, "‿");
 
 /* ================= partitura de ejemplo ================= */
@@ -551,14 +570,18 @@ function staffFromTemplate([name, clef, voices]) {
 let score = null;
 let cursor = { staff: 0, voice: 0, index: 0, tickHint: null };
 let mode = "input";
-let inputDur = "q", inputDots = 0;
+let inputDur = "q", inputDots = 0, inputTup = 0; // inputTup: 0 o una clave de TUPLETS
 let undoStack = [], redoStack = [];
 let solfeoOn = false, speakOn = false, metroOn = false, countOn = false;
 let layout = null; // resultado del último dibujo
 let dirty = false;
 
 // Acepta partituras de versiones anteriores (un solo "notes" por pentagrama).
+// Versión del formato .atril: 2 agrega grupos irregulares (tup), doble puntillo, fusas, calderón (ferm) y swing.
+const FORMAT_V = 2;
 function migrate(sc) {
+  if ((+sc.v || 1) > FORMAT_V) setTimeout(() => toast("Esta partitura se hizo con una versión más nueva de Atril; puede que algo no se vea igual. Actualiza Atril."), 800);
+  sc.v = Math.max(+sc.v || 1, FORMAT_V);
   sc.groups = sc.groups || [];
   sc.changes = Array.isArray(sc.changes) ? sc.changes : [];
   sc.marks = sc.marks && typeof sc.marks === "object" && !Array.isArray(sc.marks) ? sc.marks : {};
@@ -601,6 +624,9 @@ function normChanges() {
   (score.changes || []).forEach((c) => { if (!(c.m > 0)) return; const o = map.get(c.m) || { m: c.m }; if (c.time) o.time = c.time; if (c.key != null) o.key = c.key; map.set(c.m, o); });
   score.changes = [...map.values()].filter((c) => c.time || c.key != null).sort((a, b) => a.m - b.m);
 }
+// Anacrusa: score.pickup = duración del primer compás en negras (0,5 = una corchea). Ese compás no se numera.
+const hasPickup = () => !!score && +score.pickup > 0 && +score.pickup * TQ < timeTicks(score.time);
+const barNum = (m) => (hasPickup() ? m : m + 1);
 function meterTable() {
   const ch = (score.changes || []).slice().sort((a, b) => a.m - b.m);
   const T = { times: [], keys: [], starts: [], lens: [], changes: ch };
@@ -611,7 +637,7 @@ function meterTable() {
       const c = i ? ch.find((c) => c.m === i) : null;
       if (c) { if (c.time) time = c.time; if (c.key != null) key = c.key; }
       T.times.push(time); T.keys.push(key);
-      T.starts.push(i ? T.starts[i - 1] + T.lens[i - 1] : 0); T.lens.push(timeTicks(time));
+      T.starts.push(i ? T.starts[i - 1] + T.lens[i - 1] : 0); T.lens.push(i === 0 && hasPickup() ? Math.min(timeTicks(time), Math.round(+score.pickup * TQ)) : timeTicks(time));
     }
   };
   T.len = (m) => (T.ensure(m), T.lens[m]);
@@ -624,25 +650,48 @@ function meterTable() {
   const tempos = [], dyns = [];
   T.tempo = (m) => { for (let i = tempos.length; i <= m; i++) { const x = +((score.marks || {})[i] || {}).tempo; tempos.push(x >= 20 ? x : i ? tempos[i - 1] : score.tempo); } return tempos[m]; };
   T.dyn = (m) => { for (let i = dyns.length; i <= m; i++) { const x = ((score.marks || {})[i] || {}).dyn; dyns.push(DYN_GAIN[x] ? x : i ? dyns[i - 1] : "mf"); } return dyns[m]; };
+  // swing: "8" (corcheas), "16" (semicorcheas) o "" (recto); se mantiene hasta que otro compás lo cambie
+  const swings = [];
+  T.swing = (m) => { for (let i = swings.length; i <= m; i++) { const x = ((score.marks || {})[i] || {}).swing; swings.push(x === "8" || x === "16" ? x : x === "no" ? "" : i ? swings[i - 1] : score.swing === "8" || score.swing === "16" ? score.swing : ""); } return swings[m]; };
   return T;
 }
 
 /* ================= modelo de compases ================= */
-const NOTE_VALS = [[64, "w", 0], [48, "h", 1], [32, "h", 0], [24, "q", 1], [16, "q", 0], [12, "8", 1], [8, "8", 0], [4, "16", 0]];
-const REST_VALS = [[64, "w"], [32, "h"], [16, "q"], [8, "8"], [4, "16"]];
+const NOTE_VALS = ["w", "h", "q", "8", "16", "32"].flatMap((d) => [[TICKS[d] * 1.5, d, 1], [TICKS[d], d, 0]]).filter((v) => v[1] !== "w" || !v[2]).sort((a, b) => b[0] - a[0]);
+const REST_VALS = ["w", "h", "q", "8", "16", "32"].map((d) => [TICKS[d], d]);
 function decomposeNote(t) {
   const out = [];
-  while (t > 0) { const v = NOTE_VALS.find((v) => v[0] <= t); if (!v) break; out.push(v); t -= v[0]; }
+  // un resto que ninguna figura cubre (trozo de un grupo irregular partido por la barra) va como fusa con su duración real
+  while (t > 0) { const v = NOTE_VALS.find((v) => v[0] <= t) || [t, "32", 0]; out.push(v); t -= v[0]; }
   return out;
 }
 function decomposeRest(pos, t) {
   const out = [];
   while (t > 0) {
-    const v = REST_VALS.find((v) => v[0] <= t && pos % v[0] === 0) || REST_VALS.find((v) => v[0] <= t);
-    if (!v) break;
+    const v = REST_VALS.find((v) => v[0] <= t && pos % v[0] === 0) || REST_VALS.find((v) => v[0] <= t) || [t, "32"];
     out.push([v[0], v[1], 0]); pos += v[0]; t -= v[0];
   }
   return out;
+}
+// Grupos irregulares: notas seguidas con el mismo `tup` forman un grupo hasta llenar n figuras de la unidad `u`
+// (un tresillo de corcheas = 3 corcheas; una negra + una corchea también lo llenan).
+function tupletGroups(items) {
+  const out = []; let g = null;
+  items.forEach((x, j) => {
+    const t = tupOf(x);
+    if (!t) { g = null; return; }
+    if (g && (g.n !== t.n || g.of !== t.of || g.acc >= g.cap)) g = null;
+    if (!g) { g = { n: t.n, of: t.of, cap: t.n * TICKS[t.u || x.d], acc: 0, idx: [] }; out.push(g); }
+    g.idx.push(j); g.acc += TICKS[x.d] * DOT_MUL[x.dots || 0];
+  });
+  return out;
+}
+// ¿El grupo irregular que termina en la nota idx-1 sigue abierto? Devuelve su `tup` para continuarlo.
+function openTuplet(notes, idx) {
+  const gs = tupletGroups(notes.slice(0, idx));
+  const g = gs[gs.length - 1];
+  if (!g || g.idx[g.idx.length - 1] !== idx - 1 || g.acc >= g.cap) return null;
+  return notes[idx - 1].tup;
 }
 function sameKeys(a, b) {
   if (!a || !b || a.length !== b.length) return false;
@@ -659,12 +708,14 @@ function buildVoice(notes, T) {
     while (t > 0) {
       const ML = T.len(mi);
       const take = Math.min(t, ML - pos);
-      const parts = take === whole && first && TICKS[n.d] ? [[whole, n.d, n.dots]] : decomposeNote(take);
+      const intact = take === whole && first && TICKS[n.d];
+      const parts = intact ? [[whole, n.d, n.dots || 0]] : decomposeNote(take);
       for (const p of parts) {
         t -= p[0];
         const nextNote = notes[i + 1];
         const userTie = n.tie && !n.rest && nextNote && !nextNote.rest && sameKeys(n.keys, nextNote.keys);
-        cur.push({ src: i, part: part++, d: p[1], dots: p[2], rest: n.rest, hid: !!n.hid, keys: n.keys, ticks: p[0], start: abs, tieNext: !n.rest && (t > 0 || userTie) });
+        cur.push({ src: i, part: part++, d: p[1], dots: p[2], rest: n.rest, hid: !!n.hid, keys: n.keys, ticks: p[0], start: abs, tieNext: !n.rest && (t > 0 || userTie),
+          tup: intact ? tupOf(n) : null, ferm: !!n.ferm && t <= 0 });
         pos += p[0]; abs += p[0];
       }
       first = false;
@@ -728,7 +779,8 @@ function measureMinW(model, m, L) {
       let w = 0;
       pieces.forEach((p) => {
         if (p.full) { w += 56; return; }
-        let nw = (p.ghost ? 18 : solfeoOn ? 30 : 24) + (p.dots ? 6 : 0) + (p.keys || []).filter((k) => (k.a || 0) !== keyAlter(k.s, key)).length * 9;
+        let nw = (p.ghost ? 18 : solfeoOn ? 30 : 24) + (p.dots || 0) * 6 + (p.keys || []).filter((k) => (k.a || 0) !== keyAlter(k.s, key)).length * 9;
+        if (!p.ghost && p.part === 0 && notes[p.src] && notes[p.src].grace) nw += notes[p.src].grace.length * 13 + 6;
         if (!p.ghost && p.part === 0 && notes[p.src] && notes[p.src].ly) {
           const longest = Math.max(0, ...notes[p.src].ly.filter(Boolean).map((x) => x.t.length + (x.h ? 1 : 0)));
           nw = Math.max(nw, longest * 6.6 * L + 8 * L);
@@ -769,7 +821,7 @@ function render() {
   const lastLy = ly[nS - 1].total ? ly[nS - 1].total * LY_H + 8 * L : 0;
   const sysH = yOff[nS - 1] + STAFF_H + lastLy;
   const sysGap = 30 + 22 * L;
-  const hasTopMarks = Object.entries(score.marks || {}).some(([m, x]) => x.volta || x.segno || x.coda || x.toCoda || x.fine || x.jump || (+m > 0 && x.tempo) || +x.repEnd > 2);
+  const hasTopMarks = !!score.swing || Object.entries(score.marks || {}).some(([m, x]) => x.volta || x.segno || x.coda || x.toCoda || x.fine || x.jump || x.swing || (+m > 0 && x.tempo) || +x.repEnd > 2);
   const topPad = (hasTopMarks ? 24 : 0) + (chordMode !== "off" ? 26 : 0);
   const hasDyn = Object.values(score.marks || {}).some((x) => x.dyn);
   const labels = score.staves.map(staffLabelLines);
@@ -862,12 +914,12 @@ function render() {
         staves.forEach((st, sIdx) => rects.push({ page: pi, staff: sIdx, m, x, y: st.getYForLine(0) - 22, w, h: STAFF_H + 44, nx: startX, top: st.getYForLine(0) }));
         if (k === 0) {
           sysStaves[sysIndex] = staves;
-          if (sysIndex > 0) svgEl(svg, "text", { x: x + 2, y: s.y - 9, "font-family": "Georgia, serif", "font-size": 9 * L, "font-style": "italic", fill: "#4a4f5c" }, String(m + 1));
+          if (sysIndex > 0) svgEl(svg, "text", { x: x + 2, y: s.y - 9, "font-family": "Georgia, serif", "font-size": 9 * L, "font-style": "italic", fill: "#4a4f5c" }, String(barNum(m)));
           drawConnectors(ctx, staves);
           if (sysIndex === 0) drawNames(svg, staves, x, labels, L);
         }
         drawGroupBars(ctx, staves, m === model.M - 1);
-        const allVoices = [], beams = [], perStaffVoices = [];
+        const allVoices = [], beams = [], perStaffVoices = [], tuplets = [];
         score.staves.forEach((st, sIdx) => {
           const c = CLEFS[st.clef] || CLEFS.treble;
           const vlist = model.grid[sIdx][m];
@@ -879,10 +931,23 @@ function render() {
             const notes = st.voices[v].notes;
             const vfNotes = pieces.map((p) => {
               const keys = p.rest ? [c.rest[two ? (v === 0 ? 1 : 2) : 0]] : p.keys.map((kk) => `${kk.s.toLowerCase()}${kk.a === 1 ? "#" : kk.a === -1 ? "b" : ""}/${kk.o}`);
-              const opts = { clef: c.vf, keys, duration: p.d + (p.dots ? "d" : "") + (p.rest ? "r" : ""), align_center: !!p.full && !two };
+              const opts = { clef: c.vf, keys, duration: p.d + "d".repeat(p.dots || 0) + (p.rest ? "r" : ""), align_center: !!p.full && !two };
               if (two) { opts.auto_stem = false; opts.stem_direction = v === 0 ? 1 : -1; } else opts.auto_stem = true;
               const vn = new VF.StaveNote(opts);
-              if (p.dots) VF.Dot.buildAndAttach([vn], { all: true });
+              for (let d = 0; d < (p.dots || 0); d++) VF.Dot.buildAndAttach([vn], { all: true });
+              if (p.ferm) vn.addModifier(new VF.Articulation(two && v > 0 ? "a@u" : "a@a").setPosition(two && v > 0 ? VF.Modifier.Position.BELOW : VF.Modifier.Position.ABOVE), 0);
+              const src = notes[p.src];
+              if (!p.ghost && !p.rest && p.part === 0 && src && src.grace && src.grace.length) {
+                try {
+                  const key = T.key(m);
+                  const gn = src.grace.map((g) => {
+                    const n = new VF.GraceNote({ clef: c.vf, keys: g.keys.map((kk) => `${kk.s.toLowerCase()}${kk.a === 1 ? "#" : kk.a === -1 ? "b" : ""}/${kk.o}`), duration: g.d || "8", slash: g.slash !== false });
+                    g.keys.forEach((kk, ki) => { if ((kk.a || 0) !== keyAlter(kk.s, key)) n.addModifier(new VF.Accidental(kk.a === 1 ? "#" : kk.a === -1 ? "b" : "n"), ki); });
+                    return n;
+                  });
+                  vn.addModifier(new VF.GraceNoteGroup(gn, true).beamNotes(), 0);
+                } catch (e) { /* adorno omitido */ }
+              }
               vn.setAttribute("id", p.ghost ? `g${sIdx}_${v}_${m}_${p.gi || 0}` : `n${sIdx}_${v}_${p.src}_${p.part}`);
               if (p.ghost || p.hid) vn.setStyle({ fillStyle: p.hid ? "rgba(0,0,0,0)" : "#b8bcc6", strokeStyle: p.hid ? "rgba(0,0,0,0)" : "#b8bcc6" });
               if (solfeoOn && !p.rest && p.part === 0) {
@@ -897,6 +962,8 @@ function render() {
               vn.setStave(staves[sIdx]);
               return vn;
             });
+            // grupos irregulares: se arman antes de agregar las notas a la voz (VexFlow ajusta sus duraciones)
+            tupletGroups(pieces).forEach((g) => tuplets.push(new VF.Tuplet(g.idx.map((j) => vfNotes[j]), { num_notes: g.n, notes_occupied: g.of, ratioed: false, location: two && v > 0 ? VF.Tuplet.LOCATION_BOTTOM : VF.Tuplet.LOCATION_TOP })));
             const voice = new VF.Voice({ num_beats: 4, beat_value: 4 }).setMode(VF.Voice.Mode.SOFT);
             voice.addTickables(vfNotes);
             try {
@@ -916,6 +983,7 @@ function render() {
         fmt.format(allVoices.map((x) => x.voice), Math.max(20, staves[0].getNoteEndX() - startX - 12));
         allVoices.forEach((x) => x.voice.draw(ctx, x.stave));
         beams.forEach((b) => b.setContext(ctx).draw());
+        tuplets.forEach((t) => { try { t.setContext(ctx).draw(); } catch (e) { /* corchete omitido */ } });
         measureOverlays(svg, staves, m, x, w, startX, rendered, model, L, ly, k === 0);
         x += w;
       });
@@ -970,6 +1038,11 @@ const lastChordInSystem = { text: "", x: -1e9, chord: null };
 function measureOverlays(svg, staves, m, x, w, startX, rendered, model, L, ly, sysStart) {
   const mm = mk(m), top = staves[0], bot = staves[staves.length - 1];
   if (+mm.repEnd > 2) svgEl(svg, "text", { x: x + w - 6, y: top.getYForLine(0) - 6, "text-anchor": "end", "font-family": "Georgia, serif", "font-size": 11 * L, "font-style": "italic", fill: "#111318" }, `×${mm.repEnd}`);
+  const sw = mm.swing || (m === 0 ? score.swing : "");
+  if (sw === "8" || sw === "16" || sw === "no") {
+    const label = sw === "no" ? "Recto" : sw === "16" ? "Swing (semicorcheas)" : "Swing";
+    svgEl(svg, "text", { x: startX + (m === 0 ? 96 * L : 2), y: top.getYForLine(0) - (chordMode !== "off" ? 46 : 28) * L, "font-family": ENGRAVE_FONT, "font-size": 12 * L, "font-weight": 700, fill: "#111318", class: "swingmark" }, label);
+  }
   if (mm.dyn) {
     const lyB = ly[ly.length - 1].total ? ly[ly.length - 1].total * 14.5 * L + 8 * L : 0;
     svgEl(svg, "text", { x: startX + 2, y: bot.getYForLine(4) + 46 + lyB, "font-family": "Times New Roman, Georgia, serif", "font-size": 14 * L, "font-style": "italic", "font-weight": 700, fill: "#111318" }, mm.dyn);
@@ -1096,7 +1169,7 @@ function updateNow(playingNote) {
   const who = voiceLabel(cursor.staff, cursor.voice);
   if (!n) { syl.textContent = "—"; meta.textContent = `${who} · escribe con A–G`; return; }
   syl.textContent = n.rest ? "Silencio" : n.keys.slice().reverse().map(sylOf).join(" · ");
-  const dur = DUR_NAME[n.d] + (n.dots ? " con puntillo" : "");
+  const dur = DUR_NAME[n.d] + (n.dots === 2 ? " con doble puntillo" : n.dots ? " con puntillo" : "") + (tupOf(n) ? ` (${(Object.values(TUPLETS).find((t) => t.n === n.tup.n && t.of === n.tup.of) || { label: n.tup.n + ":" + n.tup.of }).label.toLowerCase()})` : "") + (n.ferm ? " · calderón" : "") + (n.grace && n.grace.length ? ` · ${n.grace.length === 1 ? "1 adorno" : n.grace.length + " adornos"}` : "");
   const oct = n.rest ? "" : " · octava " + n.keys.map((k) => k.o).join("/");
   const lyr = n.ly && n.ly.filter(Boolean).length ? ` · «${n.ly.filter(Boolean).map((x) => lyShow(x.t)).join(" / ")}»` : "";
   meta.textContent = `${who} · ${dur}${oct}${lyr}`;
@@ -1151,7 +1224,7 @@ function insertNote(step) {
     let refDia = ref ? dia(ref) : (CLEFS[st.clef] || CLEFS.treble).center;
     if (!ref && st.voices.length > 1) refDia += cursor.voice === 0 ? 2 : -3;
     const k = { s: step, a: keyAlter(step, keyAtIndex(vc, cursor.index)), o: nearestOctave(step, refDia) };
-    vc.notes.splice(cursor.index, 0, { d: inputDur, dots: inputDots, rest: false, tie: false, keys: [k] });
+    vc.notes.splice(cursor.index, 0, withTup(vc, { d: inputDur, dots: inputDots, rest: false, tie: false, keys: [k] }));
     cursor.index++; mode = "input";
   });
   const n = selNote(); if (n) audition(n.keys, st.clef);
@@ -1168,19 +1241,55 @@ function addToChord(step) {
 }
 function insertRest() {
   const vc = curVoice();
-  commit(() => { fillToHint(vc); vc.notes.splice(cursor.index, 0, { d: inputDur, dots: inputDots, rest: true, tie: false, keys: [] }); cursor.index++; mode = "input"; });
+  commit(() => { fillToHint(vc); vc.notes.splice(cursor.index, 0, withTup(vc, { d: inputDur, dots: inputDots, rest: true, tie: false, keys: [] })); cursor.index++; mode = "input"; });
+}
+// Con un grupo irregular elegido, la nota nueva continúa el grupo abierto o empieza uno con la duración actual como unidad.
+function withTup(vc, n) {
+  if (!inputTup || !TUPLETS[inputTup]) return n;
+  const open = openTuplet(vc.notes, cursor.index), t = TUPLETS[inputTup];
+  n.tup = open && open.n === t.n && open.of === t.of ? clone(open) : { n: t.n, of: t.of, u: n.d };
+  return n;
 }
 function setDuration(d) {
   inputDur = d;
   const n = selNote();
-  if (mode === "select" && n) commit(() => { n.d = d; });
+  if (mode === "select" && n) commit(() => { n.d = d; if (d === "w" && n.dots > 1) n.dots = 1; });
   syncPalette();
 }
+const nextDots = (dots, d) => ((dots || 0) + 1) % (d === "32" ? 2 : 3); // sin → puntillo → doble puntillo → sin
 function toggleDot() {
   const n = selNote();
-  if (mode === "select" && n) { commit(() => { n.dots = n.dots ? 0 : 1; }); inputDots = n.dots; }
-  else inputDots = inputDots ? 0 : 1;
+  if (mode === "select" && n) { commit(() => { n.dots = nextDots(n.dots, n.d); }); inputDots = n.dots; }
+  else inputDots = nextDots(inputDots, inputDur);
   syncPalette();
+}
+// Elegir un grupo irregular: para lo que se escriba desde ahora y, si hay una nota elegida, para esa nota.
+function setTuplet(key) {
+  inputTup = TUPLETS[key] ? +key : 0;
+  const n = selNote();
+  if (mode === "select" && n) commit(() => { if (inputTup) n.tup = { n: TUPLETS[inputTup].n, of: TUPLETS[inputTup].of, u: (tupOf(n) && n.tup.u) || n.d }; else delete n.tup; });
+  syncPalette();
+  if (inputTup) toast(`${TUPLETS[inputTup].label}: escribe ${TUPLETS[inputTup].n} notas del mismo valor (o su equivalente) y vuelve a «Normal».`);
+}
+function toggleFermata() { const n = selNote(); if (!n) return; commit(() => { if (n.ferm) delete n.ferm; else n.ferm = true; }); }
+// Adornos: en modo adorno, las letras agregan notas de adorno a la nota elegida (acciaccatura con raya o apoyatura).
+let graceMode = ""; // "" | "acc" | "app"
+function setGraceMode(m) {
+  graceMode = m === "acc" || m === "app" ? m : "";
+  const sel = document.getElementById("tGrace"); if (sel) sel.value = graceMode;
+  if (graceMode) toast(selNote() && !selNote().rest ? "Escribe con A–G los adornos de la nota elegida. Retroceso borra el último; Esc termina." : "Elige primero la nota que lleva el adorno (clic o flechas) y escribe con A–G.");
+}
+function addGrace(step) {
+  const n = selNote();
+  if (!n || n.rest) { toast("Elige la nota que lleva el adorno."); return; }
+  const ref = (n.grace && n.grace.length ? n.grace[n.grace.length - 1].keys[0] : n.keys[n.keys.length - 1]);
+  const k = { s: step, a: keyAlter(step, keyAtIndex(curVoice(), cursor.index - 1)), o: nearestOctave(step, dia(ref)) };
+  commit(() => { n.grace = n.grace || []; n.grace.push({ keys: [k], d: inputDur === "16" || inputDur === "32" ? inputDur : "8", slash: graceMode === "acc" }); });
+  audition([k], curStaff().clef);
+}
+function removeGrace() {
+  const n = selNote(); if (!n || !n.grace || !n.grace.length) return;
+  commit(() => { n.grace.pop(); if (!n.grace.length) delete n.grace; });
 }
 function setAccidental(a) {
   const n = selNote(); if (!n || n.rest) return;
@@ -1463,7 +1572,10 @@ function transposeScore(iv, df, staffSet) {
   const newKey = wrapFifths(+score.key + df);
   score.staves.forEach((st, s) => {
     if (staffSet && !staffSet.has(s)) return;
-    st.voices.forEach((vc) => vc.notes.forEach((n) => { if (!n.rest && n.keys) n.keys = n.keys.map((k) => transposeKey(k, iv, newKey)); }));
+    st.voices.forEach((vc) => vc.notes.forEach((n) => {
+      if (!n.rest && n.keys) n.keys = n.keys.map((k) => transposeKey(k, iv, newKey));
+      (n.grace || []).forEach((g) => { g.keys = g.keys.map((k) => transposeKey(k, iv, newKey)); });
+    }));
   });
   if (!staffSet) {
     score.key = newKey;
@@ -1948,8 +2060,8 @@ function performance(model) {
   model = model || buildModel();
   const T = model.T, M = scoreLen(model);
   const entries = []; let perf = 0, sec = 0;
-  playOrder(M).forEach((m) => { const spt = 60 / T.tempo(m) / 16, len = T.len(m); entries.push({ m, perf, sec, spt, len }); perf += len; sec += len * spt; });
-  const events = [];
+  playOrder(M).forEach((m) => { const spt = 60 / T.tempo(m) / TQ, len = T.len(m); entries.push({ m, perf, sec, spt, len, swing: T.swing(m) }); perf += len; sec += len * spt; });
+  const events = [], holds = new Map(); // calderones: tick donde termina la nota → segundos que se detiene todo
   score.staves.forEach((st, s) => st.voices.forEach((vc, v) => {
     let last = null;
     entries.forEach((e, ei) => {
@@ -1959,16 +2071,36 @@ function performance(model) {
         if (p.ghost || p.rest) { last = null; return; }
         const start = e.perf + (p.start - T.start(e.m));
         if (last && last.tieNext && sameKeys(last.keys, p.keys) && last.start + last.dur === start) { last.dur += p.ticks; last.tieNext = p.tieNext; return; }
-        last = { s, v, m: e.m, ei, start, dur: p.ticks, keys: p.keys, tieNext: p.tieNext, src: p.src, note: vc.notes[p.src], dyn: T.dyn(e.m) };
+        const src = vc.notes[p.src];
+        let st0 = start, dur0 = p.ticks;
+        if (p.part === 0 && src && src.grace && src.grace.length) {
+          // adornos en el tiempo: cada uno dura una fusa (o menos si la nota es muy corta) y la nota principal entra después
+          const g = Math.min(TICKS["32"], p.ticks / (src.grace.length + 2));
+          src.grace.forEach((gr) => { events.push({ s, v, m: e.m, ei, start: st0, dur: g, keys: gr.keys, tieNext: false, src: p.src, note: src, dyn: T.dyn(e.m), grace: true }); st0 += g; dur0 -= g; });
+        }
+        last = { s, v, m: e.m, ei, start: st0, dur: dur0, keys: p.keys, tieNext: p.tieNext, src: p.src, note: src, dyn: T.dyn(e.m) };
         events.push(last);
       });
+      // el calderón cae al final de la última pieza de la nota (aunque esté ligada desde antes)
+      pieces.forEach((p) => { if (p.ferm && !p.ghost) { const end = e.perf + (p.start - T.start(e.m)) + p.ticks, extra = Math.min(3, Math.max(0.6, p.ticks * e.spt)); holds.set(end, Math.max(holds.get(end) || 0, extra)); } });
     });
   }));
   events.sort((a, b) => a.start - b.start);
+  const holdList = [...holds].sort((a, b) => a[0] - b[0]);
+  const holdUpTo = (tick, from = -1) => holdList.reduce((a, [t, x]) => (t > from && t <= tick ? a + x : a), 0);
+  entries.forEach((e) => { e.sec += holdUpTo(e.perf); });
   const entryAt = (tick) => { let lo = 0, hi = entries.length - 1; while (lo < hi) { const mid = (lo + hi + 1) >> 1; if (entries[mid].perf <= tick) lo = mid; else hi = mid - 1; } return entries[lo]; };
-  const timeOf = (tick) => { const e = entryAt(tick); return e ? e.sec + (tick - e.perf) * e.spt : 0; };
+  const timeOf = (tick) => { const e = entryAt(tick); return e ? e.sec + swingWarp(tick - e.perf, e.swing) * e.spt + holdUpTo(tick, e.perf) : 0; };
   const entryAtSec = (s) => { let lo = 0, hi = entries.length - 1; while (lo < hi) { const mid = (lo + hi + 1) >> 1; if (entries[mid].sec <= s) lo = mid; else hi = mid - 1; } return entries[lo]; };
-  return { T, M, model, entries, events, timeOf, entryAtSec, totalPerf: perf, totalSec: sec };
+  return { T, M, model, entries, events, timeOf, entryAtSec, totalPerf: perf, totalSec: sec + holdUpTo(Infinity) };
+}
+// Swing: dentro de cada par de corcheas (o semicorcheas) la primera dura 2/3 y la segunda 1/3, como un tresillo.
+// Las partes fuertes no se mueven, así que el pulso y el metrónomo quedan iguales.
+function swingWarp(off, sw) {
+  if (!sw) return off;
+  const unit = sw === "16" ? TQ / 2 : TQ, half = unit / 2, first = (unit * 2) / 3;
+  const pos = ((off % unit) + unit) % unit, base = off - pos;
+  return base + (pos <= half ? (pos * first) / half : first + ((pos - half) * (unit - first)) / half);
 }
 function performanceClicks(P, fromEi, countIn, metro) {
   const clicks = [];
@@ -1976,7 +2108,7 @@ function performanceClicks(P, fromEi, countIn, metro) {
   if (!e0) return { clicks, leadSec: 0 };
   const lead = countIn ? e0.len : 0, leadSec = lead * e0.spt;
   if (countIn) { const bt = beatOf(P.T.time(e0.m)); for (let t = 0; t < lead; t += bt) clicks.push({ sec: e0.sec - leadSec + t * e0.spt, accent: t === 0 }); }
-  if (metro) for (let i = fromEi; i < P.entries.length; i++) { const e = P.entries[i], bt = beatOf(P.T.time(e.m)); for (let t = 0; t < e.len; t += bt) clicks.push({ sec: e.sec + t * e.spt, accent: t === 0 }); }
+  if (metro) for (let i = fromEi; i < P.entries.length; i++) { const e = P.entries[i], bt = beatOf(P.T.time(e.m)); for (let t = 0; t < e.len; t += bt) clicks.push({ sec: P.timeOf(e.perf + t), accent: t === 0 }); }
   return { clicks, leadSec };
 }
 
@@ -2484,10 +2616,10 @@ function toMusicXML() {
     const two = st.voices.length > 1;
     const prev = st.voices.map(() => ({ tie: false, keys: null, hy: [] }));
     for (let m = 0; m < M; m++) {
-      x += `    <measure number="${m + 1}">\n`;
+      x += `    <measure number="${barNum(m)}"${m === 0 && hasPickup() ? ' implicit="yes"' : ""}>\n`;
       const [tn, td] = T.time(m).split("/");
       let attrs = "";
-      if (m === 0) attrs = `<divisions>4</divisions><key><fifths>${T.key(0)}</fifths></key><time><beats>${tn}</beats><beat-type>${td}</beat-type></time><clef><sign>${c.xml[0]}</sign><line>${c.xml[1]}</line>${c.xml[2] ? `<clef-octave-change>${c.xml[2]}</clef-octave-change>` : ""}</clef>`;
+      if (m === 0) attrs = `<divisions>${TQ}</divisions><key><fifths>${T.key(0)}</fifths></key><time><beats>${tn}</beats><beat-type>${td}</beat-type></time><clef><sign>${c.xml[0]}</sign><line>${c.xml[1]}</line>${c.xml[2] ? `<clef-octave-change>${c.xml[2]}</clef-octave-change>` : ""}</clef>`;
       else {
         if (T.keyChange(m)) attrs += `<key><fifths>${T.key(m)}</fifths></key>`;
         if (T.timeChange(m)) attrs += `<time><beats>${tn}</beats><beat-type>${td}</beat-type></time>`;
@@ -2500,21 +2632,29 @@ function toMusicXML() {
       if (m > 0 && s === 0 && +mm.tempo >= 20) x += `      <direction placement="above"><direction-type><metronome><beat-unit>quarter</beat-unit><per-minute>${mm.tempo}</per-minute></metronome></direction-type><sound tempo="${mm.tempo}"/></direction>\n`;
       if (s === 0 && mm.segno) x += `      <direction placement="above"><direction-type><segno/></direction-type><sound segno="segno"/></direction>\n`;
       if (s === 0 && mm.coda) x += `      <direction placement="above"><direction-type><coda/></direction-type><sound coda="coda"/></direction>\n`;
+      const swm = mm.swing || (m === 0 ? score.swing : "");
+      if (s === 0 && swm === "no") x += `      <direction placement="above"><direction-type><words>Recto</words></direction-type><sound><swing><straight/></swing></sound></direction>\n`;
+      else if (s === 0 && (swm === "8" || swm === "16")) x += `      <direction placement="above"><direction-type><words>Swing</words></direction-type><sound><swing><first>2</first><second>1</second><swing-type>${swm === "16" ? "16th" : "eighth"}</swing-type></swing></sound></direction>\n`;
       if (mm.dyn) x += `      <direction placement="${st.voices.length > 1 || s > 0 ? "above" : "below"}"><direction-type><dynamics><${mm.dyn}/></dynamics></direction-type><sound dynamics="${Math.round(DYN_GAIN[mm.dyn] * 100)}"/></direction>\n`;
       const vlist = model.grid[s][m] || [];
       let wrote = false;
       vlist.forEach((pieces, v) => {
         if (!pieces) return;
-        if (wrote) x += `      <backup><duration>${T.len(m) / 4}</duration></backup>\n`;
+        if (wrote) x += `      <backup><duration>${T.len(m)}</duration></backup>\n`;
         wrote = true;
         const notes = st.voices[v].notes, pv = prev[v];
         const stem = two ? `<stem>${v === 0 ? "up" : "down"}</stem>` : "";
-        pieces.forEach((p) => {
-          const dur = p.ticks / 4;
+        const tupAt = {};
+        tupletGroups(pieces).forEach((g) => g.idx.forEach((j, i) => { tupAt[j] = { n: g.n, of: g.of, start: i === 0, stop: i === g.idx.length - 1 }; }));
+        pieces.forEach((p, j) => {
+          const dur = Math.round(p.ticks);
+          const tg = tupAt[j];
+          const dots = "<dot/>".repeat(p.dots || 0) + (tg ? `<time-modification><actual-notes>${tg.n}</actual-notes><normal-notes>${tg.of}</normal-notes></time-modification>` : "");
+          const tupN = tg ? (tg.start ? '<tuplet type="start" bracket="yes"/>' : "") + (tg.stop ? '<tuplet type="stop"/>' : "") : "";
           if (p.rest) {
             const hidden = p.hid ? ' print-object="no"' : "";
-            x += p.full ? `      <note${hidden}><rest measure="yes"/><duration>${T.len(m) / 4}</duration><voice>${v + 1}</voice></note>\n`
-              : `      <note${hidden}><rest/><duration>${dur}</duration><voice>${v + 1}</voice><type>${XML_TYPE[p.d]}</type>${p.dots ? "<dot/>" : ""}</note>\n`;
+            x += p.full ? `      <note${hidden}><rest measure="yes"/><duration>${T.len(m)}</duration><voice>${v + 1}</voice></note>\n`
+              : `      <note${hidden}><rest/><duration>${dur}</duration><voice>${v + 1}</voice><type>${XML_TYPE[p.d]}</type>${dots}${tupN || p.ferm ? `<notations>${tupN}${p.ferm ? "<fermata/>" : ""}</notations>` : ""}</note>\n`;
             pv.tie = false; pv.keys = null; return;
           }
           const tieStop = pv.tie && sameKeys(pv.keys, p.keys);
@@ -2526,10 +2666,13 @@ function toMusicXML() {
             lyr += `<lyric number="${i + 1}"><syllabic>${syllabic}</syllabic><text>${esc(lyShow(sy.t))}</text></lyric>`;
             pv.hy[i] = !!sy.h;
           });
+          if (p.part === 0 && src && src.grace) src.grace.forEach((g) => g.keys.forEach((k, ki) => {
+            x += `      <note><grace${g.slash !== false ? ' slash="yes"' : ""}/>${ki ? "<chord/>" : ""}<pitch><step>${k.s}</step>${k.a ? `<alter>${k.a}</alter>` : ""}<octave>${k.o}</octave></pitch><voice>${v + 1}</voice><type>${XML_TYPE[g.d || "8"]}</type>${stem}</note>\n`;
+          }));
           p.keys.forEach((k, ki) => {
             const ties = (tieStop ? '<tie type="stop"/>' : "") + (p.tieNext ? '<tie type="start"/>' : "");
-            const tied = (tieStop ? '<tied type="stop"/>' : "") + (p.tieNext ? '<tied type="start"/>' : "");
-            x += `      <note>${ki ? "<chord/>" : ""}<pitch><step>${k.s}</step>${k.a ? `<alter>${k.a}</alter>` : ""}<octave>${k.o}</octave></pitch><duration>${dur}</duration>${ties}<voice>${v + 1}</voice><type>${XML_TYPE[p.d]}</type>${p.dots ? "<dot/>" : ""}${stem}${tied ? `<notations>${tied}</notations>` : ""}${ki === 0 ? lyr : ""}</note>\n`;
+            const tied = (tieStop ? '<tied type="stop"/>' : "") + (p.tieNext ? '<tied type="start"/>' : "") + (ki === 0 ? tupN + (p.ferm ? `<fermata type="${two && v > 0 ? "inverted" : "upright"}"/>` : "") : "");
+            x += `      <note>${ki ? "<chord/>" : ""}<pitch><step>${k.s}</step>${k.a ? `<alter>${k.a}</alter>` : ""}<octave>${k.o}</octave></pitch><duration>${dur}</duration>${ties}<voice>${v + 1}</voice><type>${XML_TYPE[p.d]}</type>${dots}${stem}${tied ? `<notations>${tied}</notations>` : ""}${ki === 0 ? lyr : ""}</note>\n`;
           });
           pv.tie = p.tieNext; pv.keys = p.keys;
         });
@@ -2784,13 +2927,15 @@ function fromMusicXML(text) {
   if (doc.querySelector("parsererror")) throw new Error("El archivo no es un MusicXML válido.");
   const root = doc.querySelector("score-partwise");
   if (!root) throw new Error("Solo se pueden importar archivos MusicXML de tipo “partwise”.");
-  const T = { breve: "w", whole: "w", half: "h", quarter: "q", eighth: "8", "16th": "16", "32nd": "16", "64th": "16" };
+  const T = { breve: "w", whole: "w", half: "h", quarter: "q", eighth: "8", "16th": "16", "32nd": "32", "64th": "32" };
   const sc = { id: uid(), title: "", composer: "", tempo: 90, time: "4/4", key: 0, changes: [], layout: { staff: 6, perSystem: 0 }, groups: [], staves: [] };
   sc.title = (doc.querySelector("work > work-title") || doc.querySelector("movement-title") || {}).textContent || "Partitura importada";
   sc.composer = (doc.querySelector('creator[type="composer"]') || {}).textContent || "";
   const tempoEl = doc.querySelector("sound[tempo]"); if (tempoEl) sc.tempo = Math.round(+tempoEl.getAttribute("tempo")) || 90;
   const names = {}; doc.querySelectorAll("part-list > score-part").forEach((sp) => { names[sp.getAttribute("id")] = (sp.querySelector("part-name") || {}).textContent || ""; });
   let lossy = false, firstPart = true;
+  const openTup = {}; // grupo irregular en curso por pentagrama y voz
+  const pendGrace = {}; // adornos que esperan su nota principal
   const chMap = new Map();
   const marks = {};
   const setM = (m, k, v) => { (marks[m] = marks[m] || {})[k] = v; };
@@ -2813,7 +2958,7 @@ function fromMusicXML(text) {
       if (n === 1 && st.voices.length < 2) st.voices.push({ name: "", notes: [] });
       return n;
     };
-    let div = 1, mticks = 64, mIndex = 0;
+    let div = 1, mticks = TICKS.w, mIndex = 0;
     part.querySelectorAll("measure").forEach((meas) => {
       if (firstPart) {
         meas.querySelectorAll(":scope > barline").forEach((bl) => {
@@ -2834,6 +2979,9 @@ function fromMusicXML(text) {
           if (isDC || isDS) setM(mIndex, "jump", (isDS ? "DS" : "DC") + (/al\s*fine/i.test(words) ? "alFine" : /al\s*coda/i.test(words) ? "alCoda" : ""));
           const dyn = dr.querySelector("dynamics > *"); if (dyn && DYN_GAIN[dyn.tagName]) setM(mIndex, "dyn", dyn.tagName);
           const pm = dr.querySelector("metronome per-minute"); if (pm && mIndex > 0 && +pm.textContent >= 20) setM(mIndex, "tempo", Math.round(+pm.textContent));
+          const sw = dr.querySelector("sound swing");
+          if (sw) setM(mIndex, "swing", sw.querySelector("straight") ? "no" : /16th/.test((sw.querySelector("swing-type") || {}).textContent || "") ? "16" : "8");
+          else if (/^swing$/i.test(words)) setM(mIndex, "swing", "8");
         });
       }
       for (const el of meas.children) {
@@ -2853,10 +3001,10 @@ function fromMusicXML(text) {
           const xv = (el.querySelector("voice") || {}).textContent; if (!xv) continue;
           const sn = +((el.querySelector("staff") || {}).textContent || 1) - 1;
           const v = voiceFor(sn, xv); if (v < 0) continue;
-          const t = Math.round((+((el.querySelector("duration") || {}).textContent || 0)) / div * 16);
-          decomposeRest(0, Math.max(4, Math.round(t / 4) * 4)).forEach((r) => sc.staves[base + sn].voices[v].notes.push({ d: r[1], dots: 0, rest: true, tie: false, keys: [], hid: v > 0 || undefined }));
+          const t = Math.round((+((el.querySelector("duration") || {}).textContent || 0)) / div * TQ);
+          decomposeRest(0, Math.max(MIN_T, Math.round(t / MIN_T) * MIN_T)).forEach((r) => sc.staves[base + sn].voices[v].notes.push({ d: r[1], dots: 0, rest: true, tie: false, keys: [], hid: v > 0 || undefined }));
         } else if (el.tagName === "note") {
-          if (el.querySelector("grace") || el.querySelector("cue")) continue;
+          if (el.querySelector("cue")) continue;
           const sn = +((el.querySelector("staff") || {}).textContent || 1) - 1;
           const st = sc.staves[base + sn]; if (!st) continue;
           const v = voiceFor(sn, (el.querySelector("voice") || {}).textContent || "1"); if (v < 0) continue;
@@ -2864,10 +3012,24 @@ function fromMusicXML(text) {
           const isChord = !!el.querySelector("chord");
           const pitch = el.querySelector("pitch");
           const key = pitch ? { s: pitch.querySelector("step").textContent, a: Math.max(-1, Math.min(1, Math.round(+((pitch.querySelector("alter") || {}).textContent || 0)))), o: +pitch.querySelector("octave").textContent } : null;
+          const gEl = el.querySelector("grace"), gKey = base + sn + "_" + v;
+          if (gEl) {
+            // adorno: se guarda hasta llegar a la nota principal
+            if (!key) continue;
+            const pend = (pendGrace[gKey] = pendGrace[gKey] || []);
+            if (isChord && pend.length) { pend[pend.length - 1].keys.push(key); continue; }
+            const gt = T[((el.querySelector("type") || {}).textContent) || "eighth"];
+            pend.push({ keys: [key], d: gt === "16" || gt === "32" ? gt : "8", slash: gEl.getAttribute("slash") === "yes" });
+            continue;
+          }
           if (isChord && key) { const last = vc.notes[vc.notes.length - 1]; if (last && !last.rest) { last.keys.push(key); last.keys.sort((a, b) => dia(a) - dia(b)); } continue; }
+          const graceHere = pendGrace[gKey] && pendGrace[gKey].length ? pendGrace[gKey] : null; pendGrace[gKey] = [];
           const typeEl = el.querySelector("type");
-          const dots = el.querySelectorAll("dot").length ? 1 : 0;
-          const durTicks = Math.round((+((el.querySelector("duration") || {}).textContent || 0)) / div * 16);
+          const dots = Math.min(2, el.querySelectorAll("dot").length);
+          const tm = el.querySelector("time-modification");
+          const tupN = tm ? +((tm.querySelector("actual-notes") || {}).textContent || 0) : 0, tupOfN = tm ? +((tm.querySelector("normal-notes") || {}).textContent || 0) : 0;
+          const ferm = !!el.querySelector("notations fermata");
+          const durTicks = Math.round((+((el.querySelector("duration") || {}).textContent || 0)) / div * TQ);
           const tie = !!el.querySelector('tie[type="start"]');
           const rest = !!el.querySelector("rest");
           const hid = rest && el.getAttribute("print-object") === "no" && v > 0;
@@ -2879,16 +3041,33 @@ function fromMusicXML(text) {
             ly = ly || []; ly[n] = { t: t.replace(/‿/g, "_"), h: syl === "begin" || syl === "middle" };
           });
           if (typeEl && T[typeEl.textContent]) {
-            if (/32nd|64th|breve/.test(typeEl.textContent)) lossy = true;
-            const n = { d: T[typeEl.textContent], dots, rest: rest || !key, tie, keys: key && !rest ? [key] : [] };
-            if (hid) n.hid = true; if (ly && !n.rest) n.ly = ly;
+            if (/64th|breve/.test(typeEl.textContent)) lossy = true;
+            const n = { d: T[typeEl.textContent], dots: T[typeEl.textContent] === "w" || T[typeEl.textContent] === "32" ? Math.min(1, dots) : dots, rest: rest || !key, tie, keys: key && !rest ? [key] : [] };
+            if (hid) n.hid = true; if (ly && !n.rest) n.ly = ly; if (ferm) n.ferm = true; if (graceHere && !n.rest) n.grace = graceHere;
+            if (tupN > 1 && tupOfN > 0) {
+              n.tup = { n: tupN, of: tupOfN, u: n.d };
+              // la unidad del grupo se fija al cerrarlo: la figura que, repetida n veces, llena lo que ocupa el grupo
+              const g = (openTup[base + sn + "_" + v] = openTup[base + sn + "_" + v] || []);
+              g.push(n);
+              const nom = g.reduce((a, x) => a + nominalTicks(x), 0);
+              // se cierra con <tuplet type="stop"> o, si el archivo no lo trae, al llenar n veces la figura de la primera nota
+              if (el.querySelector('notations tuplet[type="stop"]') || nom >= tupN * TICKS[g[0].d]) {
+                const unit = Object.keys(TICKS).find((d) => TICKS[d] * tupN === nom) || g[0].d;
+                g.forEach((x) => { x.tup.u = unit; }); openTup[base + sn + "_" + v] = [];
+              }
+            } else openTup[base + sn + "_" + v] = [];
             vc.notes.push(n);
           } else {
             const t = rest && el.querySelector("rest[measure='yes']") ? mticks : (durTicks || mticks);
-            const parts = decomposeNote(Math.max(4, Math.round(t / 4) * 4));
+            const parts = decomposeNote(Math.max(MIN_T, Math.round(t / MIN_T) * MIN_T));
             parts.forEach((p, i) => { const n = { d: p[1], dots: p[2], rest: rest || !key, tie: !rest && !!key && i < parts.length - 1 ? true : tie, keys: key && !rest ? [clone(key)] : [] }; if (hid) n.hid = true; if (ly && i === 0 && !n.rest) n.ly = ly; vc.notes.push(n); });
           }
         }
+      }
+      // anacrusa: el primer compás de la primera parte dura menos que el compás indicado
+      if (firstPart && mIndex === 0) {
+        const len = voiceEnd(sc.staves[base].voices[0]);
+        if (len > 0 && len < mticks) sc.pickup = Math.round((len / TQ) * 1000) / 1000;
       }
       mIndex++;
     });
@@ -3118,7 +3297,7 @@ function buildFromOmr(ctx) {
     groups: S > 1 ? [{ type: "bracket", from: 0, to: S - 1 }] : [],
     staves: ctx.staves.map((s) => ({ name: s.voices.length > 1 ? s.name : s.name || s.voices[0] || "", clef: s.clef, voices: s.voices.map((n) => ({ name: s.voices.length > 1 ? n : "", notes: [] })) })),
   };
-  const report = { measures: 0, uneven: [], badTokens: 0, filledPickup: false, warnings: ctx.warnings.slice() };
+  const report = { measures: 0, uneven: [], badTokens: 0, pickup: false, warnings: ctx.warnings.slice() };
   if (ctx.wholePages.length) report.warnings.push(`En ${ctx.wholePages.length === 1 ? "la página " + ctx.wholePages[0] : "las páginas " + ctx.wholePages.join(", ")} no se detectaron los pentagramas y se leyó la página completa: revisa esa parte con más cuidado.`);
   let curKey = ctx.key, curTime = ctx.time, mIdx = 0;
   ctx.systems.forEach((sys) => {
@@ -3154,15 +3333,19 @@ function buildFromOmr(ctx) {
         cells.push({ s, v, notes, ticks: notes.reduce((a, n) => a + noteTicks(n), 0) });
       }
       const allShort = cells.filter((c) => c.ticks > 0).every((c) => c.ticks < MT) && cells.some((c) => c.ticks > 0);
+      // anacrusa: el primer compás queda tan largo como su voz más larga (score.pickup), sin rellenar con silencios
+      const pick = isFirst && (ctx.pickup || allShort) ? Math.max(0, ...cells.map((c) => c.ticks)) : 0;
+      if (pick > 0 && pick < MT) { sc.pickup = Math.round((pick / TQ) * 1000) / 1000; report.pickup = true; }
+      const ML = pick > 0 && pick < MT ? pick : MT;
       cells.forEach((c) => {
         let notes = c.notes;
         const restFill = (t) => decomposeRest(0, t).map((r) => ({ d: r[1], dots: 0, rest: true, tie: false, keys: [], hid: c.v > 0 || undefined }));
-        if (c.ticks === 0) notes = restFill(MT);
-        else if (c.ticks < MT) {
-          const fill = restFill(MT - c.ticks);
-          if (isFirst && (ctx.pickup || allShort)) { notes = fill.concat(notes); report.filledPickup = true; }
+        if (c.ticks === 0) notes = restFill(ML);
+        else if (c.ticks < ML) {
+          const fill = restFill(ML - c.ticks);
+          if (ML < MT) notes = fill.concat(notes); // en la anacrusa, las voces más cortas entran al final
           else { notes = notes.concat(fill); if (!report.uneven.includes(mIdx + 1)) report.uneven.push(mIdx + 1); }
-        } else if (c.ticks > MT && !report.uneven.includes(mIdx + 1)) report.uneven.push(mIdx + 1);
+        } else if (c.ticks > ML && !report.uneven.includes(mIdx + 1)) report.uneven.push(mIdx + 1);
         sc.staves[c.s].voices[c.v].notes.push(...notes);
       });
       mIdx++;
@@ -3269,7 +3452,7 @@ async function omrDialog() {
         const warnings = [];
         if (ocrMissing) warnings.push("Audiveris no leyó textos (letra, título, tempo) porque no tiene idiomas instalados. Para que los lea, abre Audiveris, ve a Tools → Languages y marca “spa” (Spanish) y “eng”; Atril los usará solo.");
         if (parts > 1) warnings.push(`Audiveris separó la obra en ${parts} partes y se abrió la primera. Para las demás, vuelve a leer eligiendo sus páginas.`);
-        showOmrReport({ measures: scoreLen(buildModel()), uneven: [], filledPickup: false, badTokens: 0, warnings }, sc);
+        showOmrReport({ measures: scoreLen(buildModel()), uneven: [], pickup: false, badTokens: 0, warnings }, sc);
       } catch (e) {
         const msg = String((e && e.message) || e || "");
         if (!document.getElementById("oSteps")) return;
@@ -3294,7 +3477,7 @@ function showOmrReport(report, sc) {
   const nNotes = sc.staves.reduce((a, s) => a + s.voices.reduce((b, v) => b + v.notes.filter((n) => !n.rest).length, 0), 0);
   const items = [];
   if (report.uneven.length) items.push(`Compases que no calzan con el ${sc.time} y conviene revisar primero: ${report.uneven.slice(0, 30).join(", ")}${report.uneven.length > 30 ? "…" : ""}. Se completaron con silencios grises.`);
-  if (report.filledPickup) items.push("La anacrusa del inicio se completó con silencios (Atril aún no tiene compás de anacrusa).");
+  if (report.pickup) items.push("El primer compás quedó como anacrusa (incompleto). Se cambia en el panel Compás → Anacrusa.");
   if (report.badTokens) items.push(`${report.badTokens} figuras no se pudieron interpretar y se omitieron.`);
   report.warnings.forEach((w) => items.push(w));
   openModal(`<h3>Partitura leída</h3>
@@ -3306,6 +3489,7 @@ function showOmrReport(report, sc) {
 
 /* ================= interfaz ================= */
 const DUR_ICONS = {
+  "32": '<svg viewBox="0 0 18 22"><ellipse cx="6" cy="17.5" rx="4" ry="3" transform="rotate(-20 6 17.5)"/><path d="M9.3 17V1.5" fill="none" stroke-width="1.4"/><path d="M9.3 1.5c2 2.6 5.5 3.2 5 6.6c-.6-2-2.8-3-5-3.7z" stroke="none"/><path d="M9.3 5.3c2 2.6 5.5 3.2 5 6.6c-.6-2-2.8-3-5-3.7z" stroke="none"/><path d="M9.3 9.1c2 2.6 5.5 3.2 5 6.6c-.6-2-2.8-3-5-3.7z" stroke="none"/></svg>',
   "16": '<svg viewBox="0 0 18 22"><ellipse cx="6" cy="17.5" rx="4" ry="3" transform="rotate(-20 6 17.5)"/><path d="M9.3 17V2.5" fill="none" stroke-width="1.4"/><path d="M9.3 2.5c2 3 5.5 3.6 5 7.6c-.6-2.2-2.8-3.4-5-4.2z" stroke="none"/><path d="M9.3 6.8c2 3 5.5 3.6 5 7.6c-.6-2.2-2.8-3.4-5-4.2z" stroke="none"/></svg>',
   "8": '<svg viewBox="0 0 18 22"><ellipse cx="6" cy="17.5" rx="4" ry="3" transform="rotate(-20 6 17.5)"/><path d="M9.3 17V2.5" fill="none" stroke-width="1.4"/><path d="M9.3 2.5c2 3 5.5 4 4.6 9.2c-.4-2.6-2.4-4.6-4.6-5.2z" stroke="none"/></svg>',
   q: '<svg viewBox="0 0 18 22"><ellipse cx="6" cy="17.5" rx="4" ry="3" transform="rotate(-20 6 17.5)"/><path d="M9.3 17V2.5" fill="none" stroke-width="1.4"/></svg>',
@@ -3342,9 +3526,13 @@ function showXml(xml) {
 
 function syncPalette() {
   document.querySelectorAll("#gDur [data-dur]").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.dur === inputDur)));
-  document.getElementById("tDot").setAttribute("aria-pressed", String(!!inputDots));
+  const dot = document.getElementById("tDot");
+  dot.setAttribute("aria-pressed", String(!!inputDots)); dot.textContent = inputDots === 2 ? "••" : "•";
   const n = selNote();
   document.getElementById("tTie").setAttribute("aria-pressed", String(!!(n && n.tie)));
+  document.getElementById("tFerm").setAttribute("aria-pressed", String(!!(n && n.ferm)));
+  const tp = document.getElementById("tTup");
+  if (document.activeElement !== tp) tp.value = mode === "select" && n ? String(tupOf(n) ? tupOf(n).n : "") : String(inputTup || "");
 }
 function syncVoiceTools() {
   document.getElementById("tV1").setAttribute("aria-pressed", String(cursor.voice === 0));
@@ -3363,11 +3551,13 @@ function syncProps() {
 function syncMeterFields() {
   if (!score) return;
   const T = meterTable(), m = cursorMeasure();
-  document.getElementById("pMeterAt").textContent = m === 0 ? "1 (inicio)" : String(m + 1);
+  document.getElementById("pMeterAt").textContent = m === 0 ? (hasPickup() ? "anacrusa (inicio)" : "1 (inicio)") : String(barNum(m));
+  const pk = document.getElementById("pPickup"); if (pk && document.activeElement !== pk) pk.value = hasPickup() ? String(+score.pickup) : "";
   const mm = mk(m);
   const tf = document.getElementById("pTempoM"); if (document.activeElement !== tf) tf.value = m === 0 ? score.tempo : mm.tempo || "";
   tf.placeholder = m === 0 ? "" : "igual (" + T.tempo(m) + ")";
   document.getElementById("pDyn").value = mm.dyn || "";
+  document.getElementById("pSwing").value = mm.swing || "";
   document.getElementById("mRepStart").checked = !!mm.repStart;
   document.getElementById("mRepEnd").checked = !!mm.repEnd;
   document.getElementById("mTimes").value = String(mm.repEnd || 2);
@@ -3378,8 +3568,8 @@ function syncMeterFields() {
     const x = score.marks[i], parts = [];
     if (x.repStart) parts.push("‖:"); if (x.repEnd) parts.push(":‖" + (+x.repEnd > 2 ? "×" + x.repEnd : ""));
     if (x.volta) parts.push(x.volta.join("ª ") + "ª casilla"); if (x.segno) parts.push("Segno"); if (x.coda) parts.push("Coda");
-    if (x.toCoda) parts.push("Al Coda"); if (x.fine) parts.push("Fine"); if (x.jump) parts.push(JUMPS[x.jump]); if (x.tempo && i > 0) parts.push("♩=" + x.tempo); if (x.dyn) parts.push(x.dyn);
-    return parts.length ? `<span class="mchip">c. ${i + 1} · ${esc(parts.join(" "))}<button class="mini" data-mm="${i}" aria-label="Quitar las marcas del compás ${i + 1}">✕</button></span>` : "";
+    if (x.toCoda) parts.push("Al Coda"); if (x.fine) parts.push("Fine"); if (x.jump) parts.push(JUMPS[x.jump]); if (x.tempo && i > 0) parts.push("♩=" + x.tempo); if (x.dyn) parts.push(x.dyn); if (x.swing) parts.push(x.swing === "no" ? "Recto" : "Swing" + (x.swing === "16" ? " ♬" : ""));
+    return parts.length ? `<span class="mchip">c. ${barNum(i)} · ${esc(parts.join(" "))}<button class="mini" data-mm="${i}" aria-label="Quitar las marcas del compás ${barNum(i)}">✕</button></span>` : "";
   }).join("");
   document.getElementById("pMarks").innerHTML = mlist;
   const pt = document.getElementById("pTime"), cur = T.time(m);
@@ -3389,8 +3579,8 @@ function syncMeterFields() {
   const list = document.getElementById("pChanges");
   const items = [];
   (score.changes || []).forEach((c) => {
-    if (c.time) items.push(`<span class="mchip">c. ${c.m + 1} · ${c.time}<button class="mini" data-cm="${c.m}" data-cw="time" aria-label="Quitar el cambio de compás del compás ${c.m + 1}">✕</button></span>`);
-    if (c.key != null) items.push(`<span class="mchip">c. ${c.m + 1} · ${KEY_SHORT[String(c.key)]}<button class="mini" data-cm="${c.m}" data-cw="key" aria-label="Quitar el cambio de tonalidad del compás ${c.m + 1}">✕</button></span>`);
+    if (c.time) items.push(`<span class="mchip">c. ${barNum(c.m)} · ${c.time}<button class="mini" data-cm="${c.m}" data-cw="time" aria-label="Quitar el cambio de compás del compás ${barNum(c.m)}">✕</button></span>`);
+    if (c.key != null) items.push(`<span class="mchip">c. ${barNum(c.m)} · ${KEY_SHORT[String(c.key)]}<button class="mini" data-cm="${c.m}" data-cw="key" aria-label="Quitar el cambio de tonalidad del compás ${barNum(c.m)}">✕</button></span>`);
   });
   list.innerHTML = items.length ? items.join("") : '<span class="hint">Sin cambios a mitad de obra. Pon el cursor en un compás y elige otro compás o tonalidad.</span>';
 }
@@ -3453,8 +3643,11 @@ function helpDialog() {
     <div class="keys">
       <kbd>C D E F G A B</kbd><span>Do Re Mi Fa Sol La Si</span>
       <kbd>Mayús + letra</kbd><span>Agrega la nota encima, formando un acorde</span>
-      <kbd>3 4 5 6 7</kbd><span>Semicorchea, corchea, negra, blanca, redonda</span>
-      <kbd>.</kbd><span>Puntillo</span>
+      <kbd>2 3 4 5 6 7</kbd><span>Fusa, semicorchea, corchea, negra, blanca, redonda</span>
+      <kbd>.</kbd><span>Puntillo; otra vez, doble puntillo; otra vez, sin puntillo</span>
+      <kbd>Alt + 3</kbd><span>Tresillo: las notas que escribas entran al grupo hasta completarlo; otra vez, vuelve a normal. Dosillo, cinquillo, seisillo y septillo en la barra</span>
+      <kbd>Alt + F</kbd><span>Calderón en la nota seleccionada (al reproducir, la música se detiene ahí)</span>
+      <kbd>Alt + G</kbd><span>Adornos: elige la nota y escribe con A–G las notas de adorno que van antes; Retroceso borra el último, Esc termina</span>
       <kbd>0 · R</kbd><span>Silencio</span>
       <kbd>+ · − · =</kbd><span>Sostenido, bemol, becuadro en la nota seleccionada</span>
       <kbd>↑ ↓</kbd><span>Mover la nota un grado; con Ctrl, una octava</span>
@@ -3472,6 +3665,7 @@ function helpDialog() {
     </div>
     <p><b>Letra:</b> con L se abre la barra de letra. Escribe la sílaba y pulsa Espacio para pasar a la nota siguiente, o guion para separar sílabas de una misma palabra. Con “Pegar estrofa” puedes poner una estrofa entera escrita así: Al-ce-mos hoy la voz.</p>
     <p><b>Cambios de compás o tonalidad:</b> pon el cursor en el compás donde empieza el cambio y elige el compás o la tonalidad en el panel Partitura.</p>
+    <p><b>Swing y anacrusa:</b> en el panel Compás, “Swing desde aquí” hace que las corcheas (o semicorcheas) se toquen con swing a partir de ese compás, aunque estén escritas rectas; “Recto” lo quita. “Anacrusa” deja el primer compás incompleto, y la numeración empieza en el compás siguiente.</p>
     <p>Para ensayar una voz del coro, usa la S de esa voz para escucharla sola, o la M para silenciarla.</p>
     <p><b>Tus archivos:</b> cada partitura se guarda como un archivo .atril en la carpeta que elijas; “Abrir” muestra las recientes. Para compartirla, usa “Compartir”: el enlace lleva la partitura adentro, sin subirla a ningún servidor. También puedes enviar el archivo .atril, o el PDF, MusicXML o audio desde el menú Archivo.${canPick || desktop ? "" : " Este navegador no puede escribir directo en tus carpetas: al guardar se descarga el archivo .atril."}</p>
     <p>Atril funciona en tu equipo, sin cuenta y sin internet: escribir, reproducir, letra, acordes, transponer y generar PDF, MusicXML y audio. Si cierras la pestaña sin guardar, al volver encontrarás tu último borrador.</p>
@@ -3498,8 +3692,16 @@ function onKey(e) {
   if (k === " ") { if (tag === "button") return; e.preventDefault(); player ? stopPlayback() : startPlayback(); return; }
   if (ctrl) return;
   if (e.altKey && (e.code === "Digit1" || e.code === "Digit2")) { e.preventDefault(); switchVoice(e.code === "Digit1" ? 0 : 1); return; }
+  if (e.altKey && e.code === "Digit3") { e.preventDefault(); setTuplet(inputTup === 3 ? "" : "3"); return; }
+  if (e.altKey && e.code === "KeyF") { e.preventDefault(); toggleFermata(); return; }
+  if (e.altKey && e.code === "KeyG") { e.preventDefault(); setGraceMode(graceMode ? "" : "acc"); return; }
+  if (graceMode) {
+    if (/^[a-gA-G]$/.test(k)) { e.preventDefault(); addGrace(k.toUpperCase()); return; }
+    if (k === "Backspace" || k === "Delete") { e.preventDefault(); removeGrace(); return; }
+    if (k === "Escape" || k === "Enter") { e.preventDefault(); setGraceMode(""); return; }
+  }
   if (/^[a-gA-G]$/.test(k) && !e.altKey) { e.preventDefault(); const s = k.toUpperCase(); e.shiftKey ? addToChord(s) : insertNote(s); return; }
-  const durKeys = { "3": "16", "4": "8", "5": "q", "6": "h", "7": "w" };
+  const durKeys = { "2": "32", "3": "16", "4": "8", "5": "q", "6": "h", "7": "w" };
   if (durKeys[k] && !e.altKey) { e.preventDefault(); setDuration(durKeys[k]); return; }
   switch (k) {
     case ".": e.preventDefault(); toggleDot(); break;
@@ -3531,6 +3733,9 @@ function wire() {
   document.querySelectorAll("[data-acc]").forEach((b) => (b.onclick = () => setAccidental(+b.dataset.acc)));
   document.getElementById("tRest").onclick = insertRest;
   document.getElementById("tTie").onclick = toggleTie;
+  document.getElementById("tFerm").onclick = toggleFermata;
+  document.getElementById("tGrace").onchange = (e) => { setGraceMode(e.target.value); document.getElementById("desk").focus({ preventScroll: true }); };
+  document.getElementById("tTup").onchange = (e) => { setTuplet(e.target.value); document.getElementById("desk").focus({ preventScroll: true }); };
   document.getElementById("tUndo").onclick = undo;
   document.getElementById("tRedo").onclick = redo;
   document.getElementById("tV1").onclick = () => switchVoice(0);
@@ -3556,6 +3761,12 @@ function wire() {
   const cmv = () => cursorMeasure();
   document.getElementById("pTempoM").onchange = (e) => { const m = cmv(), v = Math.round(+e.target.value); if (m === 0) { if (v >= 20) commit(() => { score.tempo = Math.min(260, v); }); } else setMark(m, { tempo: v >= 20 ? Math.min(260, v) : undefined }); };
   document.getElementById("pDyn").onchange = (e) => setMark(cmv(), { dyn: e.target.value || undefined });
+  document.getElementById("pSwing").onchange = (e) => setMark(cmv(), { swing: e.target.value || undefined });
+  document.getElementById("pPickup").onchange = (e) => {
+    const v = +e.target.value;
+    if (v && v * TQ >= timeTicks(score.time)) { toast("La anacrusa tiene que ser más corta que un compás completo."); syncMeterFields(); return; }
+    commit(() => { if (v > 0) score.pickup = v; else delete score.pickup; });
+  };
   document.getElementById("mRepStart").onchange = (e) => setMark(cmv(), { repStart: e.target.checked || undefined });
   const repEnd = () => setMark(cmv(), { repEnd: document.getElementById("mRepEnd").checked ? +document.getElementById("mTimes").value : undefined });
   document.getElementById("mRepEnd").onchange = repEnd;

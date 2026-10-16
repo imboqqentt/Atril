@@ -41,17 +41,24 @@ Todo vive en **`index.html`** (un solo archivo, ~3.600 líneas: CSS + HTML + JS 
 ### Formato de datos
 
 ```
-score = { id, title, composer, tempo, time:"4/4", key:<quintas -7..7>,
+score = { v:2, id, title, composer, tempo, time:"4/4", key:<quintas -7..7>,
+  pickup?:<negras>,                                 // anacrusa: duración del primer compás (0.5 = corchea); ese compás no se numera
   changes:[{m, time?, key?}],                      // cambios a mitad de obra (m = índice de compás)
   marks:{ [m]: {repStart, repEnd:n, volta:[1,2], segno, coda, toCoda, fine,
-               jump:"DC"|"DCalFine"|"DCalCoda"|"DS"|"DSalFine"|"DSalCoda", tempo, dyn} },
+               jump:"DC"|"DCalFine"|"DCalCoda"|"DS"|"DSalFine"|"DSalCoda", tempo, dyn,
+               swing:"8"|"16"|"no"} },             // swing desde ese compás ("no" = recto); se hereda como el tempo
   layout:{ staff:<mm>, perSystem:<compases por sistema, 0 = auto> },
   groups:[{type:"bracket", from, to}],
   staves:[{ name, clef:"treble"|"treble8"|"bass"|"alto",
             voices:[{ name, notes:[note], muted, solo, sound }] }] }
-note = { d:"w"|"h"|"q"|"8"|"16", dots:0|1, rest, tie, keys:[{s:"C".."B", a:-1|0|1, o:<octava>}],
-         ly:[{t, h}|null], hid? }       // a = alteración real (no relativa a la armadura)
+note = { d:"w"|"h"|"q"|"8"|"16"|"32", dots:0|1|2, rest, tie, keys:[{s:"C".."B", a:-1|0|1, o:<octava>}],
+         ly:[{t, h}|null], hid?,        // a = alteración real (no relativa a la armadura)
+         tup?:{n, of, u},               // grupo irregular: n figuras en el lugar de `of`; u = figura unidad (tresillo de corcheas: {3,2,"8"})
+         ferm?:true,                    // calderón
+         grace?:[{keys, d:"8"|"16"|"32", slash}] }   // adornos antes de la nota (slash = acciaccatura)
 ```
+
+Tiempo interno: una negra = `TQ` = 3360 ticks (permite fusas, doble puntillo y grupos de 3, 5, 6 y 7 exactos). Los ticks no se guardan: el `.atril` lleva figuras. `noteTicks` aplica puntillos y `tup`; `tupletGroups` arma los grupos (dibujo, MusicXML, escritura); `swingWarp` y los calderones (`holds`) viven en `performance.timeOf`.
 
 Ese JSON es el formato `.atril`. Los `.atril.json` antiguos también se abren.
 
@@ -88,10 +95,54 @@ Orden sugerido: el bloque 1 en una v0.1.2; luego actualizaciones automáticas.
    - [ ] Prueba de “escribir notas” (la única que faltaba de Calidad).
 2. [ ] Actualizaciones automáticas: plugin updater de Tauri con GitHub Releases (requiere firmar las actualizaciones con una clave propia de Tauri, no un certificado de pago).
 3. Mejor lectura de partituras
-   - [ ] Compás de anacrusa (hoy se completa con silencios).
+   - [x] Compás de anacrusa (hecho en Fase 6, A7).
    - [ ] Calibrar con partituras reales de Daniel: pares PDF → partitura corregida en `ejemplos/`, medir errores de Audiveris y de la skill.
 4. [ ] Mantenimiento: dividir `index.html` en ES modules nativos (sin build), con las pruebas como red.
 5. Opcionales: firmar el instalador (certificado de pago, evita SmartScreen); versiones para macOS/Linux.
+
+### Fase 6 — notación completa (propuesta, 2026-10-16)
+Meta: que el próximo release escriba, dibuje (VexFlow ya trae casi todo), toque y exporte lo que hoy se aproxima. Cada punto incluye MusicXML de ida y vuelta, `omrPrompt`/skill `leer-partitura` y pruebas. Orden: bloque A primero (los demás dependen de él).
+
+**A. Ritmo (base)** — hecho en la rama `notacion-completa` (2026-10-16), pruebas en `tests/notacion.spec.mjs`
+- [x] A1. Resolución: negra = `TQ` = 3360 ticks (no hizo falta migrar: el `.atril` guarda figuras, no ticks). `score.v = 2` y aviso si llega un archivo de una versión más nueva.
+- [x] A2. Grupos irregulares 3:2, 2:3, 5:4, 6:4, 7:4: `note.tup = { n, of, u }`, selector en la barra y Alt+3; `VF.Tuplet`; audio exacto; `<time-modification>`/`<tuplet>`.
+- [x] A3. Fusa (tecla 2) y doble puntillo (el punto da la vuelta: sin → puntillo → doble).
+- [x] A4. Swing 2:1 por compás (`marks[m].swing = "8"|"16"|"no"`, panel Compás), en `performance.timeOf`; texto «Swing»/«Recto»; `<sound><swing>`. Pendiente si se pide: proporción 3:1 (shuffle).
+- [x] A5. Calderón (Alt+F): se dibuja y detiene la música (el doble de la nota, entre 0,6 y 3 s).
+- [x] A6. Adornos (Alt+G o selector): acciaccatura/apoyatura, `VF.GraceNoteGroup`, suenan en el tiempo (una fusa cada uno), se transponen; MusicXML `<grace>`.
+- [x] A7. Anacrusa (`score.pickup` en negras, panel Compás): primer compás corto, numeración desde el siguiente, MusicXML `implicit`, la skill la deja como anacrusa en vez de rellenar.
+
+**B. Articulación y expresión**
+- [ ] B1. Articulaciones: staccato, tenuto, acento, marcato, staccatissimo (`note.art: []`, `VF.Articulation`); en audio cambian duración y volumen.
+- [ ] B2. Ligaduras de expresión (slurs): `note.slur: "start"|"end"`, `VF.Curve`, `<slur>`.
+- [ ] B3. Reguladores (cresc./decresc.) por tramo: `score.spans = [{ type: "cresc", from:{m,tick}, to:{m,tick} }]`, `VF.StaveHairpin`, rampa de ganancia en `performance`.
+- [ ] B4. Dinámicas a mitad de compás y sfz, fp, fz (hoy una por compás, al inicio).
+- [ ] B5. Ornamentos: trino, mordente, grupeto (`VF.Ornament`) y jazz: caída, doit, scoop, bend (VexFlow los trae).
+- [ ] B6. Respiración y cesura; glissando entre dos notas.
+- [ ] B7. Textos: expresión («dolce», «rit.», «Swing») y marcas de ensayo en caja (A, B, C).
+
+**C. Armonía y música popular**
+- [ ] C1. Cifrado editable. Hoy `measureChords`/`nameChord` lo calculan al dibujar, uno por pulso, y no se guarda: no se puede mover ni corregir.
+  - Guardado: `score.chords = [{ m, tick, root:{s,a}, q, bass?:{s,a}, text? }]` (`tick` relativo al compás, ya en la resolución de A1). Los acordes guardados mandan; la detección solo rellena donde no hay ninguno (dibujada en gris) o se apaga.
+  - «Fijar acordes»: convierte lo detectado en acordes guardados, para editarlos a partir de ahí.
+  - Cambiar como texto: doble clic (o Enter con el acorde elegido) abre un campo; se escribe en inglés o latino (`Cm7`, `Do7`, `Sib/Re`, `F#m7b5`, `Lam(add9)`), `parseChord` lo valida y avisa si no lo entiende. Texto libre opcional (`N.C.`, `(A7)`). Vacío = borrar.
+  - Mover: arrastrar el acorde a lo largo del pentagrama, con ajuste al pulso (Alt = a la subdivisión), incluso a otro compás; con el acorde elegido, ←/→ mueve un pulso y Alt+←/→ una subdivisión.
+  - Agregar en cualquier pulso: clic sobre el pentagrama de arriba en modo «Acordes», o atajo con la nota elegida.
+  - Todo pasa por `commit` (deshacer); se transpone con `transposeScore`; respeta Inglés/Latino al mostrar; exporta e importa `<harmony>` con `<offset>`; PDF/SVG iguales a la pantalla.
+- [ ] C2. Repetición de compás (%) y silencios multicompás agrupados (como el «7» de los arreglos).
+- [ ] C3. Notación en barras (slash) para improvisar o acompañar.
+
+**D. Instrumentos**
+- [ ] D1. Instrumentos transpositores (sax alto/tenor, trompeta, clarinete en Sib/Mib, corno en Fa): `staff.transpose`; ver en sonido real o escrito; el audio siempre suena real.
+- [ ] D2. Más claves: tenor, sol 8va, fa 8vb, percusión.
+- [ ] D3. 8va/8vb por tramo y pedal de piano.
+- [ ] D4. Barras a mano (unir/romper) y plicas forzadas.
+
+**E. Lectura e intercambio**
+- [ ] E1. `fromMusicXML` deja de saltarse `grace`/`cue` y lee todo lo de A–D.
+- [ ] E2. Ampliar el formato compacto de la skill (`armar.py`, `buildFromOmr`): tresillos, articulaciones, ligaduras de expresión, cifrado.
+
+Riesgos: A1 toca `render`, `playOrder` y `performance` (correr `npm test` antes y después); un `.atril` v2 no abre bien en un Atril anterior → avisar al abrir si `score.v` es mayor que el que entiende la app.
 
 ### Calidad
 - [x] Pruebas con Playwright (`tests/`, `npm install` y `npm test`; abren Atril con internet bloqueado): cargar, escribir notas, reproducir, transponer, exportar MusicXML ida y vuelta, `playOrder` con repeticiones/casillas/D.S. al Coda. Falta: escribir notas. Comprobaciones conocidas que pasaban: casillas → `1 2 3 1 2 4 5 6`; D.S. al Coda → `1 2 3 4 5 6 2 3 4 7 8`.

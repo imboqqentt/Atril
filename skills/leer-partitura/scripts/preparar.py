@@ -3,10 +3,13 @@
 
 Uso:
   python3 preparar.py partitura.pdf [--salida carpeta] [--paginas 1-3] [--ancho 2200]
+                      [--claves treble,bass] [--sin-guia]
 
 Crea en la carpeta de salida (por defecto ./recortes):
   p01_encabezado.jpg      título, autor y tempo de la primera página (si hay espacio sobre la música)
   p01_s01.jpg, p01_s02.jpg …   cada sistema (renglón de pentagramas) en orden de lectura
+  p01_s01_guia1.png …     el sistema ampliado x3 por tramos, con una línea punteada y el nombre
+                          de cada altura (rojo = línea, azul = espacio, con líneas adicionales)
   p02_pagina.jpg          la página completa cuando no se distinguen los pentagramas
   indice.json             lista de recortes con cantidad de pentagramas por sistema
 """
@@ -107,7 +110,13 @@ def detectar_sistemas(img):
             grupos[-1].append(staves[k])
         else:
             grupos.append([staves[k]])
-    out = [{"top": g[0]["top"], "bottom": g[-1]["bottom"], "gap": g[0]["gap"], "pentagramas": len(g)} for g in grupos]
+    def derecha(st):
+        cols = np.nonzero(dark[round(st["top"] + 2 * st["gap"])])[0]
+        return int(cols[-1]) if len(cols) else W - 1
+
+    out = [{"top": g[0]["top"], "bottom": g[-1]["bottom"], "gap": g[0]["gap"], "pentagramas": len(g),
+            "pentas": [(st["top"], st["gap"]) for st in g],
+            "left": min(st["left"] for st in g), "right": max(derecha(st) for st in g)} for g in grupos]
     for k, s in enumerate(out):
         prev = out[k - 1] if k else None
         nxt = out[k + 1] if k + 1 < len(out) else None
@@ -116,12 +125,65 @@ def detectar_sistemas(img):
     return out
 
 
+# Nota de la línea superior de cada clave, como índice diatónico (octava * 7 + paso; C4 = 28).
+LINEA_SUPERIOR = {"treble": 38, "treble8": 31, "treble8va": 45, "bass": 26, "bass8vb": 19, "alto": 32, "tenor": 30}
+PASOS = "CDEFGAB"
+
+
+def claves_del_sistema(texto, n):
+    """--claves "treble,bass" se repite en cada sistema; sin --claves supone sol + fa con 2 pentagramas y sol en los demás casos."""
+    if texto:
+        lista = [c.strip() for c in texto.split(",") if c.strip()]
+    else:
+        lista = ["treble", "bass"] if n == 2 else ["treble"]
+    return [lista[k % len(lista)] for k in range(n)]
+
+
+def guias(img, s, claves, base, salida, zoom=3, tramo=750):
+    """Amplía el sistema por tramos y dibuja una línea punteada con el nombre de cada altura
+    (incluidas 3 líneas adicionales arriba y abajo): rojo en líneas, azul en espacios."""
+    from PIL import ImageDraw, ImageFont
+    try:
+        fuente = ImageFont.load_default(size=13)
+    except TypeError:
+        fuente = ImageFont.load_default()
+    rgb = img.convert("RGB")
+    izq, der = max(0, s["left"] - 10), min(img.width, s["right"] + 10)
+    n = max(1, -(-(der - izq) // tramo))
+    ancho = -(-(der - izq) // n)
+    nombres = []
+    for k in range(n):
+        x0 = max(0, izq + k * ancho - 40)
+        x1 = min(img.width, izq + (k + 1) * ancho + 40)
+        c = rgb.crop((x0, s["y0"], x1, s["y1"]))
+        c = c.resize((c.width * zoom, c.height * zoom), Image.LANCZOS)
+        d = ImageDraw.Draw(c)
+        for (top, gap), clave in zip(s["pentas"], claves):
+            sup = LINEA_SUPERIOR.get(clave)
+            if sup is None:
+                continue
+            for j in range(-6, 15):
+                y = (top - s["y0"] + j * gap / 2) * zoom
+                col = (220, 0, 0) if j % 2 == 0 else (0, 140, 255)
+                for xx in range(0, c.width, 6):
+                    d.point((xx, y), fill=col)
+                idx = sup - j
+                for xx in range(4, c.width, 260):
+                    d.text((xx, y - 7), PASOS[idx % 7] + str(idx // 7), fill=col, font=fuente)
+        nom = f"{base}_guia{k + 1}.png"
+        c.save(os.path.join(salida, nom))
+        nombres.append(nom)
+    return nombres
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("archivo")
     ap.add_argument("--salida", default="recortes")
     ap.add_argument("--paginas", default="")
     ap.add_argument("--ancho", type=int, default=2200)
+    ap.add_argument("--claves", default="", help='claves de arriba abajo en cada sistema, p. ej. "treble,bass"')
+    ap.add_argument("--sin-guia", action="store_true", help="no generar las imágenes con guía de alturas")
     args = ap.parse_args()
     os.makedirs(args.salida, exist_ok=True)
     ext = os.path.splitext(args.archivo)[1].lower()
@@ -151,7 +213,12 @@ def main():
         for k, s in enumerate(sis, 1):
             nom = f"p{p:02d}_s{k:02d}.jpg"
             img.crop((0, s["y0"], img.width, s["y1"])).save(os.path.join(args.salida, nom), quality=92)
-            indice.append({"pagina": p, "archivo": nom, "tipo": "sistema", "pentagramas": s["pentagramas"]})
+            ent = {"pagina": p, "archivo": nom, "tipo": "sistema", "pentagramas": s["pentagramas"]}
+            if not args.sin_guia:
+                claves = claves_del_sistema(args.claves, s["pentagramas"])
+                ent["claves"] = claves
+                ent["guias"] = guias(img, s, claves, nom[:-4], args.salida)
+            indice.append(ent)
         print(f"Página {p}: {len(sis)} sistemas de {sis[0]['pentagramas']} pentagrama(s)")
     json.dump(indice, open(os.path.join(args.salida, "indice.json"), "w"), ensure_ascii=False, indent=1)
     print(f"Listo: {len(indice)} imágenes en {args.salida}/")

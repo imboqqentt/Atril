@@ -20,6 +20,7 @@ Dos scripts de Python (numpy + Pillow; para PDF, PyMuPDF o `pdftoppm`):
 1. **Recortar.**
    `python3 scripts/preparar.py partitura.pdf --salida recortes`
    (`--paginas 1-2` para leer solo algunas páginas.) Mira `recortes/indice.json`. Si una página salió como `pXX_pagina.jpg`, no se detectaron los pentagramas: léela completa con más cuidado.
+   Por cada sistema también salen `pXX_sYY_guia1.png`, `_guia2.png`…: el sistema ampliado x3 por tramos, con una línea punteada y el nombre de cada altura (rojo = línea, azul = espacio, con 3 líneas adicionales arriba y abajo). Sin `--claves` supone sol + fa en sistemas de 2 pentagramas y sol en los demás. Si las claves son otras (por ejemplo, cuatro pentagramas SATB con tenor en `treble8`), vuelve a correrlo con `--claves treble,treble,treble8,bass` después de mirar el primer sistema. `--sin-guia` las omite.
 2. **Mirar el encabezado y el primer sistema** (abre las imágenes). Fija:
    - título, autor y tempo;
    - armadura (sostenidos positivos, bemoles negativos) y compás;
@@ -27,7 +28,7 @@ Dos scripts de Python (numpy + Pillow; para PDF, PyMuPDF o `pdftoppm`):
    - instrumentos transpositores: agrega `"trans"` al pentagrama (`bb` trompeta/clarinete/sax soprano en Si♭, `ten` sax tenor, `eb` sax alto, `bari` sax barítono, `a` clarinete en La, `f` corno en Fa, `ebs` requinto) y transcribe las notas **como están escritas**. `key` es siempre la armadura impresa en el pentagrama de arriba;
    - voces por pentagrama. En himnarios SATB: `["Soprano","Contralto"]` en clave de sol y `["Tenor","Bajo"]` en clave de fa, dos voces por pentagrama (plicas arriba y abajo);
    - si el primer compás es una anacrusa (incompleto).
-3. **Transcribir de a 2 o 3 sistemas por vez**, en el formato de abajo, siempre con los mismos pentagramas y voces. Guarda una página por archivo (`pag1.json`, `pag2.json`…), cada una con su `key`/`time` vigentes al inicio de esa página.
+3. **Transcribir de a 2 o 3 sistemas por vez.** Usa `pXX_sYY.jpg` para el ritmo, la letra y las marcas, y las guías para leer cada altura: la cabeza de la nota cae sobre una línea punteada o justo entre dos. No calcules las alturas contando líneas a ojo, sobre todo en notas con líneas adicionales. Escríbelas en el formato de abajo, siempre con los mismos pentagramas y voces. Guarda una página por archivo (`pag1.json`, `pag2.json`…), cada una con su `key`/`time` vigentes al inicio de esa página.
 4. **Revisar sin escribir:**
    `python3 scripts/armar.py pag1.json pag2.json --revisar`
    Corrige cada «compás que no cuadra» y cada «ficha ilegible» volviendo a mirar ese compás en el recorte (puedes ampliar la imagen recortando de nuevo con Pillow). Repite hasta que no queden, o deja la duda escrita en `warnings`.

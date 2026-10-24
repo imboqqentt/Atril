@@ -111,6 +111,7 @@ button { cursor: pointer; }
 .tool.text { font-size: 13px; font-weight: 500; }
 .tool.play { color: var(--play); }
 .tool.play[aria-pressed="true"] { background: var(--play); color: #fff; }
+.zoomv { min-width: 52px; font-family: var(--font-mono); font-size: 12px !important; }
 .tempo { display: flex; align-items: center; gap: 4px; padding: 0 6px; font-family: var(--font-mono); font-size: 13px; }
 .tempo input { width: 52px; border: 1px solid var(--line); border-radius: 6px; padding: 4px 6px; background: var(--panel); font-family: var(--font-mono); }
 .group select { border: 0; background: none; padding: 6px; border-radius: 6px; }
@@ -120,10 +121,11 @@ button { cursor: pointer; }
 .desk {
   min-height: 0; overflow: auto; padding-block: 24px 120px;
   padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
-  display: flex; flex-direction: column; align-items: center; gap: 24px;
+  display: flex; flex-direction: column; align-items: safe center; gap: 24px;
 }
 .desk:focus { outline: none; }
-.page { width: 100%; max-width: 794px; background: var(--paper); box-shadow: var(--shadow); border-radius: 2px; position: relative; }
+/* --zoom (Ctrl+rueda, Ctrl+más/menos, botones − +): agranda la hoja; si no cabe, el escritorio se desplaza hacia los lados */
+.page { width: calc(794px * var(--zoom, 1)); max-width: calc(100% * var(--zoom, 1)); flex-shrink: 0; background: var(--paper); box-shadow: var(--shadow); border-radius: 2px; position: relative; }
 .page svg { display: block; width: 100%; height: auto; }
 .page svg .vf-stavenote, .page svg .vf-stavenote * { cursor: pointer; }
 .page svg .sel path, .page svg .sel rect { fill: var(--paper-sel) !important; stroke: var(--paper-sel) !important; }
@@ -183,7 +185,7 @@ button { cursor: pointer; }
 .tpStaff { display: inline-flex !important; align-items: center; gap: 6px; white-space: nowrap; width: auto !important; margin: 0 !important; font-size: 13px !important; color: var(--ink, inherit) !important; }
 .meterat { font-size: 12px; color: var(--muted); font-weight: 400; text-transform: none; letter-spacing: 0; }
 .lyricbar {
-  position: sticky; top: 0; z-index: 6; align-self: stretch;
+  position: sticky; top: 0; left: 0; z-index: 6; align-self: stretch;
   display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 8px 10px; border-radius: 12px;
   background: var(--panel); border: 1px solid var(--accent); box-shadow: var(--shadow);
 }
@@ -218,7 +220,7 @@ button { cursor: pointer; }
 
 /* teclado en pantalla */
 .pad {
-  position: sticky; bottom: 0; align-self: stretch; margin-top: auto; z-index: 5;
+  position: sticky; bottom: 0; left: 0; align-self: stretch; margin-top: auto; z-index: 5;
   display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; padding: 8px; border-radius: 12px;
   background: color-mix(in srgb, var(--panel) 92%, transparent); border: 1px solid var(--line); box-shadow: var(--shadow);
   backdrop-filter: blur(6px);
@@ -361,6 +363,11 @@ textarea.xml { width: 100%; height: 220px; font-family: var(--font-mono); font-s
       <button class="tool text" id="tV2" aria-pressed="false" title="Escribir en la voz de abajo (Alt+2)">Voz 2</button>
       <button class="tool text" id="tLyr" aria-pressed="false" title="Escribir letra (L)">Letra</button>
     </div>
+    <div class="group" aria-label="Zoom">
+      <button class="tool text" id="zOut" title="Alejar (Ctrl+−, o Ctrl+rueda del mouse)">−</button>
+      <button class="tool text zoomv" id="zReset" title="Tamaño normal (Ctrl+0)">100 %</button>
+      <button class="tool text" id="zIn" title="Acercar (Ctrl++, o Ctrl+rueda del mouse)">+</button>
+    </div>
     <div class="group" aria-label="Deshacer">
       <button class="tool text" id="tUndo" title="Deshacer (Ctrl+Z)">↶</button>
       <button class="tool text" id="tRedo" title="Rehacer (Ctrl+Y)">↷</button>
@@ -378,7 +385,7 @@ textarea.xml { width: 100%; height: 220px; font-family: var(--font-mono); font-s
       <button class="tool text" id="tSolfeo" aria-pressed="false" title="Mostrar nombres Do Re Mi bajo las notas">Do Re Mi</button>
       <button class="tool text" id="tSpeak" aria-pressed="false" title="Decir el nombre de cada nota al reproducir">Cantar nombres</button>
       <select id="chordMode" aria-label="Cifrado de acordes" title="Mostrar los acordes sobre la partitura"><option value="off">Sin acordes</option><option value="en">Acordes C Dm</option><option value="es">Acordes Do Rem</option></select>
-      <button class="tool text" id="tChord" title="Escribir un acorde en la nota elegida (Alt+K). Doble clic sobre el pentagrama de arriba lo pone en ese pulso; arrástralo para moverlo">Acorde +</button>
+      <button class="tool text" id="tChord" title="Escribir un acorde en la nota elegida (Alt+K). Doble clic sobre el pentagrama de arriba lo pone en ese pulso; arrástralo para moverlo (también más arriba o más abajo)">Acorde +</button>
     </div>
   </div>
 
@@ -977,6 +984,7 @@ function render() {
       const sysIndex = systems.indexOf(s);
       let x = s.x0;
       sysStaves[sysIndex] = [];
+      const sysFrom = svg.childNodes.length, sysMarks = []; // para alinear los acordes del sistema al terminarlo
       s.ms.forEach((m, k) => {
         const w = s.ws[k];
         const span = s.spans[m] || 1, mEnd = m + span - 1; // con silencios agrupados, este lugar va de m a mEnd
@@ -1007,7 +1015,8 @@ function render() {
         });
         const startX = Math.max(...staves.map((st) => st.getNoteStartX()));
         staves.forEach((st) => st.setNoteStartX(startX));
-        staves.forEach((st) => st.draw());
+        // lo que VexFlow dibuja suelto con el pentagrama de arriba (tempo, casillas, segno…): sube con la fila de acordes
+        staves.forEach((st, sIdx) => { const n0 = svg.childNodes.length; st.draw(); if (sIdx === 0) for (let i = n0; i < svg.childNodes.length; i++) sysMarks.push(svg.childNodes[i]); });
         staves.forEach((st, sIdx) => rects.push({ page: pi, staff: sIdx, m, x, y: st.getYForLine(0) - 22, w, h: STAFF_H + 44, nx: startX, top: st.getYForLine(0) }));
         if (k === 0) {
           sysStaves[sysIndex] = staves;
@@ -1115,6 +1124,7 @@ function render() {
         measureOverlays(svg, staves, m, x, w, startX, rendered, model, L, ly, k === 0);
         x += w;
       });
+      if (sysStaves[sysIndex][0]) alignChordRow(svg, sysFrom, sysMarks, sysStaves[sysIndex][0].getYForLine(0));
     });
   });
   // 4) ligaduras
@@ -1376,6 +1386,11 @@ function measureOverlays(svg, staves, m, x, w, startX, rendered, model, L, ly, s
   rendered.forEach((sv) => sv.forEach((seq) => seq.forEach((r) => { if (r.m === m && !r.p.rest && !(r.p.start in xs)) { try { xs[r.p.start] = r.vf.getNoteHeadBeginX(); } catch (e) {} } })));
   const xAt = chordXFn(model.T, m, xs, startX, x + w);
   const written = (score.chords || []).length > 0;
+  // lo que ocupa cada nota del pentagrama de arriba (cabezas, plicas alargadas hasta la barra): el acorde no lo tapa
+  const sp = top.getSpacingBetweenLines ? top.getSpacingBetweenLines() : 10, baseY = top.getYForLine(0) - 10;
+  const boxes = [];
+  (rendered[0] || []).forEach((seq) => seq.forEach((r) => { if (r.m !== m) return; try { const bb = r.vf.getBoundingBox(); if (bb) boxes.push([bb.getX(), bb.getX() + bb.getW(), bb.getY()]); } catch (e) {} }));
+  const clearY = (x0, x1) => boxes.reduce((y, [a, b, t]) => (b >= x0 - 2 * L && a <= x1 + 2 * L ? Math.min(y, t - 6 * L) : y), baseY);
   measureChordList(model, m, m === 0 ? null : lastChordInSystem.chord).forEach((c) => {
     if (c.chord && c.chord.tones) lastChordInSystem.chord = c.chord;
     const t = chordText(c.chord);
@@ -1390,7 +1405,39 @@ function measureOverlays(svg, staves, m, x, w, startX, rendered, model, L, ly, s
     const el = svgEl(svg, "text", { x: cx, y: top.getYForLine(0) - 10, "font-family": "IBM Plex Sans, Arial, sans-serif", "font-size": 12 * L, "font-weight": 600,
       fill: sel ? "#2446c4" : c.auto && written ? "#9aa0ad" : "#111318", class: "chordsym" + (c.auto ? " auto" : " own") + (sel ? " sel" : ""), ...(c.ci != null ? { "data-ci": c.ci } : {}) }, t);
     let tw = t.length * 7 * L; try { tw = el.getComputedTextLength() || tw; } catch (e) {}
+    const own = c.ci != null ? score.chords[c.ci] : null;
+    const auto = clearY(cx, cx + tw), dy = (own && own.dy) || 0;
+    el.setAttribute("y", auto - dy * sp);
+    el.setAttribute("data-auto", auto); el.setAttribute("data-dy", dy); el.setAttribute("data-sp", sp);
     lastChordInSystem.x = cx + tw;
+  });
+}
+// Todos los acordes de un sistema a la misma altura: la más alta que necesitó alguno para no tocar las notas
+// (más la altura a mano de cada uno). Si la fila subió, lo que va encima (tempo, casillas, signos, marca de ensayo,
+// «Swing») sube lo justo donde quedaría montado sobre un acorde.
+function alignChordRow(svg, from, marks, line0) {
+  const nodes = [...svg.childNodes].slice(from).filter((n) => n.nodeType === 1);
+  const chords = nodes.filter((n) => n.classList.contains("chordsym"));
+  if (!chords.length) return;
+  const row = Math.min(...chords.map((c) => +c.dataset.auto));
+  chords.forEach((c) => c.setAttribute("y", row - (+c.dataset.dy || 0) * (+c.dataset.sp || 10)));
+  if (line0 - 10 - row < 0.5) return; // la fila quedó en su altura normal: lo de arriba ya tiene su lugar
+  const extra = nodes.filter((n) => n.classList.contains("rehearsal") || n.classList.contains("swingmark") || (n.previousSibling && n.previousSibling.classList && n.previousSibling.classList.contains("rehearsal")));
+  const cb = chords.map((c) => { try { return c.getBBox(); } catch (e) { return null; } }).filter(Boolean);
+  // solo lo que está encima del pentagrama; las piezas que se tocan (la línea, el gancho y el número de una casilla) van juntas
+  const items = [...marks, ...extra].map((n) => { if (n.nodeType !== 1 || n.classList.contains("vf-stave")) return null; let b = null; try { b = n.getBBox(); } catch (e) {} return b && b.height > 0 && b.y + b.height <= line0 - 2 ? { n, b } : null; }).filter(Boolean);
+  const near = (p, q) => p.x < q.x + q.width + 4 && p.x + p.width + 4 > q.x && p.y < q.y + q.height + 4 && p.y + p.height + 4 > q.y;
+  const groups = [];
+  items.forEach((it) => {
+    const hit = groups.filter((g) => g.some((o) => near(o.b, it.b)));
+    const g = hit.length ? hit[0] : []; if (!hit.length) groups.push(g);
+    hit.slice(1).forEach((h) => { g.push(...h); groups.splice(groups.indexOf(h), 1); });
+    g.push(it);
+  });
+  // cada grupo sube lo justo para quedar 5 unidades sobre el acorde que tiene debajo (si no toca ninguno, no se mueve)
+  groups.forEach((g) => {
+    const lift = g.reduce((u, { b }) => cb.reduce((v, a) => (a.x < b.x + b.width + 2 && a.x + a.width > b.x - 2 ? Math.max(v, b.y + b.height - (a.y - 5)) : v), u), 0);
+    if (lift > 0) g.forEach(({ n }) => n.setAttribute("transform", `translate(0 ${-lift})`));
   });
 }
 // x de un instante del compás: en una nota si hay; si no, entre las notas vecinas (o los bordes del compás).
@@ -1866,6 +1913,28 @@ function setConcertView(on) {
   const c = document.getElementById("pConcert"); if (c) c.checked = concertView;
   render();
 }
+/* ---------- zoom de la partitura ---------- */
+// Solo cambia cómo se ve en pantalla (no el PDF ni el archivo). Se recuerda en este equipo.
+const ZOOMS = [0.5, 0.67, 0.75, 0.9, 1, 1.1, 1.25, 1.5, 1.75, 2, 2.5, 3];
+let zoom = 1;
+// `at` = punto de la pantalla que debe quedar quieto (el mouse con Ctrl+rueda); sin él, el centro de la vista.
+function setZoom(z, at) {
+  z = Math.max(ZOOMS[0], Math.min(ZOOMS[ZOOMS.length - 1], Math.round(z * 100) / 100));
+  const desk = document.getElementById("desk"), r = desk.getBoundingClientRect();
+  const ax = at ? at.x - r.left : desk.clientWidth / 2, ay = at ? at.y - r.top : desk.clientHeight / 2;
+  const fx = (desk.scrollLeft + ax) / Math.max(1, desk.scrollWidth), fy = (desk.scrollTop + ay) / Math.max(1, desk.scrollHeight);
+  zoom = z;
+  desk.style.setProperty("--zoom", String(z));
+  desk.scrollLeft = fx * desk.scrollWidth - ax; desk.scrollTop = fy * desk.scrollHeight - ay;
+  const b = document.getElementById("zReset"); if (b) b.textContent = Math.round(z * 100) + " %";
+  lsSet("atril.zoom", String(z));
+}
+function zoomStep(dir, at) {
+  const i = ZOOMS.findIndex((x) => x >= zoom - 0.001);
+  const next = dir > 0 ? ZOOMS.find((x) => x > zoom + 0.001) : [...ZOOMS].reverse().find((x) => x < zoom - 0.001);
+  setZoom(next != null ? next : ZOOMS[i < 0 ? ZOOMS.length - 1 : i], at);
+}
+
 /* ---------- edición de acordes escritos ---------- */
 const chordAtSel = () => (chordSel ? (score.chords || []).find((c) => c.m === chordSel.m && c.at === chordSel.at) : null);
 function ensureChordsShown() {
@@ -1897,14 +1966,17 @@ function chordDialog(pos, prefill) {
     <p>En inglés o latino: C, Cm7, F#m7♭5, Bb/D, G7(♭9), Do7, Sib/Re, Lam(add9). N.C. o un texto entre paréntesis también sirven. Vacío lo borra.</p>
     <div class="field"><label for="chIn">Acorde</label><input id="chIn" maxlength="24" value="${esc(sugg)}" autocomplete="off" spellcheck="false"></div>
     <p class="hint" id="chErr" hidden></p>
+    ${ex && ex.dy ? `<label class="check"><input type="checkbox" id="chAuto"><span>Volver a la altura automática<small>Ahora está ${ex.dy > 0 ? "más arriba" : "más abajo"} (${String(Math.abs(ex.dy)).replace(".", ",")} espacios). Con el acorde elegido, ↑ ↓ lo suben o bajan.</small></span></label>` : ""}
     <div class="actions"><button class="btn" data-x="close">Cancelar</button><button class="btn" data-x="raw" hidden>Usar como texto</button><button class="btn primary" data-x="ok">Listo</button></div>`, (d) => {
     const inp = d.querySelector("#chIn"), err = d.querySelector("#chErr"), raw = d.querySelector('[data-x="raw"]');
+    let keepAuto = false;
     inp.focus(); inp.select();
     const save = (val) => {
+      keepAuto = !!(d.querySelector("#chAuto") || {}).checked;
       closeModal(); chordSel = val ? { m: pos.m, at: pos.at } : null; if (val) ensureChordsShown();
       commit(() => {
         score.chords = (score.chords || []).filter((c) => !(c.m === pos.m && c.at === pos.at));
-        if (val) score.chords.push({ m: pos.m, at: pos.at, ...val });
+        if (val) score.chords.push({ m: pos.m, at: pos.at, ...val, ...(ex && ex.dy && !keepAuto ? { dy: ex.dy } : {}) });
         sortChords(); if (!score.chords.length) delete score.chords;
       });
       document.getElementById("desk").focus({ preventScroll: true });
@@ -1932,12 +2004,16 @@ function moveChordBy(dq) {
   const m = T.measureAt(abs), at = roundAt((abs - T.start(m)) / TQ);
   moveChordTo(c, { m, at });
 }
-function moveChordTo(c, to) {
-  if (c.m === to.m && c.at === to.at) return;
-  if ((score.chords || []).some((x) => x !== c && x.m === to.m && x.at === to.at)) { toast("Ya hay un acorde en ese pulso."); return; }
+function moveChordTo(c, to) { placeChord(c, to, c.dy || 0); }
+// Pone el acorde en otro pulso y/o a otra altura. `dy` = espacios del pentagrama sobre su altura automática (+ arriba).
+function placeChord(c, to, dy) {
+  dy = Math.max(-6, Math.min(12, Math.round(dy * 2) / 2));
+  if (c.m === to.m && c.at === to.at && dy === (c.dy || 0)) { render(); return; }
+  if ((score.chords || []).some((x) => x !== c && x.m === to.m && x.at === to.at)) { toast("Ya hay un acorde en ese pulso."); render(); return; }
   chordSel = { m: to.m, at: to.at };
-  commit(() => { c.m = to.m; c.at = to.at; sortChords(); });
+  commit(() => { c.m = to.m; c.at = to.at; if (dy) c.dy = dy; else delete c.dy; sortChords(); });
 }
+function nudgeChord(step) { const c = chordAtSel(); if (c) placeChord(c, { m: c.m, at: c.at }, (c.dy || 0) + step); }
 function deleteChord() { const c = chordAtSel(); if (!c) return; chordSel = null; commit(() => { score.chords = score.chords.filter((x) => x !== c); if (!score.chords.length) delete score.chords; }); }
 // Convierte los acordes detectados en escritos (en los compases que no tienen escritos), para corregirlos desde ahí.
 function fixDetectedChords() {
@@ -1966,16 +2042,24 @@ function startChordDrag(e, svg, pi, el) {
   document.getElementById("desk").focus({ preventScroll: true });
   const T = layout.model.T;
   const toSvg = (ev) => { const pt = svg.createSVGPoint(); pt.x = ev.clientX; pt.y = ev.clientY; return pt.matrixTransform(svg.getScreenCTM().inverse()); };
-  const x0 = toSvg(e).x; let target = null;
+  const p0 = toSvg(e), x0 = p0.x, y0 = +el.getAttribute("y"), sp = +el.dataset.sp || 10;
+  let target = null, dyPx = 0, moved = false;
   const move = (ev) => {
-    const p = toSvg(ev); if (!target && Math.abs(p.x - x0) < 4) return;
+    const p = toSvg(ev);
+    if (!moved && Math.abs(p.x - x0) < 4 && Math.abs(p.y - p0.y) < 4) return;
+    moved = true;
+    dyPx = p.y - p0.y; el.setAttribute("y", y0 + dyPx);
+    if (!target && Math.abs(p.x - x0) < 4) return;
     const r = layout.rects.find((r) => r.page === pi && r.staff === 0 && p.x >= r.x && p.x <= r.x + r.w); if (!r) return;
     const span = Math.max(10, r.x + r.w - 14 - r.nx), len = T.len(r.m), step = beatOf(T.time(r.m)) / (ev.altKey ? 2 : 1);
     let off = Math.round((Math.max(0, Math.min(1, (p.x - r.nx) / span)) * len) / step) * step; if (off >= len) off = len - step;
     target = { m: r.m, at: roundAt(off / TQ) };
     el.setAttribute("x", r.nx + (off / len) * span);
   };
-  const up = () => { svg.removeEventListener("pointermove", move); window.removeEventListener("pointerup", up); if (target) moveChordTo(c, target); };
+  const up = () => {
+    svg.removeEventListener("pointermove", move); window.removeEventListener("pointerup", up);
+    if (moved) placeChord(c, target || { m: c.m, at: c.at }, Math.round(((c.dy || 0) - dyPx / sp) * 2) / 2);
+  };
   svg.addEventListener("pointermove", move); window.addEventListener("pointerup", up);
 }
 // Doble clic: sobre un acorde escrito lo cambia; sobre el pentagrama de arriba (encima de la línea superior) agrega uno en ese pulso.
@@ -3745,12 +3829,17 @@ const XML_KIND = { "": "major", m: "minor", "°": "diminished", "+": "augmented"
   "m7(♭5)": "half-diminished", "m(maj7)": "major-minor", 6: "major-sixth", m6: "minor-sixth", 9: "dominant-ninth", maj9: "major-ninth", m9: "minor-ninth",
   11: "dominant-11th", m11: "minor-11th", 13: "dominant-13th", maj13: "major-13th", m13: "minor-13th", sus2: "suspended-second", sus4: "suspended-fourth", 5: "power" };
 function harmonyXML(c, offset) {
-  const off = offset > 0 ? `<offset>${offset}</offset>` : "";
-  if (c.text) return `      <harmony print-frame="no"><root><root-step text="">C</root-step></root><kind text="${esc(c.text)}">none</kind>${off}</harmony>\n`;
+  const off = offset > 0 ? `<offset>${offset}</offset>` : "", ry = c.dy ? ` relative-y="${c.dy * 10}"` : "";
+  if (c.text) return `      <harmony print-frame="no"${ry}><root><root-step text="">C</root-step></root><kind text="${esc(c.text)}">none</kind>${off}</harmony>\n`;
   const step = (tag, k) => `<${tag}-step>${k.s}</${tag}-step>${k.a ? `<${tag}-alter>${k.a}</${tag}-alter>` : ""}`;
-  return `      <harmony print-frame="no"><root>${step("root", c.root)}</root><kind text="${esc(c.q)}">${XML_KIND[c.q] || "other"}</kind>${c.bass ? `<bass>${step("bass", c.bass)}</bass>` : ""}${off}</harmony>\n`;
+  return `      <harmony print-frame="no"${ry}><root>${step("root", c.root)}</root><kind text="${esc(c.q)}">${XML_KIND[c.q] || "other"}</kind>${c.bass ? `<bass>${step("bass", c.bass)}</bass>` : ""}${off}</harmony>\n`;
 }
 function harmonyFromXML(el) {
+  const c = harmonyCore(el), ry = +el.getAttribute("relative-y") || 0;
+  if (c && ry) c.dy = Math.max(-6, Math.min(12, Math.round(ry / 5) / 2));
+  return c;
+}
+function harmonyCore(el) {
   const kind = el.querySelector("kind"), kt = kind ? kind.getAttribute("text") : null, kv = kind ? kind.textContent.trim() : "major";
   if (kv === "none") return { text: (kt || "N.C.").slice(0, 24) };
   const rs = el.querySelector("root > root-step"); if (!rs) return null;
@@ -4508,7 +4597,7 @@ function syncProps() {
   document.getElementById("pSize").value = String(score.layout.staff || 6);
   document.getElementById("pPer").value = String(score.layout.perSystem || 0);
   const nCh = (score.chords || []).length;
-  document.getElementById("pChordInfo").textContent = nCh ? `${nCh === 1 ? "1 acorde escrito" : nCh + " acordes escritos"}. Doble clic en uno para cambiarlo; arrástralo o usa ← → para moverlo; Supr lo borra.` : "Sin acordes escritos: Atril muestra los que detecta en las notas. Escribe uno con «Acorde +» (Alt+K) o fija los detectados para corregirlos.";
+  document.getElementById("pChordInfo").textContent = nCh ? `${nCh === 1 ? "1 acorde escrito" : nCh + " acordes escritos"}. Doble clic en uno para cambiarlo; arrástralo o usa ← → para moverlo y ↑ ↓ para subirlo o bajarlo; Supr lo borra.` : "Sin acordes escritos: Atril muestra los que detecta en las notas. Escribe uno con «Acorde +» (Alt+K) o fija los detectados para corregirlos.";
   document.getElementById("pChordAuto").checked = score.chordAuto !== false;
   document.getElementById("pMmRest").checked = !!score.layout.mmRest;
   document.getElementById("bChordClear").disabled = !nCh;
@@ -4624,6 +4713,7 @@ function helpDialog() {
       <kbd>Alt + L</kbd><span>Ligadura de expresión: en la primera nota y luego en la última; sobre un extremo, la quita</span>
       <kbd>Alt + R · Alt + Mayús + R</kbd><span>Crescendo o decrescendo, igual que la ligadura: primera nota y última</span>
       <kbd>Alt + K</kbd><span>Escribir un acorde en la nota seleccionada (en inglés o latino: Cm7, Sib/Re, G7(♭9)…)</span>
+      <kbd>↑ ↓</kbd><span>Con un acorde elegido: subirlo o bajarlo medio espacio (también arrastrándolo). Atril ya los pone sobre las plicas; esto es para afinar a mano</span>
       <kbd>← → · Alt + ← →</kbd><span>Con un acorde elegido: moverlo un pulso o medio pulso; Enter lo cambia, Supr lo borra</span>
       <kbd>%</kbd><span>Repetir el compás anterior en el compás siguiente (se muestra con el signo %)</span>
       <kbd>Alt + G</kbd><span>Adornos: elige la nota y escribe con A–G las notas de adorno que van antes; Retroceso borra el último, Esc termina</span>
@@ -4641,6 +4731,7 @@ function helpDialog() {
       <kbd>Ctrl + S</kbd><span>Guardar en el archivo .atril (la primera vez pregunta dónde)</span>
       <kbd>Ctrl + Mayús + S</kbd><span>Guardar como, con otro nombre o en otra carpeta</span>
       <kbd>Ctrl + O</kbd><span>Abrir un archivo o una partitura reciente</span>
+      <kbd>Ctrl + rueda · Ctrl + + −</kbd><span>Acercar o alejar la partitura (Ctrl + 0: tamaño normal). No cambia el PDF</span>
     </div>
     <p><b>Letra:</b> con L se abre la barra de letra. Escribe la sílaba y pulsa Espacio para pasar a la nota siguiente, o guion para separar sílabas de una misma palabra. Con “Pegar estrofa” puedes poner una estrofa entera escrita así: Al-ce-mos hoy la voz.</p>
     <p><b>Cambios de compás o tonalidad:</b> pon el cursor en el compás donde empieza el cambio y elige el compás o la tonalidad en el panel Partitura.</p>
@@ -4659,6 +4750,12 @@ function onKey(e) {
   const ctrl = e.ctrlKey || e.metaKey;
   const k = e.key;
   const tag = (e.target.tagName || "").toLowerCase();
+  // zoom de la partitura (en vez del zoom del navegador): Ctrl+más, Ctrl+menos, Ctrl+0
+  if (ctrl && !e.altKey && !modalOpen() && (k === "+" || k === "=" || k === "-" || k === "_" || k === "0")) {
+    e.preventDefault();
+    if (k === "0") setZoom(1); else zoomStep(k === "-" || k === "_" ? -1 : 1);
+    return;
+  }
   if (ctrl && !e.altKey && /^[sSoO]$/.test(k)) {
     e.preventDefault();
     if (modalOpen() && !(k === "o" || k === "O")) return;
@@ -4673,11 +4770,13 @@ function onKey(e) {
   if (ctrl && (k === "y" || k === "Y")) { e.preventDefault(); redo(); return; }
   if (k === " ") { if (tag === "button") return; e.preventDefault(); player ? stopPlayback() : startPlayback(); return; }
   if (ctrl) return;
-  // con un acorde escrito elegido: ← → lo mueven un pulso (Alt: medio pulso), Enter lo cambia, Supr lo borra, una letra lo reescribe
+  // con un acorde escrito elegido: ← → lo mueven un pulso (Alt: medio pulso), ↑ ↓ lo suben o bajan medio espacio,
+  // Enter lo cambia, Supr lo borra, una letra lo reescribe
   const ch = chordAtSel();
   if (ch) {
     const beat = beatOf(meterTable().time(ch.m)) / TQ;
     if (k === "ArrowLeft" || k === "ArrowRight") { e.preventDefault(); moveChordBy((k === "ArrowLeft" ? -1 : 1) * (e.altKey ? beat / 2 : beat)); return; }
+    if (k === "ArrowUp" || k === "ArrowDown") { e.preventDefault(); nudgeChord(k === "ArrowUp" ? 0.5 : -0.5); return; }
     if (k === "Enter" || k === "F2") { e.preventDefault(); chordDialog({ m: ch.m, at: ch.at }); return; }
     if (k === "Delete" || k === "Backspace") { e.preventDefault(); deleteChord(); return; }
     if (k === "Escape") { e.preventDefault(); chordSel = null; paintChordSel(); return; }
@@ -4858,6 +4957,14 @@ function wire() {
   document.getElementById("sound").onchange = (e) => { lsSet("atril.sonido", e.target.value); if (isBank(e.target.value)) loadSound(e.target.value).catch(() => {}); };
   document.getElementById("bNew").onclick = newScoreDialog;
   document.getElementById("bOpen").onclick = openDialog;
+  document.getElementById("zIn").onclick = () => zoomStep(1);
+  document.getElementById("zOut").onclick = () => zoomStep(-1);
+  document.getElementById("zReset").onclick = () => setZoom(1);
+  document.getElementById("desk").addEventListener("wheel", (e) => {
+    if (!(e.ctrlKey || e.metaKey) || modalOpen()) return;
+    e.preventDefault(); // también en los touchpad, que mandan el gesto de pellizcar como Ctrl+rueda
+    zoomStep(e.deltaY < 0 ? 1 : -1, { x: e.clientX, y: e.clientY });
+  }, { passive: false });
   document.getElementById("bShare").onclick = shareDialog;
   document.getElementById("bSave").onclick = () => saveFile();
   document.getElementById("bHelp").onclick = helpDialog;
@@ -4891,6 +4998,7 @@ function start() {
   if (embedded) draft = null;
   load(embedded || draft || sampleScore());
   solfeoOn = lsGet("atril.solfeo") === "1";
+  { const z = +lsGet("atril.zoom"); if (z && z !== 1) setZoom(z); }
   chordMode = ["en", "es"].includes(lsGet("atril.acordes")) ? lsGet("atril.acordes") : "off";
   concertView = lsGet("atril.tonoReal") === "1";
   { const c = document.getElementById("pConcert"); if (c) c.checked = concertView; }

@@ -22,7 +22,8 @@ Todo vive en **`index.html`** (un solo archivo, ~3.600 líneas: CSS + HTML + JS 
 | Área | Funciones clave |
 |---|---|
 | Modelo | `score` (estado global), `migrate`, `buildModel`, `meterTable` (compases/tonalidad/tempo/dinámica por compás), `voiceEnd` |
-| Dibujo | `render`, `topStaveMarks` (casillas, segno, coda, D.C./D.S., tempo), `measureOverlays` (×n, dinámicas, cifrado de acordes), `decorate` |
+| Dibujo | `render`, `topStaveMarks` (casillas, segno, coda, D.C./D.S., tempo), `measureOverlays` (×n, dinámicas, cifrado de acordes: cada acorde sube sobre las cajas de las notas del pentagrama de arriba), `alignChordRow` (al terminar cada sistema: una sola fila de acordes y sube lo de encima que choque), `decorate` |
+| Zoom | `setZoom`/`zoomStep` (`--zoom` en `#desk`, `ZOOMS`, localStorage `atril.zoom`): solo pantalla, no el PDF; Ctrl+rueda, Ctrl++/−/0 y botones − + |
 | Edición | `commit` (undo), `onKey`, `cursor`, `insertNote`…, `setMark`, `syncProps`, `syncMeterFields` |
 | Letra | `lyricInfo`, `commitSyllable`, `pasteVerseDialog`, `splitLyricText` |
 | Interpretación | `playOrder` (desenrolla repeticiones/casillas/saltos), `performance` (línea de tiempo con tempo y dinámica), `performanceClicks` |
@@ -66,7 +67,8 @@ note = { d:"w"|"h"|"q"|"8"|"16"|"32", dots:0|1|2, rest, tie, keys:[{s:"C".."B", 
          bm?:"break"|"join", stem?:"up"|"down" }       // barras y plicas a mano
 // staff.trans = "bb"|"ten"|"eb"|"bari"|"a"|"f"|"ebs" (instrumento transpositor; notas escritas) · clef también "tenor"|"treble8va"|"bass8vb"|"perc"
 // marks[m].reh = marca de ensayo ("A", "B", "1"…) · marks[m].rpt = compás % · marks[m].slash = barras de ritmo
-// score.chords = [{ m, at, root:{s,a}, q, bass?:{s,a} } | { m, at, text }]   at = negras desde el inicio del compás
+// score.chords = [{ m, at, root:{s,a}, q, bass?:{s,a}, dy? } | { m, at, text, dy? }]   at = negras desde el inicio del compás;
+//   dy = espacios del pentagrama sobre su altura automática (+ arriba, de a 0,5; MusicXML relative-y en décimas)
 // score.chordAuto = false → no completar con los detectados · score.layout.mmRest = agrupar silencios de varios compases
 ```
 
@@ -136,7 +138,7 @@ Meta: que el próximo release escriba, dibuje (VexFlow ya trae casi todo), toque
 
 **C. Armonía y música popular** — hecho en `notacion-completa` (2026-10-16), pruebas en `tests/acordes.spec.mjs` y `tests/compases.spec.mjs`.
 Resumen de lo hecho: acordes guardados en `score.chords` (posición en negras, no en ticks); `parseChord`/`normQuality` leen inglés y latino con sinónimos (Δ, ø, -7, sus, alteraciones 7(♭9,♯11)…); `measureChordList` da los escritos o los detectados; elegir/arrastrar/doble clic/flechas; «Fijar los detectados»; se transponen; `<harmony>` con `<offset>`. % (`repeatPrevMeasure` copia notas reales y `showRepeat` lo dibuja solo si sigue igual), silencios agrupados (`restRun`, `VF.MultiMeasureRest`) y barras de ritmo (notas `type:"s"`); `<measure-style>`.
-- [x] C1. Cifrado editable. Hoy `measureChords`/`nameChord` lo calculan al dibujar, uno por pulso, y no se guarda: no se puede mover ni corregir.
+- [x] C1. Cifrado editable. (2026-10-24: altura automática sobre plicas y barras, fila alineada por sistema, ↑ ↓ y arrastre vertical con `dy`.) Hoy `measureChords`/`nameChord` lo calculan al dibujar, uno por pulso, y no se guarda: no se puede mover ni corregir.
   - Guardado: `score.chords = [{ m, tick, root:{s,a}, q, bass?:{s,a}, text? }]` (`tick` relativo al compás, ya en la resolución de A1). Los acordes guardados mandan; la detección solo rellena donde no hay ninguno (dibujada en gris) o se apaga.
   - «Fijar acordes»: convierte lo detectado en acordes guardados, para editarlos a partir de ahí.
   - Cambiar como texto: doble clic (o Enter con el acorde elegido) abre un campo; se escribe en inglés o latino (`Cm7`, `Do7`, `Sib/Re`, `F#m7b5`, `Lam(add9)`), `parseChord` lo valida y avisa si no lo entiende. Texto libre opcional (`N.C.`, `(A7)`). Vacío = borrar.

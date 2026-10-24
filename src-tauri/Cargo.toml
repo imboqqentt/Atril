@@ -1,6 +1,6 @@
 [package]
 name = "atril"
-version = "0.2.1"
+version = "0.2.2"
 description = "Atril, editor de partituras"
 authors = ["Daniel Hormazábal"]
 edition = "2021"

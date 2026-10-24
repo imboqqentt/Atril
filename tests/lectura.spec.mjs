@@ -47,3 +47,10 @@ test("un .json que no es de Atril avisa", async ({ page }) => {
   await page.setInputFiles("#fileIn", { name: "otra.json", mimeType: "application/json", buffer: Buffer.from('{"hola":1}') });
   await expect(page.locator("#toast")).toHaveText("Ese archivo no es una partitura de Atril.");
 });
+
+test("una lectura de varias páginas en una lista también se importa", async ({ page }) => {
+  await openAtril(page);
+  const p2 = { ...omr, title: null, systems: [omr.systems[1]] };
+  await page.setInputFiles("#fileIn", { name: "dos.atril-omr.json", mimeType: "application/json", buffer: Buffer.from(JSON.stringify([{ ...omr, systems: [omr.systems[0]] }, p2])) });
+  await expect(page.locator("#modal .stat")).toContainText("4compases");
+});

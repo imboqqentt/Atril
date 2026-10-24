@@ -37,6 +37,7 @@ Todo vive en **`index.html`** (un solo archivo, ~3.600 líneas: CSS + HTML + JS 
 | Importar | `importFile` (.atril/.json abre con su archivo; .musicxml, .xml, .mxl, .zip importa), `fromMusicXML` |
 | Lectura de PDF | escritorio: `omrDialog`, `readWithAudiveris`, `audiverisMissingDialog`, `findAudiveris`; navegador: `webOmrDialog`. JSON compacto de la skill (`.atril-omr.json`): `importFile` → `openOmrJson` → `mergeOmr` + `buildFromOmr` (formato en `omrPrompt`). Sin uso por ahora: `detectSystems`, `cropBlob` |
 | Escritorio (Tauri) | `desktop` (null en el navegador): `read`/`write` por ruta, `pickOpen`/`pickSave`, `setTitle`; `openPath`, `stashDraft`. En escritorio `fileHandle` es la ruta (texto). Lado Rust en `src-tauri/src/lib.rs`: `leer`, `escribir`, `elegir_abrir`, `elegir_guardar`, `archivo_inicial`, evento `abrir-archivo` |
+| Artefacto de claude.ai | `inClaude`/`cloud` (null fuera de claude.ai): «Mis partituras» en la cuenta (`makeCloudLib`, `saveToCloud`, guardado automático `scheduleCloudSave`), compartir en el artefacto (`initShare`, `publishShared`, `openShared`, `cloudShareHtml`), descargas por la capacidad (`offer`), lectura con Claude (`claudeOmrDialog`, `runOmr`). `startClaude` las pide al arrancar. Se publica con `node tools/armar-artefacto.mjs` → `dist-artefacto/index.html` en https://claude.ai/artifact/MCd6RU94PhsQUnpLhMvyr8 (capacidades db, user, downloads, sample con imágenes; snd/ ya está publicado allá) |
 | Partitura incrustada | `<script type="application/json" id="atril-embed">` → `start()` la abre en vez del ejemplo |
 
 ### Formato de datos
@@ -169,6 +170,7 @@ Riesgos: A1 toca `render`, `playOrder` y `performance` (correr `npm test` antes 
 - `npm run test:escritorio` — compila en modo depuración y prueba la app real por el puerto de depuración de WebView2.
 - `npm run instalador` — instaladores `.exe` (NSIS) y `.msi`.
 - Publicar una versión: correr `npm test` y `npm run test:escritorio` en Windows (en GitHub las de escritorio no bloquean: WebView2 no abre el puerto de depuración allá), subir `version` en `package.json` y `src-tauri/Cargo.toml`, commit, `git tag vX.Y.Z` y `git push origin vX.Y.Z`. El workflow `release.yml` corre las pruebas, compila en Windows y deja un **borrador** de Release con el `.exe` y el `.msi` para revisar y publicar.
+- Artefacto de claude.ai: `node tools/armar-artefacto.mjs` y publicar `dist-artefacto/index.html` en el artefacto (sin cambiar sus capacidades). Pruebas de esa capa: `tests/artefacto.spec.mjs` (simula `window.claude`).
 - Requisitos para compilar: Rust (rustup) y Visual Studio Build Tools con C++.
 
 ## Reglas

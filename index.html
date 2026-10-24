@@ -268,6 +268,8 @@ textarea.xml { width: 100%; height: 220px; font-family: var(--font-mono); font-s
 
 .linkout { width: 100%; border: 1px solid var(--line); border-radius: 7px; padding: 8px 9px; background: var(--panel-2); font-family: var(--font-mono); font-size: 12px; color: var(--fg); }
 .dialog p.warn { color: var(--warn); font-size: 13px; }
+.sharebar { position: fixed; left: 50%; top: 72px; transform: translateX(-50%); z-index: 60; display: flex; align-items: center; gap: 10px; max-width: min(640px, calc(100vw - 32px)); padding: 10px 12px 10px 16px; background: var(--panel); color: var(--fg); border: 1px solid var(--accent); border-radius: 10px; box-shadow: var(--shadow); font-size: 14px; }
+.sharebar span { flex: 1; }
 .toast {
   position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(20px + env(safe-area-inset-bottom, 0px)); z-index: 60;
   background: var(--fg); color: var(--bg); padding: 9px 14px; border-radius: 9px; font-size: 13px; box-shadow: var(--shadow); max-width: calc(100% - 32px);
@@ -501,6 +503,7 @@ textarea.xml { width: 100%; height: 220px; font-family: var(--font-mono); font-s
 
 <div id="modal"></div>
 <div class="toast" id="toast" hidden></div>
+<div class="sharebar" id="shareBar" hidden role="status"><span id="shareBarText"></span><button class="btn primary" id="shareBarOpen">Abrir</button><button class="btn" id="shareBarClose" aria-label="Cerrar">✕</button></div>
 
 <script src="vendor/vexflow.js"></script>
 <script src="vendor/jspdf.umd.min.js"></script>
@@ -3175,6 +3178,135 @@ async function openPath(path) {
   catch (e) { toast(`No se pudo abrir ${baseName(path)}. ¿Se movió o se borró?`); }
 }
 
+/* ================= artefacto de claude.ai ================= */
+// Atril nació como artefacto de claude.ai y se sigue publicando ahí (tools/armar-artefacto.mjs). Dentro de claude.ai, y
+// solo ahí, usa capacidades de la plataforma: «Mis partituras» en la cuenta de quien lo abre (db + user), compartir con
+// quien tenga el enlace del artefacto (colección "shared" de db), descargas (downloads) y lectura de partituras con Claude
+// (sample). Fuera de claude.ai `inClaude` es false y nada de esto corre.
+const inClaude = !!(window.claude && typeof window.claude.use === "function") && !window.__TAURI__;
+const cloud = { lib: null, inLib: false, downloads: null, sample: null, imgMax: 0, db: null, owner: false, shared: [], autoOpened: false, timer: null };
+function makeCloudLib(db, uidStr) {
+  const col = db.collection("data/users/" + uidStr);
+  return {
+    async list() { const snap = await col.orderBy("updatedAt", "desc").limit(300).get(); return snap.docs.map((d) => { const b = d.data() || {}; return { id: d.id, title: b.title, composer: b.composer, updatedAt: b.updatedAt }; }); },
+    async save(sc) { await col.doc(sc.id).set({ title: sc.title || "Sin título", composer: sc.composer || "", updatedAt: new Date().toISOString(), data: JSON.stringify(sc) }); },
+    async load(id) { const snap = await col.doc(id).get(); if (!snap.exists) return null; return JSON.parse(snap.data().data); },
+    async remove(id) { await col.doc(id).delete(); },
+  };
+}
+// Guarda en «Mis partituras». `auto` = guardado automático después de un cambio (sin aviso).
+async function saveToCloud(auto) {
+  clearTimeout(cloud.timer);
+  if (score.sample) delete score.sample;
+  const el = document.getElementById("savestate"); el.textContent = "Guardando…";
+  try {
+    await cloud.lib.save(score);
+    cloud.inLib = true; dirty = false; saveDraft();
+    if (cloud.owner && isShared(score.id)) publishShared(score).catch(() => toast("Guardada, pero no se pudo actualizar la copia compartida."));
+    if (!auto) toast("Guardada en tu cuenta (Abrir → Mis partituras).");
+    return true;
+  } catch (e) {
+    setSaveState();
+    if (!auto) toast("No se pudo guardar en tu cuenta. Revisa tu conexión e inténtalo de nuevo.");
+    return false;
+  }
+}
+// Después de cada cambio en una partitura que ya está en la cuenta, se guarda sola a los 2,5 s.
+function scheduleCloudSave() { clearTimeout(cloud.timer); cloud.timer = setTimeout(() => { if (dirty && cloud.inLib && cloud.lib) saveToCloud(true); }, 2500); }
+
+/* ---------- compartir dentro del artefacto (colección "shared"): cualquiera con el enlace lo lee; solo el dueño escribe ---------- */
+const SHARE_MAX = 240000;
+const sharedDoc = (id) => cloud.db.collection("shared").doc(id);
+const isShared = (id) => cloud.shared.some((x) => x.id === id);
+async function publishShared(sc) {
+  const data = JSON.stringify(sc);
+  if (data.length > SHARE_MAX) throw { code: "too_big" };
+  await sharedDoc(sc.id).set({ title: sc.title || "Sin título", composer: sc.composer || "", updatedAt: new Date().toISOString(), data });
+}
+function initShare(db, owner, hadDraft) {
+  cloud.db = db; cloud.owner = owner;
+  db.collection("shared").orderBy("updatedAt", "desc").limit(100).onSnapshot((snap) => {
+    cloud.shared = snap.docs.map((d) => { const x = d.data() || {}; return { id: d.id, title: x.title, composer: x.composer, updatedAt: x.updatedAt }; });
+    // quien llega por el enlace ve directamente la última partitura compartida (si no estaba trabajando en una propia)
+    if (!owner && !cloud.autoOpened && cloud.shared.length) {
+      cloud.autoOpened = true;
+      const top = cloud.shared[0], mine = hadDraft && !isShared(score.id) && !score.sample;
+      if (!mine) openShared(top.id, true); else showShareBar(top);
+    }
+  }, () => {});
+}
+function showShareBar(it) {
+  const bar = document.getElementById("shareBar");
+  document.getElementById("shareBarText").textContent = `Te compartieron «${it.title || "Sin título"}».`;
+  document.getElementById("shareBarOpen").onclick = () => { bar.hidden = true; openShared(it.id, false); };
+  document.getElementById("shareBarClose").onclick = () => { bar.hidden = true; };
+  bar.hidden = false;
+}
+async function openShared(id, auto) {
+  try {
+    const snap = await sharedDoc(id).get();
+    if (!snap.exists) throw 0;
+    const sc = JSON.parse(snap.data().data);
+    const kept = stashDraft();
+    openScore(sc, null, ""); cloud.inLib = false; setSaveState();
+    toast(auto ? `Estás viendo «${sc.title || "Sin título"}», compartida contigo. Pulsa ▶ para escucharla.` : `Abriste «${sc.title || "Sin título"}».${kept ? " Tus cambios sin guardar quedaron en Abrir." : ""}`);
+  } catch (e) { toast("No se pudo abrir esa partitura compartida."); }
+}
+const fmtDate = (t) => { try { return new Date(t).toLocaleString("es-CL", { dateStyle: "medium", timeStyle: "short" }); } catch (e) { return ""; } };
+// La parte de «Compartir» que solo existe en el artefacto: compartir aquí (dueño) o ver lo compartido (los demás).
+function cloudShareHtml() {
+  if (!cloud.db) return "";
+  const list = cloud.shared.map((it) => `<div class="libitem ${it.id === score.id ? "current" : ""}" data-id="${esc(it.id)}"><button class="open"><b>${esc(it.title || "Sin título")}</b><span>${esc(it.composer || "")}${it.composer ? " · " : ""}${fmtDate(it.updatedAt)}</span></button>${cloud.owner ? '<button class="btn" data-unshare>Dejar de compartir</button>' : ""}</div>`).join("");
+  if (!cloud.owner) return `<div class="sub">Compartidas en este Atril</div>${list ? `<div class="liblist" id="shList">${list}</div>` : `<p class="hint">Aún no hay partituras compartidas aquí.</p>`}`;
+  const on = isShared(score.id);
+  return `<div class="sub">En este Atril</div>
+    <p>${on ? `«${esc(score.title || "Sin título")}» está compartida: quienes abran el enlace de este Atril la ven, y cada vez que la guardes verán la versión nueva.` : `Comparte «${esc(score.title || "Sin título")}» con quienes tengan el enlace de este Atril (necesitan su sesión de Claude iniciada). Ellos pueden escucharla, transponerla y descargar su copia; solo tú la cambias.`}</p>
+    <div><button class="btn" data-x="shOn">${on ? "Actualizar ahora" : "Compartir aquí"}</button> ${on ? '<button class="btn" data-x="shOff">Dejar de compartir</button>' : ""}</div>
+    ${list ? `<div class="liblist" id="shList">${list}</div>` : ""}`;
+}
+function wireCloudShare(d) {
+  d.querySelectorAll("#shList .libitem").forEach((row) => {
+    const id = row.dataset.id;
+    row.querySelector(".open").onclick = () => { closeModal(); openShared(id, false); };
+    const u = row.querySelector("[data-unshare]");
+    if (u) u.onclick = async () => {
+      if (u.dataset.confirm !== "1") { u.dataset.confirm = "1"; u.textContent = "¿Seguro? Sí"; setTimeout(() => { if (u.isConnected) { u.dataset.confirm = ""; u.textContent = "Dejar de compartir"; } }, 3500); return; }
+      try { await sharedDoc(id).delete(); row.remove(); toast("Ya no está compartida."); } catch (e) { toast("No se pudo quitar. Revisa tu conexión."); }
+    };
+  });
+  const on = d.querySelector('[data-x="shOn"]');
+  if (on) on.onclick = async () => {
+    try {
+      if (score.sample) delete score.sample;
+      await publishShared(score);
+      if (cloud.lib && !cloud.inLib) await saveToCloud(true);
+      closeModal(); toast("Compartida. Envía el enlace de este Atril y la verán al abrirlo.");
+    } catch (e) { toast(e && e.code === "too_big" ? "Es demasiado grande para compartirla aquí. Usa el enlace o envía el archivo." : "No se pudo compartir. Revisa tu conexión."); }
+  };
+  const off = d.querySelector('[data-x="shOff"]');
+  if (off) off.onclick = async () => { try { await sharedDoc(score.id).delete(); closeModal(); toast("Ya no está compartida."); } catch (e) { toast("No se pudo quitar. Revisa tu conexión."); } };
+}
+// «Mis partituras» en el diálogo Abrir
+async function fillCloudList(box) {
+  if (!box) return;
+  let items = [];
+  try { items = await cloud.lib.list(); } catch (e) { box.innerHTML = `<p class="hint">No se pudo cargar la lista. Revisa tu conexión.</p>`; return; }
+  if (!items.length) { box.innerHTML = `<p class="hint">Aún no guardas partituras en tu cuenta. Usa “Guardar” (Ctrl+S).</p>`; return; }
+  box.innerHTML = items.map((it) => `<div class="libitem ${it.id === score.id ? "current" : ""}" data-id="${esc(it.id)}"><button class="open"><b>${esc(it.title || "Sin título")}</b><span>${esc(it.composer || "")}${it.composer ? " · " : ""}${fmtDate(it.updatedAt)}</span></button><button class="btn" data-del>Borrar</button></div>`).join("");
+  box.querySelectorAll(".libitem").forEach((row) => {
+    const id = row.dataset.id;
+    row.querySelector(".open").onclick = async () => {
+      try { const sc = await cloud.lib.load(id); if (!sc) throw 0; closeModal(); openScore(sc, null, ""); cloud.inLib = true; setSaveState(); toast(`Abriste «${sc.title || "Sin título"}».`); }
+      catch (e) { toast("No se pudo abrir esa partitura."); }
+    };
+    const del = row.querySelector("[data-del]");
+    del.onclick = async () => {
+      if (del.dataset.confirm !== "1") { del.dataset.confirm = "1"; del.textContent = "¿Borrar? Sí"; setTimeout(() => { if (del.isConnected) { del.dataset.confirm = ""; del.textContent = "Borrar"; } }, 3500); return; }
+      try { await cloud.lib.remove(id); row.remove(); if (id === score.id) { cloud.inLib = false; setSaveState(); } toast("Partitura borrada de tu cuenta."); } catch (e) { toast("No se pudo borrar. Revisa tu conexión."); }
+    };
+  });
+}
+
 /* ================= guardado: archivos .atril y recientes ================= */
 // Cada partitura es un archivo .atril (el JSON de `score`). Con File System Access API se escribe sobre el mismo
 // archivo; sin ella, guardar descarga el archivo. Aparte, el borrador se copia a localStorage en cada cambio
@@ -3188,11 +3320,11 @@ const OPEN_TYPES = [{ description: "Partituras (Atril o MusicXML)", accept: { "a
 const RECENT = idbStore("atril-recientes", "archivos"), RECENT_MAX = 12;
 let fileHandle = null, fileName = ""; // archivo de la partitura abierta: FileSystemFileHandle, o la ruta en escritorio ("" = nunca guardada)
 
-function saveDraft() { lsSet(LS_DRAFT, JSON.stringify(score)); setSaveState(); }
+function saveDraft() { lsSet(LS_DRAFT, JSON.stringify(score)); setSaveState(); if (dirty && cloud.inLib && cloud.lib) scheduleCloudSave(); }
 function setSaveState() {
   const el = document.getElementById("savestate");
   el.dataset.s = dirty ? "dirty" : "saved";
-  el.textContent = score.sample && !dirty ? "" : !fileName ? "Sin guardar" : dirty ? `${fileName} · cambios sin guardar` : fileName;
+  el.textContent = score.sample && !dirty ? "" : cloud.inLib ? (dirty ? "Cambios sin guardar" : "Guardado en tu cuenta") : !fileName ? "Sin guardar" : dirty ? `${fileName} · cambios sin guardar` : fileName;
   el.title = fileName ? "Archivo: " + (typeof fileHandle === "string" ? fileHandle : fileName) : "";
   if (desktop) desktop.setTitle(`${score.title || "Sin título"}${dirty ? " •" : ""} — Atril`);
   lsSet(LS_FILE, JSON.stringify({ id: score.id, name: fileName, dirty }));
@@ -3215,6 +3347,13 @@ async function saveFile(as = false) {
   saving = true;
   try {
     if (score.sample) delete score.sample;
+    if (inClaude) {
+      // en claude.ai: Guardar va a «Mis partituras»; Guardar como (o sin cuenta) entrega una copia .atril
+      if (cloud.lib && !as) { await saveToCloud(false); return; }
+      const ok = await offer(slug() + ".atril", new Blob([JSON.stringify(score, null, 1)], { type: "application/json" }));
+      if (ok && !cloud.lib) { dirty = false; saveDraft(); }
+      return;
+    }
     if (desktop) {
       let path = !as && typeof fileHandle === "string" ? fileHandle : null;
       if (!path) {
@@ -3250,12 +3389,12 @@ async function saveFile(as = false) {
 // Abre una partitura de Atril ya leída; `handle` permite volver a guardar en el mismo archivo.
 function openScore(sc, handle, name) {
   stopPlayback(); if (lyricMode) endLyrics();
-  load(sc); fileHandle = handle || null; fileName = name || ""; dirty = false;
+  load(sc); fileHandle = handle || null; fileName = name || ""; dirty = false; cloud.inLib = false;
   render(); syncProps(); saveDraft(); addRecent();
 }
 async function pickAndOpen() {
   if (desktop) { const path = await desktop.pickOpen().catch(() => null); if (path) { closeModal(); openPath(path); } return; }
-  if (!canPick) { document.getElementById("fileIn").click(); return; }
+  if (!canPick || inClaude) { document.getElementById("fileIn").click(); return; } // (dentro de claude.ai no hay acceso a carpetas)
   let h;
   try { [h] = await window.showOpenFilePicker({ id: "atril", types: OPEN_TYPES }); } catch (e) { return; }
   closeModal();
@@ -3282,7 +3421,8 @@ async function openDialog() {
   openModal(`<h3>Abrir</h3>
     <p>Abre una partitura de Atril (.atril) o importa MusicXML (.musicxml, .xml, .mxl).</p>
     ${dirtyNote()}
-    <div><button class="btn primary" data-x="pick">Elegir archivo…</button></div>
+    ${cloud.lib ? `<div class="sub">Mis partituras (en tu cuenta)</div><div class="liblist" id="cloudList"><p>Cargando…</p></div>` : ""}
+    <div><button class="btn ${cloud.lib ? "" : "primary"}" data-x="pick">Elegir archivo…</button></div>
     <div class="sub">Recientes</div>
     <div class="liblist" id="recList"><p>Cargando…</p></div>
     <div class="actions"><button class="btn" data-x="close">Cerrar</button></div>`, (d) => {
@@ -3290,6 +3430,7 @@ async function openDialog() {
     d.querySelector('[data-x="pick"]').onclick = pickAndOpen;
     wireDirtyNote(d);
   });
+  if (cloud.lib) fillCloudList(document.getElementById("cloudList"));
   let items = [];
   try { items = (await RECENT.all()).sort((a, b) => b.at - a.at); } catch (e) {}
   const list = document.getElementById("recList"); if (!list) return;
@@ -3303,6 +3444,15 @@ async function openDialog() {
     };
     row.querySelector("[data-del]").onclick = () => { try { localStorage.removeItem(LS_PREV); } catch (e) {} row.remove(); };
     list.before(row);
+  }
+  // partituras que la versión anterior de Atril guardaba en el navegador (sin cuenta): se pueden seguir abriendo
+  let old = {}; try { old = JSON.parse(lsGet("atril.biblioteca") || "{}") || {}; } catch (e) {}
+  const oldIds = Object.keys(old).filter((id) => old[id] && old[id].data);
+  if (oldIds.length) {
+    const box = document.createElement("div"); box.id = "oldLib";
+    box.innerHTML = `<div class="sub">Guardadas en este navegador (versión anterior)</div><div class="liblist">${oldIds.map((id) => `<div class="libitem" data-id="${esc(id)}"><button class="open"><b>${esc(old[id].title || "Sin título")}</b><span>${fmtDate(old[id].updatedAt)}</span></button></div>`).join("")}</div><p class="hint">Ábrelas y guárdalas${cloud.lib ? " en tu cuenta" : " como archivo .atril"} para no perderlas.</p>`;
+    box.querySelectorAll(".libitem").forEach((row) => { row.querySelector(".open").onclick = () => { try { closeModal(); openScore(JSON.parse(old[row.dataset.id].data), null, ""); dirty = true; saveDraft(); toast("Abierta. Guárdala con Ctrl+S."); } catch (e) { toast("No se pudo abrir esa partitura."); } }; });
+    list.before(box);
   }
   if (!items.length) { list.innerHTML = `<p class="hint">Aquí aparecerán las partituras que guardes o abras.</p>`; return; }
   const fmt = (t) => { try { return new Date(t).toLocaleString("es-CL", { dateStyle: "medium", timeStyle: "short" }); } catch (e) { return ""; } };
@@ -3339,6 +3489,8 @@ async function unpackScore(str) {
 // si está en <meta name="atril-url">, para que el enlace funcione en otros equipos.
 function linkBase() {
   const here = location.origin + location.pathname;
+  // dentro de claude.ai el enlace con la partitura adentro abre Atril publicado (el artefacto no recibe #s=…)
+  if (inClaude) { const pub = (document.querySelector('meta[name="atril-url"]') || {}).content || ""; return { url: pub, localOnly: !pub }; }
   const local = !/^https?:$/.test(location.protocol) || /^(localhost|127\.0\.0\.1|\[::1\]|tauri\.localhost)$/.test(location.hostname);
   const pub = (document.querySelector('meta[name="atril-url"]') || {}).content || "";
   return { url: local && pub ? pub : here, localOnly: local && !pub };
@@ -3348,10 +3500,12 @@ async function shareLink() {
   return linkBase().url + "#s=" + (await packScore(sc));
 }
 async function shareDialog() {
-  if (!canLink) { toast("Este navegador no puede crear enlaces. Comparte el archivo .atril (Guardar) o el PDF."); return; }
-  const link = await shareLink(), long = link.length > LINK_MAX, { localOnly } = linkBase();
+  if (!canLink && !cloud.db) { toast("Este navegador no puede crear enlaces. Comparte el archivo .atril (Guardar) o el PDF."); return; }
+  const link = canLink ? await shareLink() : "", long = link.length > LINK_MAX, { localOnly } = linkBase();
   openModal(`<h3>Compartir</h3>
-    <p>El enlace lleva la partitura completa adentro: quien lo abra la ve, la escucha y puede guardar su copia. No se sube a ningún servidor; si después cambias la partitura, comparte un enlace nuevo.</p>
+    ${cloudShareHtml()}
+    ${cloud.db ? `<div class="sub">Enlace con la partitura adentro</div>` : ""}
+    <p>El enlace lleva la partitura completa adentro${inClaude ? " y abre Atril en el navegador, sin cuenta" : ""}: quien lo abra la ve, la escucha y puede guardar su copia. No se sube a ningún servidor; si después cambias la partitura, comparte un enlace nuevo.</p>
     <input class="linkout" id="shLink" readonly aria-label="Enlace de la partitura">
     ${long ? `<p class="warn" id="shLong">El enlace es muy largo (${link.length.toLocaleString("es-CL")} caracteres) y puede cortarse en WhatsApp o en el correo. Mejor envía el archivo .atril.</p>` : `<p class="hint">${link.length.toLocaleString("es-CL")} caracteres.</p>`}
     ${localOnly ? `<p class="warn" id="shLocal">Este enlace apunta a tu equipo y solo funciona aquí. Para que funcione en otros equipos, compártelo desde Atril publicado en internet.</p>` : ""}
@@ -3359,6 +3513,7 @@ async function shareDialog() {
     const inp = d.querySelector("#shLink"); inp.value = link;
     inp.onclick = () => inp.select();
     d.querySelector('[data-x="close"]').onclick = closeModal;
+    wireCloudShare(d);
     d.querySelector('[data-x="file"]').onclick = () => { const sc = clone(score); delete sc.sample; offer(slug() + ".atril", new Blob([JSON.stringify(sc, null, 1)], { type: "application/json" })); };
     d.querySelector('[data-x="copy"]').onclick = () => navigator.clipboard.writeText(link).then(() => toast(long ? "Enlace copiado. Es largo: si no llega completo, envía el archivo." : "Enlace copiado."), () => { inp.focus(); inp.select(); toast("Selecciona el enlace y cópialo con Ctrl+C."); });
     const nat = d.querySelector('[data-x="native"]');
@@ -3394,8 +3549,18 @@ function browserDownload(filename, data) {
     return true;
   } catch (e) { return false; }
 }
-// Entrega un archivo con la descarga normal del navegador.
+const DL_FALLBACK = ["unavailable", "not_granted", "capability_disabled", "capability_removed", "rejected_extension", "extension_not_enabled", "transform_error"];
+// Entrega un archivo: en claude.ai por la capacidad downloads; en el escritorio con el diálogo Guardar; si no, la descarga del navegador.
 async function offer(filename, data) {
+  if (cloud.downloads) {
+    try { await cloud.downloads.save({ filename, data }); toast("Listo: " + filename); return true; }
+    catch (e) {
+      if (e && e.code === "declined") return false;
+      if (e && e.code === "rate_limited") { toast("Ya hay una descarga esperando tu confirmación."); return false; }
+      if (e && e.code === "too_large") { toast("El archivo es demasiado grande para descargarlo aquí."); return false; }
+      if (!e || !DL_FALLBACK.includes(e.code)) { toast("No se pudo descargar el archivo."); return false; }
+    }
+  }
   if (desktop) {
     const ext = filename.split(".").pop().toLowerCase();
     try {
@@ -3744,7 +3909,7 @@ async function audioDialog() {
           const f = await encode(buf);
           say(`Audio listo: ${Math.round(buf.duration)} s`, "done");
           if (f.ext === "wav" || f.ext === "mp3") {
-            if (f.ext === "mp3") await offer(slug() + ".mp3", f.data);
+            if (f.ext === "mp3" && !inClaude) await offer(slug() + ".mp3", f.data); // claude.ai no entrega .mp3 sueltos: va en .zip
             else { const zip = new JSZip(); zip.file(slug() + "." + f.ext, f.data); await offer(slug() + "-" + f.ext + ".zip", await zip.generateAsync({ type: "blob" })); }
           } else await offer(slug() + "." + f.ext, new Blob([f.data]));
         } else {
@@ -3786,7 +3951,7 @@ async function importFile(file, handle = null) {
       let d = null;
       try { d = JSON.parse(await file.text()); } catch (e) {}
       // JSON compacto de lectura de partituras (skill leer-partitura, .atril-omr.json): se arma con buildFromOmr
-      if (d && Array.isArray(d.systems)) { openOmrJson(d); return; }
+      if (d && (Array.isArray(d.systems) || (Array.isArray(d) && d.length && Array.isArray(d[0].systems)))) { openOmrJson(d); return; }
       if (!d || !Array.isArray(d.staves)) throw new Error("Ese archivo no es una partitura de Atril.");
       d.id = d.id || uid();
       openScore(d, name.endsWith(".atril") ? handle : null, name.endsWith(".atril") ? file.name : "");
@@ -4306,7 +4471,7 @@ function mergeOmr(ctx, res, header) {
 // Abre como partitura nueva el JSON compacto (formato de omrPrompt) y muestra el informe de lo leído.
 function openOmrJson(d) {
   const ctx = { staves: null, key: 0, time: "4/4", tempo: null, title: "", composer: "", pickup: false, systems: [], warnings: [], wholePages: [] };
-  mergeOmr(ctx, d, true);
+  (Array.isArray(d) ? d : [d]).forEach((pg, i) => mergeOmr(ctx, pg, i === 0)); // una página o una lista de páginas
   if (!ctx.systems.length) throw new Error("El archivo de lectura no trae compases.");
   const { score: sc, report } = buildFromOmr(ctx);
   stopPlayback(); if (lyricMode) endLyrics();
@@ -4457,7 +4622,7 @@ function audiverisMissingDialog() {
   });
 }
 async function omrDialog() {
-  if (!desktop) return webOmrDialog();
+  if (!desktop) return cloud.sample ? claudeOmrDialog() : webOmrDialog();
   const exe = await findAudiveris();
   if (!exe) return audiverisMissingDialog();
   let path = null, running = false;
@@ -4505,6 +4670,119 @@ async function omrDialog() {
         say(msg === "cancelado" ? "Lectura detenida." : msg.split("\n")[0] || "No se pudo leer la partitura.", "warn");
       } finally {
         running = false; go.disabled = !path; if (cancel.isConnected) cancel.textContent = "Cerrar";
+      }
+    };
+  });
+}
+/* ---------- lectura con Claude (solo en el artefacto de claude.ai: capacidad sample con imágenes) ---------- */
+async function runOmr(file, opts, ui, signal) {
+  const isPdf = /pdf$/i.test(file.type) || /\.pdf$/i.test(file.name);
+  let doc = null, nPages = 1;
+  if (isPdf) {
+    ui.step("Abriendo el PDF");
+    await ensurePdf();
+    doc = await pdfjsLib.getDocument({ data: new Uint8Array(await file.arrayBuffer()), isEvalSupported: false }).promise;
+    nPages = doc.numPages;
+  }
+  const from = Math.max(1, Math.min(nPages, opts.from || 1));
+  const to = Math.max(from, Math.min(nPages, opts.to || nPages, from + 19));
+  const ctx = { staves: null, key: 0, time: "4/4", tempo: null, title: "", composer: "", pickup: false, systems: [], warnings: [], wholePages: [] };
+  const per = Math.max(1, Math.min(6, (cloud.imgMax || 6) - 1));
+  for (let p = from; p <= to; p++) {
+    if (signal.aborted) throw { code: "cancelled" };
+    const label = isPdf ? `Página ${p} de ${to}` : "Imagen";
+    ui.step(`${label}: buscando los sistemas`);
+    const canvas = isPdf ? await renderPdfPage(doc, p) : await imageToCanvas(file);
+    const det = detectSystems(canvas);
+    let chunks = [], header = null, whole = false;
+    if (det && det.systems.length) {
+      const blobs = [];
+      for (const s of det.systems) blobs.push(await cropBlob(canvas, s.cropTop, s.cropBottom));
+      if (p === from && det.headerBottom > canvas.height * 0.04) header = await cropBlob(canvas, 0, det.headerBottom);
+      for (let i = 0; i < blobs.length; i += per) chunks.push(blobs.slice(i, i + per));
+      ui.done(`${label}: ${det.systems.length} ${det.systems.length === 1 ? "sistema" : "sistemas"} de ${det.systems[0].staves} ${det.systems[0].staves === 1 ? "pentagrama" : "pentagramas"}`);
+    } else {
+      chunks = [[await canvasBlob(canvas)]]; whole = true; ctx.wholePages.push(p);
+      ui.warn(`${label}: no se distinguieron los pentagramas; se enviará la página completa (menos precisa)`);
+    }
+    for (let c = 0; c < chunks.length; c++) {
+      if (signal.aborted) throw { code: "cancelled" };
+      const withHeader = !!header && c === 0;
+      ui.step(`${label}: Claude está leyendo ${chunks.length > 1 ? `la parte ${c + 1} de ${chunks.length}` : "la música"} (puede tardar un par de minutos)`);
+      const images = withHeader ? [header, ...chunks[c]] : chunks[c];
+      const res = await cloud.sample.json(omrPrompt(ctx, chunks[c].length, withHeader, whole, opts), { images, modelTier: "complex", signal });
+      mergeOmr(ctx, res, withHeader);
+      ui.done(`${label}: leída${chunks.length > 1 ? ` (parte ${c + 1})` : ""}`);
+    }
+  }
+  return buildFromOmr(ctx);
+}
+const OMR_ERR = {
+  not_granted: "Atril necesita tu permiso para usar Claude. Puedes darlo desde el menú de permisos de esta página.",
+  sampling_disabled: "Claude no está disponible para tu cuenta en este momento.",
+  images_unavailable: "Esta vista no puede enviar imágenes a Claude.",
+  image_rejected: "La imagen no se pudo enviar. Prueba con un PDF o una foto JPG o PNG más pequeña.",
+  rate_limited: "Llegaste al límite de uso por ahora. Inténtalo más tarde.",
+  session_expired: "Tu sesión expiró. Vuelve a iniciar sesión en Claude.",
+  invalid_json: "Claude respondió en un formato que no se pudo leer. Inténtalo de nuevo.",
+  refused: "Claude no pudo transcribir esta página.",
+  upstream_error: "Se cortó la conexión con Claude. Inténtalo de nuevo.",
+};
+function claudeOmrDialog() {
+  let file = null, ctl = null, running = false;
+  openModal(`<h3>Leer partitura</h3>
+    ${dirtyNote()}
+    <p>Sube un PDF o una foto de una partitura impresa. Claude la transcribe y se abre como partitura nueva para que la revises y corrijas. También lee la letra y el cifrado impresos. La lectura automática se equivoca a veces, sobre todo con fotos torcidas o borrosas y con figuras pequeñas.</p>
+    <label class="drop" id="oDrop"><b id="oName">Elegir PDF o imagen</b><span>o arrastra el archivo aquí · PDF, JPG, PNG</span>
+      <input type="file" id="oFile" accept=".pdf,application/pdf,image/png,image/jpeg,image/webp" hidden></label>
+    <div class="row" id="oPages" hidden>
+      <div class="field"><label for="oFrom">Desde la página</label><input id="oFrom" type="number" min="1" value="1"></div>
+      <div class="field"><label for="oTo">Hasta la página</label><input id="oTo" type="number" min="1" value="1"></div>
+    </div>
+    <label class="check"><input type="checkbox" id="oSplit" checked><span>Leer las dos voces de cada pentagrama<small>Para himnarios a 4 voces: soprano y contralto arriba, tenor y bajo abajo, cada una con su plica. Así podrás escuchar cada voz sola. Desmárcalo para partituras de una voz por pentagrama.</small></span></label>
+    <div class="steps" id="oSteps" hidden></div>
+    <p class="hint">Usa tu cuenta de Claude: cada página es una consulta.</p>
+    <div class="actions"><button class="btn" data-x="cancel">Cancelar</button><button class="btn primary" data-x="go" disabled>Leer partitura</button></div>`, (d) => {
+    wireDirtyNote(d);
+    const fi = d.querySelector("#oFile"), go = d.querySelector('[data-x="go"]'), drop = d.querySelector("#oDrop"), steps = d.querySelector("#oSteps");
+    const setFile = async (f) => {
+      if (!f) return;
+      if (!/pdf|image\/(png|jpe?g|webp)/i.test(f.type) && !/\.(pdf|png|jpe?g|webp)$/i.test(f.name)) { toast("Elige un PDF o una imagen JPG o PNG."); return; }
+      file = f; d.querySelector("#oName").textContent = f.name; go.disabled = false;
+      const isPdf = /pdf/i.test(f.type) || /\.pdf$/i.test(f.name);
+      d.querySelector("#oPages").hidden = !isPdf;
+      if (isPdf) {
+        try { await ensurePdf(); const doc = await pdfjsLib.getDocument({ data: new Uint8Array(await f.arrayBuffer()), isEvalSupported: false }).promise; const to = d.querySelector("#oTo"); to.value = Math.min(doc.numPages, 20); to.max = d.querySelector("#oFrom").max = doc.numPages; }
+        catch (e) { toast((e && e.message) || "No se pudo abrir el PDF."); }
+      }
+    };
+    fi.onchange = () => setFile(fi.files[0]);
+    drop.addEventListener("dragover", (e) => { e.preventDefault(); drop.classList.add("over"); });
+    drop.addEventListener("dragleave", () => drop.classList.remove("over"));
+    drop.addEventListener("drop", (e) => { e.preventDefault(); drop.classList.remove("over"); setFile(e.dataTransfer.files[0]); });
+    d.querySelector('[data-x="cancel"]').onclick = () => { if (ctl) ctl.abort(); closeModal(); };
+    const put = (text, st) => { const cur = steps.querySelector('[data-s="now"]'); if (cur) cur.remove(); const row = document.createElement("div"); row.dataset.s = st; row.textContent = text; steps.appendChild(row); };
+    const ui = { step: (t) => put(t, "now"), done: (t) => put(t, "done"), warn: (t) => put(t, "warn") };
+    go.onclick = async () => {
+      if (running || !file) return;
+      running = true; go.disabled = true; steps.hidden = false; steps.innerHTML = "";
+      d.querySelector('[data-x="cancel"]').textContent = "Detener";
+      ctl = new AbortController();
+      const opts = { split: d.querySelector("#oSplit").checked, from: +d.querySelector("#oFrom").value || 1, to: +d.querySelector("#oTo").value || 1 };
+      try {
+        const { score: sc, report } = await runOmr(file, opts, ui, ctl.signal);
+        stopPlayback(); if (lyricMode) endLyrics();
+        load(sc); fileHandle = null; fileName = ""; cloud.inLib = false; dirty = true;
+        render(); syncProps(); saveDraft();
+        showOmrReport(report, sc);
+      } catch (e) {
+        if (!document.getElementById("oSteps")) return;
+        if (e && e.code === "cancelled") ui.warn("Lectura detenida.");
+        else ui.warn((e && OMR_ERR[e.code]) || (e && e.message) || "No se pudo leer la partitura.");
+        if (e && e.code === "not_granted") go.hidden = true;
+      } finally {
+        running = false; ctl = null; go.disabled = false;
+        const c = document.querySelector('#modal [data-x="cancel"]'); if (c) c.textContent = "Cerrar";
       }
     };
   });
@@ -4740,6 +5018,7 @@ function helpDialog() {
     <p><b>Acordes:</b> elige «Acordes C Dm» o «Do Rem» para verlos. Atril detecta los acordes de las notas; para corregirlos, usa «Fijar los detectados» en el panel Acordes, o escribe uno con «Acorde +» o con doble clic sobre el pentagrama de arriba. Un acorde escrito se elige con un clic, se mueve arrastrándolo o con las flechas, y se cambia con doble clic. Al transponer, los acordes cambian con la partitura.</p>
     <p><b>Swing y anacrusa:</b> en el panel Compás, “Swing desde aquí” hace que las corcheas (o semicorcheas) se toquen con swing a partir de ese compás, aunque estén escritas rectas; “Recto” lo quita. “Anacrusa” deja el primer compás incompleto, y la numeración empieza en el compás siguiente.</p>
     <p>Para ensayar una voz del coro, usa la S de esa voz para escucharla sola, o la M para silenciarla.</p>
+    ${inClaude ? `<p><b>En claude.ai:</b> “Guardar” deja la partitura en tu cuenta (Abrir → Mis partituras) y desde ahí se guarda sola con cada cambio. “Compartir” la publica en este Atril para quienes tengan su enlace, o te da un enlace que la abre en Atril web. “Guardar como” descarga una copia .atril.</p>` : ""}
     <p><b>Tus archivos:</b> cada partitura se guarda como un archivo .atril en la carpeta que elijas; “Abrir” muestra las recientes. Para compartirla, usa “Compartir”: el enlace lleva la partitura adentro, sin subirla a ningún servidor. También puedes enviar el archivo .atril, o el PDF, MusicXML o audio desde el menú Archivo.${canPick || desktop ? "" : " Este navegador no puede escribir directo en tus carpetas: al guardar se descarga el archivo .atril."}</p>
     <p>Atril funciona en tu equipo, sin cuenta y sin internet: escribir, reproducir, letra, acordes, transponer y generar PDF, MusicXML y audio. Si cierras la pestaña sin guardar, al volver encontrarás tu último borrador.</p>
     <div class="actions"><button class="btn primary" data-x="close">Entendido</button></div>`, (d) => { d.querySelector('[data-x="close"]').onclick = closeModal; });
@@ -4989,6 +5268,23 @@ function wire() {
 }
 
 /* ================= arranque ================= */
+// Capacidades de claude.ai: llegan después del primer dibujo (cada una puede no estar: se sigue sin ella).
+function startClaude(hadDraft) {
+  const cl = window.claude;
+  cl.use("downloads").then((d) => { cloud.downloads = d; }).catch(() => {});
+  cl.use("sample").then(async (s) => {
+    if (!s) return;
+    const lim = await s.limits().catch(() => null);
+    if (lim && lim.images) { cloud.sample = s; cloud.imgMax = lim.images.maxCount || 6; document.getElementById("omrHint").textContent = "Claude la transcribe y la abres para corregir"; }
+  }).catch(() => {});
+  Promise.all([cl.use("db"), cl.use("user")]).then(async ([db, user]) => {
+    if (db) { const owner = user ? await user.isOwner().catch(() => false) : false; try { initShare(db, owner, hadDraft); } catch (e) {} }
+    if (!db || !user) return;
+    const id = await user.id().catch(() => null); if (!id) return;
+    cloud.lib = makeCloudLib(db, id);
+    try { const items = await cloud.lib.list(); if (items.some((x) => x.id === score.id)) { cloud.inLib = true; setSaveState(); } } catch (e) {}
+  }).catch(() => {});
+}
 function start() {
   let draft = null;
   try { const d = lsGet(LS_DRAFT); if (d) { const p = JSON.parse(d); if (p && Array.isArray(p.staves) && p.staves.length) draft = p; } } catch (e) {}
@@ -5026,6 +5322,7 @@ function start() {
     document.getElementById("omrHint").textContent = "Con Audiveris, en tu equipo y sin internet";
     window.__TAURI__.event.listen("abrir-archivo", (e) => openExternal(e.payload));
   }
+  if (inClaude) startClaude(!!draft);
   if (embedded) setTimeout(() => toast(`«${embedded.title || "Sin título"}» — pulsa ▶ para escucharla. Puedes transponerla y descargar PDF, audio o MusicXML.`), 600);
   else if (!draft && !location.hash.startsWith("#s=")) setTimeout(() => score.sample && toast("Partitura de ejemplo. Pulsa ▶ para escucharla o “Nueva” para empezar la tuya."), 600);
   document.getElementById("desk").focus({ preventScroll: true });
@@ -5035,6 +5332,6 @@ function start() {
 }
 start();
 </script>
-<script>if ("serviceWorker" in navigator && location.protocol.startsWith("http") && !window.__TAURI__) navigator.serviceWorker.register("sw.js").catch(() => {});</script>
+<script>if ("serviceWorker" in navigator && location.protocol.startsWith("http") && !window.__TAURI__ && !window.claude) navigator.serviceWorker.register("sw.js").catch(() => {});</script>
 </body>
 </html>

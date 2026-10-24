@@ -35,8 +35,12 @@ test("carga sin errores y sin pedir nada a internet", async ({ page }) => {
   await page.click("#tPlay");
   await expect(page.locator("#tPlay")).toHaveAttribute("aria-pressed", "false");
 
-  // nada depende de la plataforma Claude
-  expect(await page.content()).not.toMatch(/window\.claude|Claude/);
+  // fuera de claude.ai la capa del artefacto queda apagada y no se ve nada de Claude (ni en la página ni en la ayuda)
+  expect(await page.evaluate(() => ({ inClaude, lib: cloud.lib, sample: cloud.sample, dl: cloud.downloads }))).toEqual({ inClaude: false, lib: null, sample: null, dl: null });
+  expect(await page.evaluate(() => document.body.innerText)).not.toMatch(/Claude/);
+  await page.click("#bHelp");
+  expect(await page.locator("#modal").innerText()).not.toMatch(/Claude/);
+  await page.keyboard.press("Escape");
 
   expect(external, "pedidos a internet").toEqual([]);
   expect(errors, "errores de consola").toEqual([]);

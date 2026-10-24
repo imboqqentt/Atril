@@ -9,3 +9,4 @@ dist/
 _site/
 src-tauri/gen/
 skills/*.zip
+dist-artefacto/

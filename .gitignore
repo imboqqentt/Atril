@@ -8,3 +8,4 @@ playwright-report/
 dist/
 _site/
 src-tauri/gen/
+skills/*.zip

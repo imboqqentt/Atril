@@ -14,6 +14,13 @@ Con --revisar solo informa, sin escribir archivos.
 import argparse, json, os, random, re, string, sys, time
 from xml.sax.saxutils import escape
 
+# La consola de Windows no siempre es UTF-8: que los avisos con ♩, ñ o tildes no hagan caer el script.
+for _f in (sys.stdout, sys.stderr):
+    try:
+        _f.reconfigure(encoding="utf-8", errors="replace")
+    except (AttributeError, ValueError):
+        pass
+
 # Tiempo interno igual que Atril 0.2: una negra = 3360 (permite fusas, doble puntillo y grupos de 3, 5, 6 y 7 exactos).
 TQ = 3360
 TICKS = {"w": TQ * 4, "h": TQ * 2, "q": TQ, "8": TQ // 2, "16": TQ // 4, "32": TQ // 8}

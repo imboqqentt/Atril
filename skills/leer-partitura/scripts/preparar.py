@@ -18,6 +18,13 @@ import argparse, glob, json, os, shutil, subprocess, sys, tempfile
 import numpy as np
 from PIL import Image, ImageOps
 
+# La consola de Windows no siempre es UTF-8: que los avisos con ♩, ñ o tildes no hagan caer el script.
+for _f in (sys.stdout, sys.stderr):
+    try:
+        _f.reconfigure(encoding="utf-8", errors="replace")
+    except (AttributeError, ValueError):
+        pass
+
 
 def rango(texto, total):
     if not texto:
@@ -35,7 +42,10 @@ def rango(texto, total):
 def paginas_pdf(ruta, ancho, sel):
     """Rasteriza con PyMuPDF si está, si no con pdftoppm."""
     try:
-        import fitz  # PyMuPDF
+        try:
+            import pymupdf as fitz  # PyMuPDF (nombre nuevo)
+        except ImportError:
+            import fitz  # PyMuPDF anterior a 1.24
         doc = fitz.open(ruta)
         for p in rango(sel, doc.page_count):
             pg = doc[p - 1]
@@ -126,7 +136,9 @@ def detectar_sistemas(img):
 
 
 # Nota de la línea superior de cada clave, como índice diatónico (octava * 7 + paso; C4 = 28).
-LINEA_SUPERIOR = {"treble": 38, "treble8": 31, "treble8va": 45, "bass": 26, "bass8vb": 19, "alto": 32, "tenor": 30}
+# Alturas ESCRITAS, como las guarda Atril: en las claves con 8 (treble8, treble8va, bass8vb) se lee igual que en la
+# clave sin 8 y Atril corre la octava al hacerla sonar. Por eso treble8 y treble8va usan la misma línea que treble.
+LINEA_SUPERIOR = {"treble": 38, "treble8": 38, "treble8va": 38, "bass": 26, "bass8vb": 26, "alto": 32, "tenor": 30}
 PASOS = "CDEFGAB"
 
 

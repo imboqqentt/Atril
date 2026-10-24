@@ -20,7 +20,7 @@ Dos scripts de Python (numpy + Pillow; para PDF, PyMuPDF o `pdftoppm`):
 1. **Recortar.**
    `python3 scripts/preparar.py partitura.pdf --salida recortes`
    (`--paginas 1-2` para leer solo algunas páginas.) Mira `recortes/indice.json`. Si una página salió como `pXX_pagina.jpg`, no se detectaron los pentagramas: léela completa con más cuidado.
-   Por cada sistema también salen `pXX_sYY_guia1.png`, `_guia2.png`…: el sistema ampliado x3 por tramos, con una línea punteada y el nombre de cada altura (rojo = línea, azul = espacio, con 3 líneas adicionales arriba y abajo). Sin `--claves` supone sol + fa en sistemas de 2 pentagramas y sol en los demás. Si las claves son otras (por ejemplo, cuatro pentagramas SATB con tenor en `treble8`), vuelve a correrlo con `--claves treble,treble,treble8,bass` después de mirar el primer sistema. `--sin-guia` las omite.
+   Por cada sistema también salen `pXX_sYY_guia1.png`, `_guia2.png`…: el sistema ampliado x3 por tramos, con una línea punteada y el nombre de cada altura (rojo = línea, azul = espacio, con 3 líneas adicionales arriba y abajo). Sin `--claves` supone sol + fa en sistemas de 2 pentagramas y sol en los demás. Si las claves son otras (por ejemplo, cuatro pentagramas SATB con tenor en `treble8`), vuelve a correrlo con `--claves treble,treble,treble8,bass` después de mirar el primer sistema. `--sin-guia` las omite. Las guías nombran la altura **escrita**: en `treble8` (y `treble8va`, `bass8vb`) dicen lo mismo que en la clave sin 8, que es lo que hay que escribir.
 2. **Mirar el encabezado y el primer sistema** (abre las imágenes). Fija:
    - título, autor y tempo;
    - armadura (sostenidos positivos, bemoles negativos) y compás;
@@ -55,7 +55,10 @@ Dos scripts de Python (numpy + Pillow; para PDF, PyMuPDF o `pdftoppm`):
 
 **Cada compás** es una lista de eventos separados por espacio:
 - **Nota** `ALTURA:DUR`: `C4:q`, `F#5:8`, `Bb3:h.`. C4 es el Do central.
-- **ALTURA** = letra + `#` o `b` + octava. Escribe la nota **como suena**: aplica la armadura y las alteraciones anteriores del mismo compás. En Sol mayor todo Fa es `F#`, salvo que tenga becuadro.
+- **ALTURA** = letra + `#` o `b` + octava. La alteración va **como suena**: aplica la armadura y las alteraciones anteriores del mismo compás. En Sol mayor todo Fa es `F#`, salvo que tenga becuadro.
+- **Octava de la altura**:
+  - en claves con 8 (`treble8`, `treble8va`, `bass8vb`), como **se ve escrita** en la clave sin 8 (el Sol de la 2.ª línea del tenor en `treble8` es `G4`; Atril lo hace sonar una octava abajo). Es lo que marcan las guías;
+  - bajo una línea `8va`/`8vb`/`15ma`, como **suena**: súmale una octava a lo que marca la guía con `8va` (dos con `15ma`) y réstale una con `8vb`.
 - **DUR**: `w` redonda, `h` blanca, `q` negra, `8` corchea, `16` semicorchea, `32` fusa. `.` puntillo, `..` doble puntillo. `~` si se liga con la siguiente (`G4:h~`).
 - **Grupos irregulares**: `*3` en cada nota o silencio del tresillo (`E5:8*3 D5:8*3 C5:8*3`); también `*2`, `*5`, `*6`, `*7`.
 - **Adornos**, justo antes de su nota: `D5:g` (acciaccatura, con raya) o `D5:ga` (apoyatura).
@@ -66,9 +69,9 @@ Dos scripts de Python (numpy + Pillow; para PDF, PyMuPDF o `pdftoppm`):
   | `tr` `pr` `mo` `tu` | trino, mordente superior, mordente inferior, grupeto | `fa` `do` `sc` `be` | caída, doit, scoop, bend |
   | `br` `cs` | respiración, cesura | `gl` | glissando a la nota siguiente |
   | `(` `)` | empieza / termina ligadura de expresión | `<` `>` `!` | empieza crescendo / decrescendo · termina el regulador |
-  | `8va` `8vb` `15ma` `8e` | empieza / termina línea de octava (la altura se escribe **como suena**) | `ped` `pe` | pedal abajo / arriba |
+  | `8va` `8vb` `15ma` `8e` | empieza / termina línea de octava (la altura se escribe **como suena**: ver «Octava de la altura») | `ped` `pe` | pedal abajo / arriba |
   | `pp`…`ff` `sfz` `sf` `fz` `fp` | dinámica bajo esta nota | `t=dolce` | texto bajo la nota (`_` en vez de espacios) |
-- **Cifrado** impreso sobre el pentagrama: `[Cm7]` justo antes de la nota donde empieza el acorde, en la primera voz del pentagrama de arriba (`[G7] D5:q [C] C5:h`). Inglés o latino (`[Sib/Re]`), y `[N.C.]`.
+- **Cifrado** impreso sobre el pentagrama: `[Cm7]` justo antes de la nota donde empieza el acorde, en la primera voz del pentagrama de arriba (`[G7] D5:q [C] C5:h`). Inglés o latino (`[Sib/Re]`), y `[N.C.]`. No anotes a qué altura está impreso: Atril pone cada fila de acordes sobre las plicas y barras, y si alguno queda raro se sube o baja en Atril (↑ ↓ con el acorde elegido).
 - **Acorde** en la misma plica: `C4+E4+G4:q`.
 - **Silencio**: `r:q`. Un compás entero en silencio: `r:w` (también en 3/4).
 - **Letra** en la voz de arriba de cada pentagrama: `G4:q/gran-`. El guion final indica que la palabra sigue. Varias estrofas se separan con `|`: `G4:q/Al-|To-`. La sinalefa va con `_`: `y_a`. Una nota sin sílaba continúa la anterior (melisma).

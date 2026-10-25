@@ -1,6 +1,7 @@
 // Atril de escritorio: la misma app web (index.html) en una ventana, más lo que el navegador no puede hacer:
-// diálogos de Windows para abrir y guardar, leer y escribir archivos por ruta, y abrir el .atril con que se lanzó
+// diálogos nativos para abrir y guardar, leer y escribir archivos por ruta, y abrir el .atril con que se lanzó
 // (doble clic). Si Atril ya está abierta, el segundo doble clic manda el archivo a esa ventana.
+// Funciona en Windows y en macOS (en Mac el doble clic llega como evento Opened, no como argumento).
 // Además lee PDF con Audiveris (instalado aparte): lo corre en modo batch y devuelve el MusicXML.
 use percent_encoding::percent_decode_str;
 use std::{
@@ -17,7 +18,8 @@ use tauri::{
 use tauri_plugin_dialog::DialogExt;
 
 /// Archivo con que se abrió Atril (doble clic o "Abrir con"); la página lo pide una vez al cargar.
-struct Inicial(Mutex<Option<String>>);
+/// El segundo valor queda en true cuando ya lo pidió: desde ahí los archivos van por el evento "abrir-archivo".
+struct Inicial(Mutex<(Option<String>, bool)>);
 
 fn ruta_de_args(args: &[String], cwd: Option<&str>) -> Option<String> {
     let arg = args.iter().skip(1).find(|a| !a.starts_with('-'))?;
@@ -32,7 +34,26 @@ fn ruta_de_args(args: &[String], cwd: Option<&str>) -> Option<String> {
 
 #[tauri::command]
 fn archivo_inicial(inicial: State<Inicial>) -> Option<String> {
-    inicial.0.lock().unwrap().take()
+    let mut g = inicial.0.lock().unwrap();
+    g.1 = true;
+    g.0.take()
+}
+
+/// Un archivo que llega con Atril ya abierta: a la página si ya está lista, si no queda para cuando lo pida.
+fn abrir_en_ventana(app: &AppHandle, ruta: String) {
+    {
+        let inicial = app.state::<Inicial>();
+        let mut g = inicial.0.lock().unwrap();
+        if !g.1 {
+            g.0 = Some(ruta);
+            return;
+        }
+    }
+    let _ = app.emit("abrir-archivo", ruta);
+    if let Some(w) = app.get_webview_window("main") {
+        let _ = w.unminimize();
+        let _ = w.set_focus();
+    }
 }
 
 #[tauri::command]
@@ -97,10 +118,18 @@ async fn elegir_guardar(window: WebviewWindow, nombre: String, tipo: String, ext
 /// Proceso de Audiveris en curso (para cancelarlo o cerrarlo junto con Atril).
 struct Audiveris(Mutex<Option<Child>>);
 
-/// Busca Audiveris.exe: primero la ruta que eligió la persona, luego donde lo deja su instalador.
+/// Busca Audiveris (Audiveris.exe; en Mac, Audiveris.app): primero la ruta que eligió la persona, luego donde lo
+/// deja su instalador. Devuelve el ejecutable.
 #[tauri::command]
 fn buscar_audiveris(ruta: Option<String>) -> Option<String> {
     let mut candidatos: Vec<PathBuf> = ruta.into_iter().map(PathBuf::from).collect();
+    if let Some(home) = std::env::var_os("HOME") {
+        candidatos.push(PathBuf::from(home).join("Applications").join("Audiveris.app"));
+    }
+    candidatos.push(PathBuf::from("/Applications/Audiveris.app"));
+    // de una carpeta .app sirve el ejecutable que lleva adentro
+    let candidatos = candidatos.into_iter().map(|p| if p.extension().is_some_and(|x| x == "app") { p.join("Contents").join("MacOS").join("Audiveris") } else { p });
+    let mut candidatos: Vec<PathBuf> = candidatos.collect();
     for var in ["ProgramFiles", "ProgramW6432", "ProgramFiles(x86)", "LOCALAPPDATA"] {
         if let Ok(base) = std::env::var(var) {
             let base = PathBuf::from(base);
@@ -128,7 +157,11 @@ fn idiomas_ocr() -> Option<String> {
         .map(PathBuf::from)
         .ok()
         .filter(|p| p.is_dir())
-        .or_else(|| std::env::var("APPDATA").ok().map(|a| PathBuf::from(a).join("AudiverisLtd").join("audiveris").join("config").join("tessdata")))?;
+        .or_else(|| {
+            // Windows: %APPDATA%/AudiverisLtd/audiveris; Mac: ~/Library/Application Support/AudiverisLtd/audiveris
+            let base = std::env::var("APPDATA").map(PathBuf::from).ok().or_else(|| std::env::var_os("HOME").map(|h| PathBuf::from(h).join("Library").join("Application Support")))?;
+            Some(base.join("AudiverisLtd").join("audiveris").join("config").join("tessdata"))
+        })?;
     let idiomas: Vec<&str> = ["spa", "eng"].into_iter().filter(|c| carpeta.join(format!("{c}.traineddata")).is_file()).collect();
     (!idiomas.is_empty()).then(|| idiomas.join("+"))
 }
@@ -208,17 +241,19 @@ pub fn run() {
     tauri::Builder::default()
         // va primero: si Atril ya está abierta, le pasa el archivo y esta segunda instancia se cierra
         .plugin(tauri_plugin_single_instance::init(|app, args, cwd| {
-            if let Some(ruta) = ruta_de_args(&args, Some(&cwd)) {
-                let _ = app.emit("abrir-archivo", ruta);
-            }
-            if let Some(w) = app.get_webview_window("main") {
-                let _ = w.unminimize();
-                let _ = w.set_focus();
+            match ruta_de_args(&args, Some(&cwd)) {
+                Some(ruta) => abrir_en_ventana(app, ruta),
+                None => {
+                    if let Some(w) = app.get_webview_window("main") {
+                        let _ = w.unminimize();
+                        let _ = w.set_focus();
+                    }
+                }
             }
         }))
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_opener::init())
-        .manage(Inicial(Mutex::new(ruta_de_args(&args, None))))
+        .manage(Inicial(Mutex::new((ruta_de_args(&args, None), false))))
         .manage(Audiveris(Mutex::new(None)))
         .invoke_handler(tauri::generate_handler![
             archivo_inicial,
@@ -232,12 +267,20 @@ pub fn run() {
         ])
         .build(tauri::generate_context!())
         .expect("no se pudo iniciar Atril")
-        .run(|app, evento| {
+        .run(|app, evento| match evento {
             // si se cierra Atril durante una lectura, Audiveris se cierra también
-            if let RunEvent::Exit = evento {
+            RunEvent::Exit => {
                 if let Some(mut hijo) = app.state::<Audiveris>().0.lock().unwrap().take() {
                     let _ = hijo.kill();
                 }
             }
+            // Mac: doble clic en un .atril (o arrastrarlo al ícono), con Atril cerrada o abierta
+            #[cfg(target_os = "macos")]
+            RunEvent::Opened { urls } => {
+                for ruta in urls.iter().filter_map(|u| u.to_file_path().ok()) {
+                    abrir_en_ventana(app, ruta.to_string_lossy().into_owned());
+                }
+            }
+            _ => {}
         });
 }

@@ -4606,18 +4606,21 @@ async function readWithAudiveris(exe, path, pages, say) {
   } finally { unlisten(); }
 }
 function audiverisMissingDialog() {
+  const mac = isMac(), prog = mac ? "Audiveris" : "Audiveris.exe";
   openModal(`<h3>Leer partitura de PDF</h3>
     <p>Para leer PDF, Atril usa <b>Audiveris</b>, un programa gratuito y de código abierto que se instala aparte (unos 85 MB). No lo encontré en este equipo.</p>
-    <div class="report"><ul><li>Descarga e instala “Audiveris-…-windows-x86_64.msi” desde su página.</li><li>Vuelve aquí y pulsa “Buscar de nuevo”.</li></ul></div>
-    <p class="hint">Si lo instalaste en otra carpeta, usa “Ubicar Audiveris.exe…”.</p>
-    <div class="actions"><button class="btn" data-x="locate" style="margin-right:auto">Ubicar Audiveris.exe…</button><button class="btn" data-x="close">Cerrar</button><button class="btn" data-x="again">Buscar de nuevo</button><button class="btn primary" data-x="web">Ir a la página de Audiveris</button></div>`, (d) => {
+    <div class="report"><ul><li>${mac ? "Descarga “Audiveris-…-macosx-….dmg” desde su página (arm64 si tu Mac tiene chip Apple, x86_64 si es Intel) y arrastra Audiveris a Aplicaciones." : "Descarga e instala “Audiveris-…-windows-x86_64.msi” desde su página."}</li><li>Vuelve aquí y pulsa “Buscar de nuevo”.</li></ul></div>
+    <p class="hint">Si lo instalaste en otra carpeta, usa “Ubicar ${prog}…”.</p>
+    <div class="actions"><button class="btn" data-x="locate" style="margin-right:auto">Ubicar ${prog}…</button><button class="btn" data-x="close">Cerrar</button><button class="btn" data-x="again">Buscar de nuevo</button><button class="btn primary" data-x="web">Ir a la página de Audiveris</button></div>`, (d) => {
     d.querySelector('[data-x="close"]').onclick = closeModal;
     d.querySelector('[data-x="web"]').onclick = () => window.__TAURI__.opener.openUrl(AUDIVERIS_URL).catch(() => toast("No se pudo abrir el navegador. Busca “Audiveris” en GitHub."));
-    d.querySelector('[data-x="again"]').onclick = async () => { if (await findAudiveris()) omrDialog(); else toast("Todavía no encuentro Audiveris. Si ya lo instalaste, usa “Ubicar Audiveris.exe…”."); };
+    d.querySelector('[data-x="again"]').onclick = async () => { if (await findAudiveris()) omrDialog(); else toast(`Todavía no encuentro Audiveris. Si ya lo instalaste, usa “Ubicar ${prog}…”.`); };
     d.querySelector('[data-x="locate"]').onclick = async () => {
-      const path = await desktop.pickOpen("Audiveris", ["exe"]).catch(() => null); if (!path) return;
-      if (await desktop.invoke("buscar_audiveris", { ruta: path }).catch(() => null) === path) { lsSet(LS_AUDIVERIS, path); omrDialog(); }
-      else toast("Ese archivo no sirve. Elige Audiveris.exe, en la carpeta donde instalaste Audiveris.");
+      const path = await desktop.pickOpen("Audiveris", [mac ? "app" : "exe"]).catch(() => null); if (!path) return;
+      // en Mac se elige Audiveris.app y sirve el programa que lleva adentro
+      const exe = await desktop.invoke("buscar_audiveris", { ruta: path }).catch(() => null);
+      if (exe && (exe === path || exe.startsWith(path + "/"))) { lsSet(LS_AUDIVERIS, exe); omrDialog(); }
+      else toast(mac ? "Ese archivo no sirve. Elige Audiveris, en Aplicaciones." : "Ese archivo no sirve. Elige Audiveris.exe, en la carpeta donde instalaste Audiveris.");
     };
   });
 }
@@ -4821,8 +4824,17 @@ const DUR_ICONS = {
   w: '<svg viewBox="0 0 18 22"><ellipse cx="9" cy="13" rx="5.6" ry="3.6" fill="none" stroke-width="2"/></svg>',
 };
 
+// En Mac los atajos van con ⌘ (Cmd) y ⇧: los textos que dicen Ctrl y Mayús se muestran así
+function isMac() { return /Mac|iPhone|iPad/.test(navigator.platform || navigator.userAgent); }
+function keys(s) { return isMac() ? String(s).replace(/Ctrl ?\+ ?rueda/g, "⌘ + rueda").replace(/Ctrl ?\+ ?/g, "⌘").replace(/Mayús ?\+ ?/g, "⇧").replace(/Ctrl/g, "⌘") : s; }
+function macKeys(root) {
+  if (!isMac()) return;
+  root.querySelectorAll("[title]").forEach((el) => { el.title = keys(el.title); });
+  const w = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+  for (let n; (n = w.nextNode());) if (/Ctrl|Mayús/.test(n.nodeValue)) n.nodeValue = keys(n.nodeValue);
+}
 function toast(msg) {
-  const t = document.getElementById("toast"); t.textContent = msg; t.hidden = false;
+  const t = document.getElementById("toast"); t.textContent = keys(msg); t.hidden = false;
   clearTimeout(toast.tm); toast.tm = setTimeout(() => { t.hidden = true; }, 3200);
 }
 function openModal(html, onMount) {
@@ -4830,6 +4842,7 @@ function openModal(html, onMount) {
   m.innerHTML = `<div class="scrim" role="dialog" aria-modal="true"><div class="dialog">${html}</div></div>`;
   const scrim = m.firstChild;
   scrim.addEventListener("pointerdown", (e) => { if (e.target === scrim) closeModal(); });
+  macKeys(scrim);
   if (onMount) onMount(scrim.firstChild);
   const f = scrim.querySelector("input,button"); if (f) f.focus();
 }
@@ -5300,6 +5313,7 @@ function start() {
   { const c = document.getElementById("pConcert"); if (c) c.checked = concertView; }
   document.getElementById("tSolfeo").setAttribute("aria-pressed", String(solfeoOn));
   refreshSoundSelects();
+  macKeys(document.body);
   wire(); syncProps(); render();
   loadInstruments();
   const warm = () => { document.removeEventListener("pointerdown", warm, true); document.removeEventListener("keydown", warm, true); preloadSounds(); };
@@ -5318,9 +5332,10 @@ function start() {
   // escritorio: el .atril del doble clic, y los que llegan con Atril ya abierta
   if (desktop) {
     const openExternal = (path) => { if (!path) return; if (stashDraft()) setTimeout(() => toast("Tus cambios sin guardar quedaron en Abrir."), 3500); openPath(path); };
-    desktop.invoke("archivo_inicial").then(openExternal).catch(() => {});
     document.getElementById("omrHint").textContent = "Con Audiveris, en tu equipo y sin internet";
-    window.__TAURI__.event.listen("abrir-archivo", (e) => openExternal(e.payload));
+    // primero escucha y después pide el archivo inicial: desde ahí Atril manda los demás por el evento
+    window.__TAURI__.event.listen("abrir-archivo", (e) => openExternal(e.payload)).catch(() => {})
+      .then(() => desktop.invoke("archivo_inicial")).then(openExternal).catch(() => {});
   }
   if (inClaude) startClaude(!!draft);
   if (embedded) setTimeout(() => toast(`«${embedded.title || "Sin título"}» — pulsa ▶ para escucharla. Puedes transponerla y descargar PDF, audio o MusicXML.`), 600);

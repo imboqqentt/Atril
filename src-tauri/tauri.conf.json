@@ -40,9 +40,14 @@
         "name": "Partitura de Atril",
         "description": "Partitura de Atril",
         "mimeType": "application/json",
-        "role": "Editor"
+        "role": "Editor",
+        "exportedType": { "identifier": "io.github.imboqqentt.atril.partitura", "conformsTo": ["public.json"] }
       }
     ],
+    "macOS": {
+      "signingIdentity": "-",
+      "minimumSystemVersion": "11.0"
+    },
     "windows": {
       "nsis": {
         "languages": ["Spanish"],

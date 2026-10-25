@@ -45,3 +45,19 @@ test("carga sin errores y sin pedir nada a internet", async ({ page }) => {
   expect(external, "pedidos a internet").toEqual([]);
   expect(errors, "errores de consola").toEqual([]);
 });
+
+test("en Mac los atajos se muestran con ⌘ y funcionan con Cmd", async ({ page }) => {
+  await page.addInitScript(() => Object.defineProperty(Navigator.prototype, "platform", { get: () => "MacIntel" }));
+  const { errors } = await openAtril(page);
+  expect(await page.getAttribute("#bSave", "title")).toBe("⌘S");
+  expect(await page.getAttribute("#zOut", "title")).toBe("Alejar (⌘−, o ⌘ + rueda del mouse)");
+  await expect(page.locator("#mFile [data-act=saveas] span")).toContainText("(⌘⇧S)");
+  await page.click("#bHelp");
+  await expect(page.locator("#modal")).toContainText("⌘Z · ⌘Y");
+  await expect(page.locator("#modal")).not.toContainText("Ctrl");
+  await page.click('#modal [data-x="close"]');
+  await page.locator("#desk").focus();
+  await page.keyboard.press("Meta+=");
+  await expect(page.locator("#zReset")).not.toHaveText("100 %");
+  expect(errors).toEqual([]);
+});

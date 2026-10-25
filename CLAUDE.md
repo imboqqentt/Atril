@@ -10,7 +10,7 @@ Idioma: la app y los mensajes al usuario van en **español (Chile)**. El código
 
 1. **Web local / PWA** — funciona abriendo `index.html` servido localmente o desde GitHub Pages, y se puede instalar sin conexión.
 2. **Sin dependencias de Claude** — guardar y abrir archivos `.atril`, compartir por archivo o por enlace (la partitura viaja dentro del enlace).
-3. **App de escritorio con Tauri 2** — `.exe` para Windows, diálogos nativos, doble clic en un `.atril` lo abre.
+3. **App de escritorio con Tauri 2** — `.exe` para Windows y `.dmg` para Mac, diálogos nativos, doble clic en un `.atril` lo abre.
 4. **Lectura de PDF local con Audiveris** (open source, PDF → MusicXML), llamado desde Tauri. La skill de Claude (`skills/leer-partitura/`) queda como opción aparte para fotos o casos difíciles.
 
 ## Estado actual del código
@@ -36,7 +36,7 @@ Todo vive en **`index.html`** (un solo archivo, ~3.600 líneas: CSS + HTML + JS 
 | Exportar | `exportPDF` (jsPDF), `exportSVG`, `toMusicXML`, `exportMXL`, `offer` → `browserDownload` |
 | Importar | `importFile` (.atril/.json abre con su archivo; .musicxml, .xml, .mxl, .zip importa), `fromMusicXML` |
 | Lectura de PDF | escritorio: `omrDialog`, `readWithAudiveris`, `audiverisMissingDialog`, `findAudiveris`; navegador: `webOmrDialog`. JSON compacto de la skill (`.atril-omr.json`): `importFile` → `openOmrJson` → `mergeOmr` + `buildFromOmr` (formato en `omrPrompt`). Sin uso por ahora: `detectSystems`, `cropBlob` |
-| Escritorio (Tauri) | `desktop` (null en el navegador): `read`/`write` por ruta, `pickOpen`/`pickSave`, `setTitle`; `openPath`, `stashDraft`. En escritorio `fileHandle` es la ruta (texto). Lado Rust en `src-tauri/src/lib.rs`: `leer`, `escribir`, `elegir_abrir`, `elegir_guardar`, `archivo_inicial`, evento `abrir-archivo` |
+| Escritorio (Tauri) | `desktop` (null en el navegador): `read`/`write` por ruta, `pickOpen`/`pickSave`, `setTitle`; `openPath`, `stashDraft`. En escritorio `fileHandle` es la ruta (texto). Lado Rust en `src-tauri/src/lib.rs`: `leer`, `escribir`, `elegir_abrir`, `elegir_guardar`, `archivo_inicial`, evento `abrir-archivo` (`abrir_en_ventana`; en Mac el doble clic llega como `RunEvent::Opened`). Atajos: el código acepta Ctrl o ⌘; en Mac `keys`/`macKeys` muestran ⌘ y ⇧ en vez de Ctrl y Mayús |
 | Artefacto de claude.ai | `inClaude`/`cloud` (null fuera de claude.ai): «Mis partituras» en la cuenta (`makeCloudLib`, `saveToCloud`, guardado automático `scheduleCloudSave`), compartir en el artefacto (`initShare`, `publishShared`, `openShared`, `cloudShareHtml`), descargas por la capacidad (`offer`), lectura con Claude (`claudeOmrDialog`, `runOmr`). `startClaude` las pide al arrancar. Se publica con `node tools/armar-artefacto.mjs` → `dist-artefacto/index.html` en https://claude.ai/artifact/MCd6RU94PhsQUnpLhMvyr8 (capacidades db, user, downloads, sample con imágenes; snd/ ya está publicado allá) |
 | Partitura incrustada | `<script type="application/json" id="atril-embed">` → `start()` la abre en vez del ejemplo |
 
@@ -113,7 +113,8 @@ Orden sugerido: el bloque 1 en una v0.1.2; luego actualizaciones automáticas.
    - [x] Compás de anacrusa (hecho en Fase 6, A7).
    - [ ] Calibrar con partituras reales de Daniel: pares PDF → partitura corregida en `ejemplos/`, medir errores de Audiveris y de la skill.
 4. [ ] Mantenimiento: dividir `index.html` en ES modules nativos (sin build), con las pruebas como red.
-5. Opcionales: firmar el instalador (certificado de pago, evita SmartScreen); versiones para macOS/Linux.
+5. Opcionales: firmar el instalador (certificado de pago, evita SmartScreen); Linux.
+6. [x] Mac (2026-10-25, para el director del coro): `.dmg` universal (chip Apple e Intel) en cada Release, firmado ad hoc (`signingIdentity: "-"`, sin cuenta de Apple: la primera vez se autoriza en Ajustes → Privacidad y seguridad). Audiveris en `/Applications/Audiveris.app`. Sin pruebas de escritorio en Mac (WKWebView no tiene puerto de depuración): en Mac solo se comprueba que compile; probarla a mano en un Mac real. Firmar y notarizar requiere la cuenta de desarrollador de Apple (USD 99/año).
 
 ### Fase 6 — notación completa (propuesta, 2026-10-16)
 Meta: que el próximo release escriba, dibuje (VexFlow ya trae casi todo), toque y exporte lo que hoy se aproxima. Cada punto incluye MusicXML de ida y vuelta, `omrPrompt`/skill `leer-partitura` y pruebas. Orden: bloque A primero (los demás dependen de él).
@@ -169,7 +170,7 @@ Riesgos: A1 toca `render`, `playOrder` y `performance` (correr `npm test` antes 
 - `npm run escritorio` — Atril de escritorio en modo desarrollo (lee los archivos de la carpeta).
 - `npm run test:escritorio` — compila en modo depuración y prueba la app real por el puerto de depuración de WebView2.
 - `npm run instalador` — instaladores `.exe` (NSIS) y `.msi`.
-- Publicar una versión: correr `npm test` y `npm run test:escritorio` en Windows (en GitHub las de escritorio no bloquean: WebView2 no abre el puerto de depuración allá), subir `version` en `package.json` y `src-tauri/Cargo.toml`, commit, `git tag vX.Y.Z` y `git push origin vX.Y.Z`. El workflow `release.yml` corre las pruebas, compila en Windows y deja un **borrador** de Release con el `.exe` y el `.msi` para revisar y publicar.
+- Publicar una versión: correr `npm test` y `npm run test:escritorio` en Windows (en GitHub las de escritorio no bloquean: WebView2 no abre el puerto de depuración allá), subir `version` en `package.json` y `src-tauri/Cargo.toml`, commit, `git tag vX.Y.Z` y `git push origin vX.Y.Z`. El workflow `release.yml` corre las pruebas, compila en Windows y en Mac y deja un **borrador** de Release con el `.exe`, el `.msi` y el `.dmg` para revisar y publicar.
 - Artefacto de claude.ai: `node tools/armar-artefacto.mjs` y publicar `dist-artefacto/index.html` en el artefacto (sin cambiar sus capacidades). Pruebas de esa capa: `tests/artefacto.spec.mjs` (simula `window.claude`).
 - Requisitos para compilar: Rust (rustup) y Visual Studio Build Tools con C++.
 

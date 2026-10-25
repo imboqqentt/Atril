@@ -1,8 +1,8 @@
-# Compila los instaladores de Windows y los deja en un borrador de Release de GitHub.
+# Compila los instaladores de Windows y de Mac y los deja en un borrador de Release de GitHub.
 # Se activa al subir una etiqueta de versión que calce con package.json, por ejemplo:
 #   (subir "version" en package.json a 0.2.0, commit)  git tag v0.2.0  y  git push origin v0.2.0
 # El borrador queda en github.com/<usuario>/Atril/releases: revisarlo y pulsar "Publish release".
-name: Instaladores de Windows
+name: Instaladores de Windows y Mac
 
 on:
   push:
@@ -59,6 +59,48 @@ jobs:
           path: test-results/
           retention-days: 7
 
+      - uses: actions/upload-artifact@v7
+        with:
+          name: windows
+          path: |
+            src-tauri/target/release/bundle/nsis/*.exe
+            src-tauri/target/release/bundle/msi/*.msi
+          retention-days: 7
+
+  # Un solo .dmg para Mac con chip Apple y con Intel. Firmado "ad hoc" (sin cuenta de desarrollador de Apple):
+  # la primera vez macOS pide autorizarlo en Ajustes del Sistema (ver el texto del Release).
+  mac:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-apple-darwin,x86_64-apple-darwin
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+      - run: npm ci
+      - name: Compilar la app de Mac (.dmg)
+        run: npx tauri build --target universal-apple-darwin --bundles app,dmg
+      - uses: actions/upload-artifact@v7
+        with:
+          name: mac
+          path: src-tauri/target/universal-apple-darwin/release/bundle/dmg/*.dmg
+          retention-days: 7
+
+  release:
+    needs: [windows, mac]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v7
+        with:
+          path: instaladores
+          merge-multiple: true
+
       - name: Borrador de Release con los instaladores
         uses: softprops/action-gh-release@v3
         with:
@@ -68,7 +110,14 @@ jobs:
           body: |
             **Windows:** descarga `Atril_…_x64-setup.exe` (recomendado, no pide permiso de administrador) o el `.msi`.
             Windows SmartScreen puede avisar porque el instalador no está firmado: «Más información» → «Ejecutar de todas formas».
+
+            **Mac** (chip Apple o Intel, macOS 11 o más nuevo): descarga `Atril_…_universal.dmg`, ábrelo y arrastra Atril a Aplicaciones.
+            La primera vez macOS avisa que no puede verificar la app (no está firmada con una cuenta de Apple): pulsa «OK», ve a
+            Ajustes del Sistema → Privacidad y seguridad, baja hasta «Se bloqueó Atril» y pulsa «Abrir igualmente». Después abre normal.
+            (En macOS 14 o anterior basta con clic derecho sobre Atril → «Abrir».)
+
             También puedes usar Atril sin instalar en https://imboqqentt.github.io/Atril/
           files: |
-            src-tauri/target/release/bundle/nsis/*.exe
-            src-tauri/target/release/bundle/msi/*.msi
+            instaladores/**/*.exe
+            instaladores/**/*.msi
+            instaladores/**/*.dmg
